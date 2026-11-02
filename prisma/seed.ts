@@ -1,0 +1,196 @@
+import "dotenv/config";
+import { PrismaPg } from "@prisma/adapter-pg";
+import { PrismaClient, type Category } from "../generated/prisma/client";
+
+const db = new PrismaClient({
+  adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL }),
+});
+
+type SeedPost = {
+  slug: string;
+  category: Category;
+  title: string;
+  excerpt: string;
+  tags: string[];
+  content: string;
+  products: string[];
+};
+
+// Link tạm trỏ tới trang tìm kiếm Shopee — thay bằng link affiliate thật trong CMS.
+const placeholderLink = (name: string) =>
+  `https://shopee.vn/search?keyword=${encodeURIComponent(name)}`;
+
+const POSTS: SeedPost[] = [
+  {
+    slug: "meo-tay-vet-o-vang-noi-chien-khong-dau",
+    category: "MEO_VAT",
+    title: "Mẹo tẩy vết ố vàng, dầu mỡ bám nồi chiên không dầu bằng baking soda và giấm",
+    excerpt: "Hai nguyên liệu có sẵn trong bếp giúp lòng nồi chiên sạch mỡ két chỉ sau 15 phút ngâm.",
+    tags: ["nhà bếp", "vệ sinh", "nồi chiên không dầu"],
+    content: `<p>Sau vài tuần dùng liên tục, lòng nồi chiên không dầu thường bám một lớp mỡ vàng khó chịu. Tin vui là bạn không cần hóa chất mạnh.</p>
+<h2>Chuẩn bị</h2>
+<ul><li>2 thìa baking soda</li><li>100ml giấm trắng</li><li>Nước ấm, miếng bọt biển mềm</li></ul>
+<h2>Các bước thực hiện</h2>
+<p>Rút điện và để nồi nguội hẳn. Trộn baking soda với một ít nước thành hỗn hợp sệt, phủ lên các vết ố và để 10 phút. Xịt giấm lên trên cho sủi bọt, sau đó lau nhẹ bằng bọt biển rồi rửa lại bằng nước ấm.</p>
+<h2>Giữ nồi sạch lâu hơn</h2>
+<p>Lót giấy nến khi chiên đồ nhiều dầu và lau lòng nồi sau mỗi lần dùng — chỉ mất 1 phút nhưng tiết kiệm cả buổi cọ rửa.</p>`,
+    products: ["Giấy nến lót nồi chiên không dầu", "Bột baking soda đa năng"],
+  },
+  {
+    slug: "tong-hop-do-decor-phong-ngu-han-quoc-gia-re",
+    category: "GOM_LINK",
+    title: "Tổng hợp đồ decor phòng ngủ phong cách Hàn Quốc dưới 100k",
+    excerpt: "Đèn ngủ vintage, thảm nỉ màu be và tranh canvas — ba món nhỏ đủ biến phòng ngủ thành góc chill.",
+    tags: ["decor", "phòng ngủ", "dưới 100k"],
+    content: `<p>Không cần sửa nhà, chỉ vài món decor đúng tông là căn phòng đã khác hẳn.</p>
+<h2>Ánh sáng vàng ấm là chìa khóa</h2>
+<p>Đèn ngủ vintage ánh vàng tạo cảm giác ấm cúng ngay lập tức, đặc biệt khi chụp ảnh buổi tối.</p>
+<h2>Tông màu be – kem</h2>
+<p>Một tấm thảm nỉ màu be giúp sàn nhà bớt trống và đồng bộ với chăn ga sáng màu.</p>
+<h2>Điểm nhấn trên tường</h2>
+<p>Tranh canvas tối giản treo đầu giường là cách rẻ nhất để có góc "sống ảo".</p>`,
+    products: ["Đèn ngủ vintage để bàn", "Thảm nỉ trải sàn màu be", "Tranh canvas tối giản treo tường"],
+  },
+  {
+    slug: "cach-gap-quan-ao-nhanh-gon-khong-bi-nhau",
+    category: "MEO_VAT",
+    title: "Cách gấp quần áo nhanh gọn, không bị nhàu theo phương pháp KonMari",
+    excerpt: "Gấp đứng thay vì chồng lên nhau giúp nhìn thấy mọi món đồ và tủ gọn hơn hẳn.",
+    tags: ["sắp xếp", "tủ quần áo", "KonMari"],
+    content: `<p>Phương pháp KonMari khuyên gấp quần áo thành hình chữ nhật nhỏ và xếp đứng trong ngăn kéo.</p>
+<h2>Gấp áo thun</h2>
+<p>Gập hai bên áo vào giữa, gấp đôi theo chiều dọc rồi gấp tiếp thành 3 phần để áo tự đứng được.</p>
+<h2>Xếp đứng trong hộp chia ngăn</h2>
+<p>Hộp chia ngăn giúp từng nếp áo không bị đổ, lấy một món không làm xô lệch cả chồng.</p>`,
+    products: ["Hộp chia ngăn vải oxford đựng quần áo"],
+  },
+  {
+    slug: "top-do-gia-dung-thong-minh-cho-nha-bep-nho",
+    category: "GOM_LINK",
+    title: "Top đồ gia dụng thông minh cho căn bếp chung cư nhỏ",
+    excerpt: "Những món nhỏ gọn giúp tiết kiệm diện tích mà vẫn nấu nướng tiện tay.",
+    tags: ["nhà bếp", "chung cư", "tiết kiệm diện tích"],
+    content: `<p>Bếp chung cư thường chật, nên mỗi món đồ đều phải "đáng đồng tiền".</p>
+<h2>Kệ gia vị xoay 360°</h2>
+<p>Gom chai lọ vào một chỗ, xoay là lấy được, không còn cảnh lục tìm.</p>
+<h2>Máy xay tỏi kéo tay</h2>
+<p>Không cần điện, rửa nhanh và cất gọn trong ngăn kéo.</p>`,
+    products: ["Kệ gia vị xoay 360 độ", "Máy xay tỏi ớt kéo tay mini"],
+  },
+  {
+    slug: "meo-giu-quan-ao-khong-bi-phai-mau-khi-giat",
+    category: "MEO_VAT",
+    title: "Mẹo giữ quần áo không bị phai màu khi giặt, nhất là quần jeans mới",
+    excerpt: "Ngâm giấm trắng trước lần giặt đầu tiên giúp hạn chế ra màu đáng kể.",
+    tags: ["giặt giũ", "quần jeans", "giấm trắng"],
+    content: `<p>Quần jeans mới thường ra màu nhiều ở vài lần giặt đầu. Một chút giấm có thể giúp ích.</p>
+<h2>Ngâm giấm trước lần giặt đầu</h2>
+<p>Pha 1 chén giấm trắng với chậu nước lạnh, lộn trái quần và ngâm khoảng 30 phút rồi phơi trong bóng râm.</p>
+<h2>Giặt đúng cách những lần sau</h2>
+<p>Luôn lộn trái, giặt nước lạnh và cho vào túi giặt lưới để hạn chế ma sát.</p>`,
+    products: ["Set túi giặt lưới bảo vệ quần áo"],
+  },
+  {
+    slug: "phu-kien-thoi-trang-hot-trend-gia-sinh-vien",
+    category: "GOM_LINK",
+    title: "Phụ kiện thời trang hot trend giá sinh viên, chỉ từ 10k",
+    excerpt: "Kẹp tóc đính đá và khuyên tai bạc nhỏ xinh giúp outfit đơn giản trở nên nổi bật.",
+    tags: ["phụ kiện", "thời trang", "giá rẻ"],
+    content: `<p>Phụ kiện là cách rẻ nhất để làm mới tủ đồ mà không cần mua thêm quần áo.</p>
+<h2>Kẹp tóc đính đá</h2>
+<p>Một chiếc kẹp nhỏ cài lệch bên là đủ để kiểu tóc đơn giản trông chỉn chu hơn.</p>
+<h2>Khuyên tai bạc S925</h2>
+<p>Bạc S925 ít gây kích ứng hơn hàng mạ thông thường, hợp cho người đeo hằng ngày.</p>`,
+    products: ["Kẹp tóc đính đá phong cách Hàn", "Khuyên tai bạc S925 tối giản"],
+  },
+  {
+    slug: "meo-cham-soc-cay-thiet-moc-lan-trong-nha-luon-xanh-tot",
+    category: "MEO_VAT",
+    title: "Mẹo chăm sóc cây thiết mộc lan trong nhà luôn xanh tốt, không thối rễ",
+    excerpt: "Tưới ít nhưng đúng lúc và giữ lá ẩm là bí quyết để cây phát triển ổn định.",
+    tags: ["cây cảnh", "trong nhà", "chăm sóc cây"],
+    content: `<p>Thiết mộc lan dễ trồng nhưng rất "ghét" úng nước — đây là lý do phổ biến nhất khiến cây vàng lá.</p>
+<h2>Kiểm tra đất trước khi tưới</h2>
+<p>Chỉ tưới khi lớp đất mặt khô khoảng 2–3cm. Mùa lạnh có thể giãn ra 10 ngày một lần.</p>
+<h2>Phun sương cho lá</h2>
+<p>Phòng máy lạnh khá khô, phun sương nhẹ lên lá giúp cây không bị cháy mép.</p>
+<h2>Bón phân hữu cơ</h2>
+<p>Phân trùn quế nhẹ, không gây nóng rễ, bón mỗi tháng một lần vào mùa cây phát triển.</p>`,
+    products: ["Bình xịt phun sương áp suất", "Phân trùn quế hữu cơ"],
+  },
+  {
+    slug: "goc-hoc-tap-cute-tang-nang-suat",
+    category: "GOM_LINK",
+    title: "Gom link đồ setup góc học tập cute, tăng hứng thú làm việc",
+    excerpt: "Bàn học gọn gàng giúp bạn ngồi vào bàn dễ hơn — và vài món nhỏ xinh làm việc đó vui hơn.",
+    tags: ["góc học tập", "setup bàn", "văn phòng phẩm"],
+    content: `<p>Một góc học tập gọn gàng giúp bạn tập trung nhanh hơn ngay từ phút đầu.</p>
+<h2>Kệ nhựa 2 tầng mini</h2>
+<p>Nâng màn hình hoặc sách lên một tầng, tầng dưới để đồ lặt vặt — mặt bàn thoáng hẳn.</p>
+<h2>Bút gel 0.5mm</h2>
+<p>Viết êm, mực đều, nhiều màu pastel cho ai thích ghi chú đẹp.</p>`,
+    products: ["Kệ nhựa 2 tầng mini để bàn", "Hộp bút gel 0.5mm nhiều màu"],
+  },
+  {
+    slug: "meo-lam-sach-sau-lo-chan-long-tai-nha",
+    category: "MEO_VAT",
+    title: "Mẹo làm sạch sâu lỗ chân lông tại nhà bằng mặt nạ đất sét",
+    excerpt: "Đắp mặt nạ đất sét đúng cách 1–2 lần mỗi tuần giúp da bớt bóng dầu và trông thông thoáng hơn.",
+    tags: ["chăm sóc da", "mặt nạ", "da dầu"],
+    content: `<p>Mặt nạ đất sét giúp hút bớt dầu thừa trên da. Hiệu quả khác nhau tùy loại da — hãy thử trước ở vùng nhỏ.</p>
+<h2>Các bước đắp mặt nạ</h2>
+<p>Rửa mặt sạch, dùng cọ silicon tán một lớp mỏng, tránh vùng mắt và môi. Rửa sạch sau 10 phút, trước khi đất sét khô nứt hoàn toàn.</p>
+<h2>Lưu ý</h2>
+<p>Không đắp quá 2 lần mỗi tuần và luôn dưỡng ẩm sau đó. Nếu da kích ứng, ngưng dùng và hỏi ý kiến bác sĩ da liễu.</p>`,
+    products: ["Mặt nạ đất sét làm sạch lỗ chân lông", "Cọ quét mặt nạ silicon"],
+  },
+  {
+    slug: "nhung-mon-do-du-lich-tien-loi-phai-co-trong-vali",
+    category: "GOM_LINK",
+    title: "Những món đồ du lịch tiện lợi nên có trong vali",
+    excerpt: "Vali gọn hơn, đi xa nhẹ nhàng hơn với vài món nhỏ mà có võ.",
+    tags: ["du lịch", "vali", "đồ tiện ích"],
+    content: `<p>Xếp vali thông minh giúp bạn mang đủ đồ mà vẫn dư chỗ cho quà về.</p>
+<h2>Bộ chai chiết mỹ phẩm</h2>
+<p>Chiết sữa rửa mặt, dầu gội ra chai nhỏ để mang lên máy bay đúng quy định.</p>
+<h2>Bàn ủi hơi nước mini</h2>
+<p>Gọn bằng chai nước, là phẳng áo sơ mi trong vài phút trước buổi hẹn.</p>`,
+    products: ["Bộ chai chiết mỹ phẩm du lịch", "Bàn ủi hơi nước cầm tay mini"],
+  },
+];
+
+async function main() {
+  await db.post.deleteMany();
+  const now = Date.now();
+  for (const [i, p] of POSTS.entries()) {
+    await db.post.create({
+      data: {
+        slug: p.slug,
+        category: p.category,
+        title: p.title,
+        excerpt: p.excerpt,
+        content: p.content,
+        tags: p.tags,
+        seoDescription: p.excerpt,
+        seoKeywords: p.tags,
+        status: "PUBLISHED",
+        publishedAt: new Date(now - i * 86_400_000),
+        products: {
+          create: p.products.map((name, sortOrder) => ({
+            name,
+            affiliateUrl: placeholderLink(name),
+            sortOrder,
+          })),
+        },
+      },
+    });
+  }
+  console.log(`Seeded ${POSTS.length} posts`);
+}
+
+main()
+  .catch((e) => {
+    console.error(e);
+    process.exit(1);
+  })
+  .finally(() => db.$disconnect());
