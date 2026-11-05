@@ -1,0 +1,239 @@
+# Quy ước code
+
+> Phiên bản: Next.js 16.4.3, TypeScript 5 `strict`, Zod 4.6, Prisma 7.10, ESLint 9 + `eslint-config-next` 16.4.3 (`package.json`, `tsconfig.json:7`) · Nguồn: mã nguồn repo · Kiểm lần cuối: 2026-11-03 @ dfd7e8f
+
+Chỉ ghi quy ước **đang thấy trong code** mà agent dễ làm sai. Bản đồ module và bất biến `[KT-xx]` xem `docs/kien-truc-codebase.md`.
+
+## Tóm tắt cho agent
+
+- Import nội bộ bằng `@/`; Prisma client từ `@/generated/prisma/client`, `db` từ `@/lib/db`.
+- Server Action nằm ở `app/cms/actions.ts`, bọc `run()`, trả `Result<T>`, ném `Error` với thông điệp tiếng Việt.
+- Kiểu suy ra từ code (`ReturnType`, `z.infer`, `z.input`), không khai báo lại bằng tay.
+- Mọi chuỗi UI, thông báo lỗi, comment viết tiếng Việt có dấu; slug URL tiếng Việt không dấu.
+- Không có Prettier; giữ nguyên style file đang sửa.
+
+## Vị trí file
+
+### [QU-01] Chia component theo mặt ứng dụng
+
+- `components/site/` — component của site public, đa số là Server Component (`components/site/post-card.tsx`, `components/site/product-card.tsx`).
+- `components/cms/` — form và widget CMS, đa số `"use client"` (`components/cms/post-editor.tsx:1`, `components/cms/fields.tsx:1`).
+- `components/ui/` — sinh bởi shadcn (style `base-nova`, primitive `@base-ui/react`, `components.json:3`). Thêm bằng CLI shadcn; không sửa tay trừ khi cần.
+- `components/` gốc — dùng chung cả hai mặt: `components/json-ld.tsx`, `components/theme-toggle.tsx`.
+- Component CMS được phép dùng component site (`app/cms/page.tsx:5` dùng `CategoryBadge`), không làm ngược lại.
+
+### [QU-02] Route group và nơi đặt route
+
+- Trang public đặt trong `app/(site)/` để nhận header/footer và `ensureStatic` (`app/(site)/layout.tsx:6-15`).
+- Trang quản trị đặt dưới `app/cms/` (không phải route group) để khớp `proxy.ts:13`.
+- Mọi Server Action của CMS đặt trong `app/cms/actions.ts` (`"use server"` ở dòng 1). Không rải `"use server"` inline trong component.
+- Truy vấn dữ liệu có cache đặt trong `lib/posts.ts`, không viết trong file `page.tsx` của site (`app/(site)/page.tsx:8`).
+
+### [QU-03] `lib/` là module phẳng, mỗi file một trách nhiệm
+
+Không tạo thư mục con trong `lib/`. Mỗi file export hàm/hằng nhỏ, không class: `lib/slug.ts` (một hàm), `lib/format.ts` (một hàm), `lib/site.ts` (hai hằng). Schema zod của form nằm ở `lib/post-input.ts`, không trong file action.
+
+## Đặt tên
+
+### [QU-04] Slug URL tiếng Việt không dấu, gạch ngang
+
+Đường dẫn dùng tiếng Việt: `/bai-viet/[slug]` (`app/(site)/bai-viet/[slug]/page.tsx`), `/meo-vat`, `/gom-link` (`lib/categories.ts:9`, `:14`). Tạo slug bằng `slugify()` (`lib/slug.ts:2-11`), không viết regex riêng. Slug bài tạo qua `uniqueSlug()` (`app/cms/actions.ts:31-38`). Id neo mục lục fallback cũng tiếng Việt: `muc-1` (`lib/content.ts:15`).
+
+### [QU-05] Tên file, export, hằng
+
+- File kebab-case: `components/site/category-badge.tsx`, `lib/require-admin.ts`.
+- Component dùng named export PascalCase (`export function CategoryBadge`, `components/site/category-badge.tsx:10`); chỉ `page.tsx`/`layout.tsx`/`sitemap.ts`/`robots.ts` dùng `export default`.
+- Hằng cấu hình UPPER_SNAKE_CASE: `CATEGORIES`, `IMAGE_HOSTS`, `POSTS_TAG`, `SITE_NAME`, `NAV_LINKS`, `WRITER_SYSTEM` (`lib/ai.ts:46`).
+- Key nghiệp vụ dạng enum Prisma UPPER_SNAKE: `MEO_VAT`, `GOM_LINK`, `DRAFT`, `PUBLISHED` (`prisma/schema.prisma:44-52`).
+
+## Import
+
+### [QU-06] Dùng alias `@/`
+
+Import chéo thư mục bằng `@/` (`tsconfig.json:21-23`), ví dụ `app/cms/actions.ts:4-17`. Ngoại lệ đang có:
+
+- Import file cùng thư mục bằng `./`: `components/cms/post-editor.tsx:15-17`, `components/site/site-header.tsx:3-4`, `lib/content.ts:1`.
+- File chạy ngoài Next dùng đường dẫn tương đối: `next.config.ts:2`, `prisma/seed.ts:3`.
+- `components/ui/*` import `cn` thẳng từ package `cn` (`components/ui/button.tsx:3`); code tự viết import `cn` từ `@/lib/utils` (`components/site/category-badge.tsx:1`).
+
+### [QU-07] Prisma import từ client sinh ra
+
+Không import `@prisma/client`. Kiểu và client lấy từ `@/generated/prisma/client` (`lib/db.ts:2`; output ở `prisma/schema.prisma:3`). Ứng dụng dùng singleton `db` từ `@/lib/db`, không `new PrismaClient()` (ngoại lệ duy nhất: `prisma/seed.ts:5`).
+
+## TypeScript
+
+### [QU-08] Object truy vấn Prisma khai báo `as const`
+
+Đối tượng `select`, `where`, `orderBy` dùng lại thì khai báo hằng `as const` để Prisma suy đúng kiểu kết quả: `cardSelect` (`lib/posts.ts:9-18`), `published`, `newestFirst` (`lib/posts.ts:41-42`). Mảng dữ liệu tĩnh cũng vậy (`app/styleguide/page.tsx:27`).
+
+### [QU-09] Suy kiểu từ nguồn, không khai báo lại
+
+- Kiểu trả của hàm map: `export type PostCard = ReturnType<typeof toCard>` (`lib/posts.ts:39`).
+- Kiểu output AI: `z.infer<typeof postDraftSchema>` (`lib/ai.ts:44`, `:106`).
+- Kiểu dữ liệu form: `z.input<typeof postInputSchema>` (`lib/post-input.ts:32-33`, `:41`) — dùng `z.input` vì state form giữ chuỗi `""` trước khi schema `transform` thành `null`.
+- Kiểu `Category` từ Prisma khi cần ngoài app: `prisma/seed.ts:3`.
+
+### [QU-10] `Result<T>` cho Server Action
+
+Action trả union `({ ok: true } & T) | { ok: false; error: string }` (`app/cms/actions.ts:19`). Client luôn kiểm `res.ok` trước khi đọc dữ liệu, rồi `toast.error(res.error)` khi lỗi (`components/cms/new-post-form.tsx:28-31`, `components/cms/post-editor.tsx:57-60`). Không ném lỗi qua ranh giới action.
+
+### [QU-11] Props typed inline, dùng kiểu route toàn cục của Next 16
+
+- Props component khai báo inline trong tham số (`components/cms/seo-score.tsx:3`), tách `type XxxData` chỉ khi cần export (`components/site/post-card.tsx:6-13`).
+- Page/layout dùng kiểu toàn cục `PageProps<"/route">` và `LayoutProps<"/route">`, `params` là Promise phải `await` (`app/(site)/[category]/page.tsx:11-12`, `app/layout.tsx:25`, `app/cms/posts/[id]/page.tsx:15-16`).
+
+### [QU-12] Optional: DB là `null`, form là `""`
+
+Cột tuỳ chọn lưu `null` (`prisma/schema.prisma:15-20`). Khi nạp vào form, đổi `null → ""` (`app/cms/posts/[id]/page.tsx:31-43`); khi lưu, zod `optionalText`/`imageUrl` đổi `"" → null` (`lib/post-input.ts:4-9`). Thêm trường tuỳ chọn thì làm đủ hai chiều.
+
+## Server Action
+
+### [QU-13] Khuôn một Server Action
+
+```ts
+export async function doSomething(id: string, input: SomeInput) {
+  return run(async () => {
+    const parsed = someSchema.safeParse(input);
+    if (!parsed.success) throw new Error(firstError(parsed.error));
+    // ... sanitize, db, AI
+    updateTag(POSTS_TAG); // nếu đụng bài public
+    return { slug: post.slug };
+  });
+}
+```
+
+Theo `app/cms/actions.ts:72-91`. Quy tắc:
+
+- Luôn bọc `run()` (`app/cms/actions.ts:21-29`) — nó gọi `requireAdmin()`, bắt lỗi, log, đổi thành `Result`.
+- Validate bằng `safeParse` + `firstError` (`lib/post-input.ts:43-45`), không dùng `parse` để lỗi zod không lộ nguyên văn.
+- Báo lỗi nghiệp vụ bằng `throw new Error("<tiếng Việt>")` (`app/cms/actions.ts:51`, `:97`); `run()` chuyển `message` thành `error` hiển thị cho người dùng. Vì vậy thông điệp phải đọc được với Người vận hành.
+- Trả object phẳng (`{ id }`, `{ slug }`, `{}`) để trộn với `ok: true`.
+- Gọi từ client trong `startTransition` (`components/cms/new-post-form.tsx:24`, `components/cms/post-editor.tsx:44-53`).
+
+### [QU-14] Thông điệp lỗi tiếng Việt
+
+Lỗi người dùng có thể thấy viết tiếng Việt có dấu, ngắn, nói cách sửa: `"Thiếu tên sản phẩm"`, `"Link affiliate không hợp lệ"` (`lib/post-input.ts:12`, `:15`), `"Chưa cấu hình OPENAI_API_KEY trong .env"` (`lib/ai.ts:10`), `"Bài chưa có nội dung, chưa thể xuất bản"` (`app/cms/actions.ts:97`). Fallback chung: `"Có lỗi xảy ra"` (`app/cms/actions.ts:27`), `"Dữ liệu không hợp lệ"` (`lib/post-input.ts:44`).
+
+## Comment và chuỗi giao diện
+
+### [QU-15] Comment tiếng Việt, giải thích vì sao
+
+Comment ngắn, tiếng Việt có dấu, nói lý do hoặc ràng buộc không thấy được từ code:
+
+- `lib/require-admin.ts:4` — vì sao action phải tự kiểm auth.
+- `app/(site)/layout.tsx:4-5` — vì sao cần `ensureStatic`.
+- `app/cms/actions.ts:103` — vì sao giữ `publishedAt` gốc.
+- `prisma.config.ts:10` — vì sao CLI dùng `DIRECT_URL`.
+- `components/cms/post-editor.tsx:171` — vì sao iframe `sandbox` an toàn.
+
+Không comment diễn giải lại dòng code. Chia khối lớn trong một file bằng `// ---------- Tên khối ----------` (`lib/ai.ts:31`, `:79`, `:100`). Comment trong schema Prisma dùng `//` cuối dòng (`prisma/schema.prisma:14`, `:16`, `:36`).
+
+### [QU-16] Chuỗi UI tiếng Việt có dấu
+
+Mọi chữ hiển thị, `aria-label`, `toast`, `confirm`, metadata viết tiếng Việt có dấu: `aria-label="Xóa sản phẩm"` (`components/cms/fields.tsx:76`), `aria-label="Đổi giao diện sáng/tối"` (`components/theme-toggle.tsx:13`), `toast.success("Đã lưu")` (`components/cms/post-editor.tsx:66`), `confirm("Xóa vĩnh viễn bài viết này?")` (`:79`). `<html lang="vi">` (`app/layout.tsx:28`). Chuỗi viết thẳng trong JSX, không có lớp i18n.
+
+## Định dạng và lint
+
+### [QU-17] Không có Prettier; ESLint flat config của Next
+
+- Không có Prettier (không có trong `package.json`, không có file cấu hình). Không chạy format toàn file; giữ style file đang sửa.
+- Lint: `npm run lint` → `eslint` với `eslint-config-next/core-web-vitals` + `eslint-config-next/typescript` (`eslint.config.mjs:2-7`).
+- Style code tự viết: nháy kép, có dấu chấm phẩy, dấu phẩy cuối, thụt 2 dấu cách (`lib/posts.ts`). `components/ui/*` theo style shadcn, không chấm phẩy (`components/ui/button.tsx:1-3`) — giữ nguyên.
+- Dòng dài được chấp nhận khi là className hoặc `select` một dòng (`app/cms/page.tsx:26`).
+
+## Môi trường
+
+### [QU-18] Đọc `process.env` tại chỗ dùng, trong `lib/`
+
+- Không có module env tập trung. Mỗi biến đọc trong đúng một file `lib/`: `ADMIN_*` ở `lib/auth.ts:8-9`, `OPENAI_*` ở `lib/ai.ts:9-16`, `DATABASE_URL` ở `lib/db.ts:9`, `NEXT_PUBLIC_SITE_URL` ở `lib/site.ts:2`.
+- Bí mật thiếu → từ chối hoặc ném lỗi tiếng Việt, không chạy tiếp: fail closed (`lib/auth.ts:10`), throw (`lib/ai.ts:9-11`).
+- Khởi tạo client phụ thuộc bí mật một cách lười để build không cần khoá (`lib/ai.ts:6-14`).
+- Giá trị không bí mật có mặc định: `?? "http://localhost:3000"` (`lib/site.ts:2`), `|| "gpt-4o-mini"` (`lib/ai.ts:16`).
+- Chỉ biến dùng ở client mới có tiền tố `NEXT_PUBLIC_`. Thêm biến mới thì thêm vào `.env.example` kèm comment tiếng Việt (`.env.example:1-14`).
+
+## Lỗi và log
+
+### [QU-19] Chỉ log tại `run()`
+
+Điểm log duy nhất của app là `console.error(e)` trong `run()` (`app/cms/actions.ts:26`). Không thêm `try/catch` + log trong `lib/`; để lỗi nổi lên tới `run()`. Trang dùng `notFound()` khi không có dữ liệu (`app/(site)/bai-viet/[slug]/page.tsx:45`, `app/cms/posts/[id]/page.tsx:21`), không tự render thông báo lỗi.
+
+## Helper dùng chung
+
+### [QU-20] Ngày tháng qua `lib/format.ts`
+
+Hiển thị ngày bằng `formatDate()` (`lib/format.ts:3`, định dạng `vi-VN` "3 tháng 11, 2026"), chấp nhận `null`. Không gọi `toLocaleDateString` rải rác. Ngày cho metadata/JSON-LD dùng `.toISOString()` (`app/(site)/bai-viet/[slug]/page.tsx:36-37`).
+
+### [QU-21] Thời gian đọc và mục lục qua `lib/content.ts`
+
+- Thời gian đọc: `readingMinutes(html)` (200 từ/phút, tối thiểu 1, `lib/content.ts:5-8`), tính sẵn trong `lib/posts.ts:35`, `:95`.
+- Mục lục: `withHeadingIds(html)` chỉ bắt `<h2>` **không thuộc tính**, nên phải gọi **sau** `sanitizePostHtml` (`lib/content.ts:10`, `app/(site)/bai-viet/[slug]/page.tsx:47`).
+
+### [QU-22] Ảnh dùng `next/image` + fallback placeholder
+
+`<Image fill sizes=... src={x || "/placeholder.svg"}>` trong khung `relative` có tỉ lệ (`components/site/post-card.tsx:18-25`, `components/site/product-card.tsx:16-23`). Ảnh hero thêm `priority` (`app/(site)/page.tsx:31`). Host ảnh ngoài phải nằm trong `IMAGE_HOSTS` ([KT-03]).
+
+### [QU-23] Màu theo Loại bài qua token Tailwind
+
+Màu Loại bài dùng token `text-meo-vat`, `text-gom-link`, `bg-meo-vat-soft` (khai báo `app/globals.css:13-16`), map bằng `Record<CategoryKey, string>` (`components/site/category-badge.tsx:4-7`). Ghép class bằng `cn()` (`components/cms/status-badge.tsx:6-9`). Không dùng mã màu cứng trong JSX (ngoại lệ: CSS nội tuyến của iframe xem trước, `components/cms/post-editor.tsx:176`).
+
+### [QU-24] Component client tối thiểu
+
+`"use client"` chỉ đặt ở component cần state/hook (`components/cms/*` form, `components/site/mobile-nav.tsx:1`, `components/theme-toggle.tsx:1`). Page luôn là Server Component, truyền dữ liệu qua props. Hook đọc dữ liệu runtime như `usePathname()` phải nằm trong `Suspense` vì `cacheComponents` (`components/cms/bottom-nav.tsx:9-16`).
+
+### [QU-25] Thứ tự Sản phẩm theo vị trí mảng
+
+`sortOrder` lấy từ chỉ số mảng khi ghi (`app/cms/actions.ts:40-41`) và mọi truy vấn Sản phẩm `orderBy: { sortOrder: "asc" }` (`lib/posts.ts:17`, `:89`, `app/cms/posts/[id]/page.tsx:19`).
+
+## Tổ chức bên trong file và hàm
+
+> **Đề xuất 2026-11-04, chờ Vinh duyệt.** Rút từ code hiện có (`lib/posts.ts`, `app/cms/actions.ts`, `components/site/product-card.tsx`) và spine kiến trúc (AD-5, AD-8, Consistency Conventions). Vị trí file theo spine, không theo mục **Vị trí file** ở trên.
+
+### [QU-26] Thứ tự trong một file
+
+1. Chỉ thị: `"use server"`, `"use client"` hoặc `import "server-only"` (AD-8).
+2. Import, mỗi nhóm một khối: thư viện ngoài → `@/platform/*` → `@/modules/*` → `@/components/*` → đường dẫn tương đối. `import type` viết inline trong cùng câu import (`app/cms/actions.ts:7-13`).
+3. Hằng và object Prisma `as const` dùng nội bộ (`lib/posts.ts:9-18`).
+4. Kiểu xuất ra, suy từ nguồn ([QU-09]).
+5. Hàm phụ không export, khai báo trước chỗ dùng (`lib/posts.ts:31-37`).
+6. Hàm hoặc component export.
+
+File component: một component export chính mỗi file. Biến thể của cùng thực thể được ở chung file (`PostCard` + `PostListItem`, `components/site/post-card.tsx`).
+
+### [QU-27] Chữ ký hàm theo vai trò
+
+| Vai trò (AD-5) | Chữ ký |
+|---|---|
+| action | `saveX(input: z.input<typeof xInputSchema>)` một tham số; id nằm trong `input`; trả `Result<T>` qua `run()` |
+| service | `xRecord(data: z.infer<typeof xInputSchema>, tx?: Prisma.TransactionClient)`; nhận dữ liệu đã parse |
+| query | `getX(slug)` / `listXForCms(filter?)`; trả `null` khi không có, không ném lỗi (AD-13) |
+| component | props khai báo inline ([QU-11]); props client serialize được (AD-8) |
+
+Kiểu trả về để TypeScript suy ra, trừ `Result<T>` của action.
+
+### [QU-28] Khi nào tách hàm hoặc file
+
+- Hàm làm hai việc, hoặc dài hơn khoảng 40 dòng → tách hàm phụ trong cùng file.
+- Dùng lại ở file khác trong cùng module → chuyển vào file đúng vai trò của AD-5, không tạo `utils.ts` trong module.
+- Dùng ở hai module trở lên → `platform/` (không nghiệp vụ) hoặc `types.ts`/`constants.ts` của module chủ (AD-2).
+- Component dài hơn khoảng 200 dòng hoặc có khối tự đứng được → tách component con vào `_components/` cạnh nó (AD-11).
+- Kiểm tra điều kiện sai thì `return`/`throw` sớm, tránh lồng `if` sâu.
+
+## Checklist review code
+
+- [ ] Thứ tự trong file, chữ ký hàm, cách tách theo [QU-26]–[QU-28] (khi đã duyệt).
+
+- [ ] Import nội bộ dùng `@/`; Prisma từ `@/generated/prisma/client`; dùng `db` từ `@/lib/db` ([QU-06], [QU-07]).
+- [ ] File mới đặt đúng chỗ: site / cms / ui / lib phẳng / `app/(site)` / `app/cms` ([QU-01], [QU-02], [QU-03]).
+- [ ] Slug URL mới tiếng Việt không dấu, tạo bằng `slugify` ([QU-04]).
+- [ ] Object Prisma dùng lại có `as const`; kiểu suy từ `ReturnType`/`z.infer`/`z.input` ([QU-08], [QU-09]).
+- [ ] Server Action bọc `run()`, `safeParse` + `firstError`, ném `Error` tiếng Việt, trả `Result` ([QU-10], [QU-13], [QU-14]).
+- [ ] Client kiểm `res.ok` và báo lỗi bằng `toast.error` ([QU-10]).
+- [ ] Trường tuỳ chọn mới xử lý `null ↔ ""` cả hai chiều ([QU-12]).
+- [ ] Chuỗi UI, `aria-label`, lỗi, comment tiếng Việt có dấu; comment nói vì sao ([QU-14], [QU-15], [QU-16]).
+- [ ] `npm run lint` sạch; không format lại file ngoài phạm vi thay đổi ([QU-17]).
+- [ ] Biến env mới đọc trong `lib/`, có trong `.env.example`, bí mật fail closed ([QU-18]).
+- [ ] Không thêm log ngoài `run()` ([QU-19]).
+- [ ] Ngày qua `formatDate`, thời gian đọc/mục lục qua `lib/content.ts` sau sanitize ([QU-20], [QU-21]).
+- [ ] Ảnh dùng `next/image` + `sizes` + placeholder; màu qua token ([QU-22], [QU-23]).
+- [ ] `"use client"` chỉ khi cần; hook runtime trong `Suspense` ([QU-24]).
+- [ ] Các bất biến `[KT-01]`–`[KT-10]` trong `docs/kien-truc-codebase.md` vẫn đúng.

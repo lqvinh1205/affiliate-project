@@ -1,0 +1,11 @@
+# Ghi đè của dự án cho bmad-spec (commit cùng repo, áp dụng cho mọi người).
+# Kiểm kết quả gộp:
+#   uv run _bmad/scripts/resolve_customization.py --skill .claude/skills/bmad-spec --project-root . --key workflow
+
+[workflow]
+persistent_facts = [
+  "Nguồn quy tắc theo thứ tự ưu tiên: docs/quy-dinh.md (luật, vi phạm là blocker) → spine kiến trúc (cấu trúc, vị trí file, luồng dữ liệu) → docs/quy-uoc-code.md, docs/nen-tang-ky-thuat/*. Spine thắng docs khi mâu thuẫn; docs và AGENTS.md còn mô tả code cũ cho tới khi xong epic nền (AD-17).",
+  "PRD (`_bmad-output/planning-artifacts/prds/prd-affiliate-project-2026-11-03/`) và spine đều status final. Spec không thêm, bớt hay đổi hành vi trái với chúng; gặp mâu thuẫn thì dừng và đề xuất `bmad-correct-course` ([QD-22], [QD-23]). Quyết định kiến trúc spine chưa có (kể cả mục Deferred) ghi thành câu hỏi mở, không tự chọn.",
+  "file:docs/quy-dinh.md",
+  "file:_bmad-output/planning-artifacts/architecture/architecture-affiliate-project-2026-11-03/ARCHITECTURE-SPINE.md",
+]

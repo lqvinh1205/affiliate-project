@@ -1,0 +1,113 @@
+# STATUS DEFINITIONS:
+# ==================
+# Epic Status:
+#   - backlog: Epic not yet started
+#   - in-progress: Epic actively being worked on
+#   - done: All stories in epic completed
+
+# Story Status:
+#   - backlog: Story only exists in epic file
+#   - ready-for-dev: Story file created, ready for development
+#   - in-progress: Developer actively working on implementation
+#   - review: Implementation complete, ready for review
+#   - done: Story completed
+
+# Retrospective Status:
+#   - optional: Can be completed but not required
+#   - done: Retrospective has been completed
+
+# Action Item Status:
+#   - open: Committed during a retrospective, not yet addressed
+#   - in-progress: Actively being worked on
+#   - done: Completed
+
+# WORKFLOW NOTES:
+# ===============
+# - Epic transitions to 'in-progress' automatically when its first story starts (via build's sprint sync)
+# - Stories can be worked in parallel if team capacity allows
+# - Developer typically creates the next story after the previous one is 'done' to incorporate learnings
+# - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
+# - Retrospective appends its action items to action_items; the status view surfaces open ones
+generated: 11-05-2026 11:30
+last_updated: 11-05-2026 11:30
+project: affiliate-project
+project_key: NOKEY
+tracking_system: file-system
+story_location: _bmad-output/implementation-artifacts
+development_status:
+  epic-1: backlog
+  1-1-kiểm-chứng-hành-vi-next-js-và-khoá-cms-đúng-matcher-ad-17-bư: backlog
+  1-2-dựng-platform-và-khung-test-vitest-ad-17-bước-2-phần-1: backlog
+  1-3-khoá-ranh-giới-module-bằng-eslint-ad-17-bước-2-phần-2: backlog
+  1-4-migration-nền-danh-mục-và-sản-phẩm-dùng-chung-ad-17-bước-3: backlog
+  1-5-cập-nhật-tài-liệu-và-agents-md-theo-cấu-trúc-mới-ad-17-bước: backlog
+  epic-1-retrospective: optional
+
+  epic-2: backlog
+  2-1-bộ-token-thiết-kế-và-khung-cms: backlog
+  2-2-quản-lý-danh-mục-trong-cms: backlog
+  2-3-kho-sản-phẩm-danh-sách-tạo-và-sửa: backlog
+  2-4-affiliatelink-nhãn-công-khai-và-productcard: backlog
+  2-5-ẩn-sản-phẩm: backlog
+  2-6-điều-hướng-site-theo-danh-mục: backlog
+  2-7-trang-danh-mục-và-trang-loại-bài-có-phân-trang: backlog
+  2-8-tải-ảnh-sản-phẩm-từ-điện-thoại: backlog
+  epic-2-retrospective: optional
+
+  epic-3: backlog
+  3-1-danh-sách-và-trạng-thái-bài-web-trong-cms: backlog
+  3-2-soạn-bài-web-và-gắn-nhiều-sản-phẩm: backlog
+  3-3-xem-trước-bài-trước-khi-xuất-bản: backlog
+  3-4-đổi-slug-giữ-link-cũ: backlog
+  3-5-trang-bài-viết-hoàn-chỉnh: backlog
+  3-6-trang-chủ-theo-bố-cục-mới: backlog
+  3-7-trang-404-trang-lỗi-và-nền-seo-toàn-site: backlog
+  epic-3-retrospective: optional
+
+  epic-4: backlog
+  4-1-lớp-ai-chung-và-chấm-seo-trên-nhà-cung-cấp-mới: backlog
+  4-2-bấm-nghiên-cứu-và-theo-dõi-tiến-trình: backlog
+  4-3-duyệt-từ-chối-và-tạo-lại-hồ-sơ-nghiên-cứu: backlog
+  4-4-ai-tìm-thông-tin-trên-web-và-đọc-ảnh-sản-phẩm: backlog
+  4-5-danh-mục-gợi-ý-cho-sản-phẩm: backlog
+  epic-4-retrospective: optional
+
+  epic-5: backlog
+  5-1-hồ-sơ-phong-cách-cho-từng-nền-tảng: backlog
+  5-2-tạo-bộ-nội-dung-và-bài-web-từ-hồ-sơ-đã-duyệt: backlog
+  5-3-bài-threads-và-bình-luận-kèm-link: backlog
+  5-4-bài-facebook-và-bình-luận-kèm-link: backlog
+  5-5-copy-một-chạm-và-đánh-dấu-đã-đăng: backlog
+  5-6-cảnh-báo-rủi-ro-trong-nội-dung-ai: backlog
+  5-7-tạo-lại-phần-đã-duyệt-và-khoá-xuất-bản: backlog
+  5-8-bộ-nội-dung-nhiều-sản-phẩm-bài-gom-link: backlog
+  5-9-chuyển-bài-web-có-sẵn-thành-bài-mạng-xã-hội: backlog
+  epic-5-retrospective: optional
+
+  epic-6: backlog
+  6-1-trang-bio-public: backlog
+  6-2-quản-lý-trang-bio-trong-cms: backlog
+  6-3-dải-gom-link-đồ-xinh-trên-trang-chủ: backlog
+  epic-6-retrospective: optional
+
+  epic-7: backlog
+  7-1-đếm-lượt-xem-ẩn-danh: backlog
+  7-2-lượt-xem-trong-danh-sách-bài-cms: backlog
+  epic-7-retrospective: optional
+
+  epic-8: backlog
+  8-1-thả-tim-bài-viết: backlog
+  8-2-chia-sẻ-bài-viết: backlog
+  8-3-tìm-kiếm-không-dấu: backlog
+  8-4-khu-xem-nhiều-trên-trang-chủ-và-404: backlog
+  epic-8-retrospective: optional
+
+  epic-9: backlog
+  9-1-quản-lý-banner-có-lịch-trong-cms: backlog
+  9-2-banner-trên-trang-chủ: backlog
+  epic-9-retrospective: optional
+
+  epic-10: backlog
+  10-1-lưu-cảm-hứng-nhanh: backlog
+  10-2-từ-cảm-hứng-tới-bộ-nội-dung: backlog
+  epic-10-retrospective: optional

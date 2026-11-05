@@ -1,0 +1,62 @@
+# Ghi đè của dự án cho bmad-build (commit cùng repo, áp dụng cho mọi người).
+# Gộp lên .claude/skills/bmad-build/customize.toml; review_layers gộp theo `id`.
+# Kiểm kết quả gộp:
+#   uv run _bmad/scripts/resolve_customization.py --skill .claude/skills/bmad-build --project-root . --key workflow
+
+[workflow]
+persistent_facts = [
+  "Nguồn quy tắc theo thứ tự ưu tiên: docs/quy-dinh.md (luật, vi phạm là blocker) → spine kiến trúc (cấu trúc, vị trí file, luồng dữ liệu) → docs/quy-uoc-code.md, docs/nen-tang-ky-thuat/* (cách dùng thư viện; đường dẫn lib/, components/site|cms/ trong đó là code cũ). Spine thắng docs khi mâu thuẫn.",
+  "Code hiện tại chưa theo spine và sẽ được refactor dần theo AD-17. Code mới viết theo spine, không bắt chước cấu trúc cũ. Sau epic nền, chạm file cũ (lib/*, components/site|cms/*, app/cms/actions.ts) thì chuyển file đó về vị trí mới trong cùng thay đổi và sửa mọi import. Chưa xong epic nền (AD-17) thì dừng và hỏi trước khi sửa code cũ.",
+  """Chọn công thức theo loại việc trước khi lập kế hoạch; việc thuộc nhiều loại thì dùng đủ các công thức liên quan. Mỗi công thức có các bảng bắt buộc phải điền vào `## Code Map` của spec:
+| Loại việc | Công thức (docs/cong-thuc/) |
+| Thêm hoặc sửa màn hình (page.tsx, *-screen.tsx, component trong app/ hoặc modules/*/components) | them-man-hinh.md |
+| Thêm hoặc sửa thao tác ghi / truy vấn (Server Action, queries.ts, cms-queries.ts) | them-server-action.md |
+| Đổi Prisma schema, migration | doi-schema.md (bảng phân tích ảnh hưởng bắt buộc) |
+| Thêm hoặc sửa tính năng AI | them-tinh-nang-ai.md |
+| Bỏ chức năng | bo-chuc-nang.md |
+| Sửa lỗi | sua-loi.md |
+| Chạm hoặc chuyển file cũ (lib/*, components/site|cms/*, app/cms/actions.ts) | chuyen-code-cu.md |
+Chỗ công thức ghi [CHỜ SPINE: …] là quyết định kiến trúc chưa có: không tự chọn, đưa vào Open Questions.""",
+  "Yêu cầu thêm, bớt hoặc đổi hành vi trái với PRD hoặc spine kiến trúc (status final): dừng, không code. Báo người dùng và đề xuất chạy `bmad-correct-course` để cập nhật tài liệu trước ([QD-22], [QD-23]).",
+  "Kiểm chứng theo docs/kiem-chung.md và ghi kết quả từng bước vào báo cáo.",
+  "file:docs/quy-dinh.md",
+  "file:_bmad-output/planning-artifacts/architecture/architecture-affiliate-project-2026-11-03/ARCHITECTURE-SPINE.md",
+]
+
+[[workflow.review_layers]]
+id = "project-conventions"
+name = "Quy ước dự án"
+instruction = """
+Launch a context-free subagent with this prompt:
+Bạn review một diff của repo affiliate-project theo quy tắc dự án, không review logic chung.
+Đọc đủ trước khi review (đường dẫn tính từ gốc repo):
+- docs/quy-dinh.md (mục Checklist khi review)
+- _bmad-output/planning-artifacts/architecture/architecture-affiliate-project-2026-11-03/ARCHITECTURE-SPINE.md (các AD-xx, Consistency Conventions, Structural Seed)
+- Mục Checklist của từng công thức khớp loại thay đổi: màn hình/.tsx → docs/cong-thuc/them-man-hinh.md + mục [GD-40] trong docs/nen-tang-ky-thuat/giao-dien.md; actions.ts/queries.ts/cms-queries.ts/service.ts/schema.ts → docs/cong-thuc/them-server-action.md; prisma/ → docs/cong-thuc/doi-schema.md; prompts/ hoặc platform/ai → docs/cong-thuc/them-tinh-nang-ai.md; xoá file hoặc route → docs/cong-thuc/bo-chuc-nang.md; file cũ bị chuyển → docs/cong-thuc/chuyen-code-cu.md
+- docs/quy-uoc-code.md mục [QU-26]–[QU-28] (thứ tự trong file, chữ ký hàm, tách hàm)
+Ngoài vi phạm, báo riêng dưới tiêu đề "CONTRACT-GAP" mọi chỗ UI và dữ liệu lệch nhau: component đọc trường mà query không trả; action trả lỗi hoặc trạng thái mà UI không hiển thị; form gửi trường mà schema.ts không nhận; action/query mới không được UI nào dùng. Thay đổi schema Prisma mà diff không cập nhật nơi dùng (select, types, form, seed, tag) cũng báo ở đây.
+Spine thắng docs khi mâu thuẫn. Code cũ (lib/, components/site|cms/) không phải chuẩn để so.
+Với mỗi vi phạm: một dòng gồm file:dòng · quy tắc bị vi phạm (ID, ví dụ AD-11, [QD-14], [GD-40]) · sửa thế nào.
+Mục checklist không kiểm được từ diff (ví dụ xem ở 360px) thì liệt kê riêng dưới tiêu đề "Cần kiểm tay".
+Output chỉ là danh sách Markdown, không xếp mức độ. Không có vi phạm thì ghi "Không có vi phạm" và liệt kê các mục đã kiểm.
+CONTENT: unified diff tại `{diff_file}`. Đọc file đó.
+Do not invoke any skill, and do not spawn subagents of your own — you are the reviewer. Return your findings as text in your final message; do not route them through any findings-reporting tool the host may offer.
+"""
+
+[[workflow.oneshot_review_layers]]
+id = "project-conventions"
+name = "Quy ước dự án"
+instruction = """
+Launch a context-free subagent with this prompt:
+Bạn review các thay đổi trong working tree của repo affiliate-project theo quy tắc dự án, không review logic chung. Xem thay đổi bằng `git diff` và `git status`.
+Đọc đủ trước khi review (đường dẫn tính từ gốc repo):
+- docs/quy-dinh.md (mục Checklist khi review)
+- _bmad-output/planning-artifacts/architecture/architecture-affiliate-project-2026-11-03/ARCHITECTURE-SPINE.md (các AD-xx, Consistency Conventions, Structural Seed)
+- Mục Checklist của từng công thức khớp loại thay đổi: màn hình/.tsx → docs/cong-thuc/them-man-hinh.md + mục [GD-40] trong docs/nen-tang-ky-thuat/giao-dien.md; actions.ts/queries.ts/cms-queries.ts/service.ts/schema.ts → docs/cong-thuc/them-server-action.md; prisma/ → docs/cong-thuc/doi-schema.md; prompts/ hoặc platform/ai → docs/cong-thuc/them-tinh-nang-ai.md; xoá file hoặc route → docs/cong-thuc/bo-chuc-nang.md; file cũ bị chuyển → docs/cong-thuc/chuyen-code-cu.md
+- docs/quy-uoc-code.md mục [QU-26]–[QU-28] (thứ tự trong file, chữ ký hàm, tách hàm)
+Ngoài vi phạm, báo riêng dưới tiêu đề "CONTRACT-GAP" mọi chỗ UI và dữ liệu lệch nhau: component đọc trường mà query không trả; action trả lỗi hoặc trạng thái mà UI không hiển thị; form gửi trường mà schema.ts không nhận; action/query mới không được UI nào dùng. Thay đổi schema Prisma mà diff không cập nhật nơi dùng (select, types, form, seed, tag) cũng báo ở đây.
+Spine thắng docs khi mâu thuẫn. Code cũ (lib/, components/site|cms/) không phải chuẩn để so.
+Với mỗi vi phạm: một dòng gồm file:dòng · quy tắc bị vi phạm (ID) · sửa thế nào. Mục không kiểm được từ code thì liệt kê riêng dưới "Cần kiểm tay".
+Output chỉ là danh sách Markdown, không xếp mức độ.
+Do not invoke any skill, and do not spawn subagents of your own — you are the reviewer. Return your findings as text in your final message; do not route them through any findings-reporting tool the host may offer.
+"""

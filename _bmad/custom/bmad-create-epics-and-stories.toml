@@ -1,0 +1,16 @@
+# Ghi đè của dự án cho bmad-create-epics-and-stories (commit cùng repo, áp dụng cho mọi người).
+# Kiểm kết quả gộp:
+#   uv run _bmad/scripts/resolve_customization.py --skill .claude/skills/bmad-create-epics-and-stories --project-root . --key workflow
+
+[workflow]
+persistent_facts = [
+  "Đầu vào: PRD `_bmad-output/planning-artifacts/prds/prd-affiliate-project-2026-11-03/prd.md` + `addendum.md`; UX `_bmad-output/planning-artifacts/ux-designs/ux-affiliate-project-2026-11-03/` (DESIGN.md, EXPERIENCE.md); spine kiến trúc (nạp bên dưới). `docs/PRD_AFFILIATE_PROJECT.md` đã lỗi thời, không dùng.",
+  "Nguồn quy tắc theo thứ tự ưu tiên: docs/quy-dinh.md (luật) → spine kiến trúc → docs/quy-uoc-code.md, docs/nen-tang-ky-thuat/*. Spine thắng docs khi mâu thuẫn. Docs và AGENTS.md còn mô tả code cũ (lib/, app/cms/actions.ts) cho tới khi xong epic nền.",
+  "Epic 1 là epic nền theo AD-17, đứng trước mọi epic nghiệp vụ, giữ đúng thứ tự 4 bước của AD-17; bước 3 (migration nền) là đúng một story. Không xếp story nghiệp vụ nào vào trước hoặc vào trong epic nền.",
+  "Danh sách module đóng (AD-3): posts, products, categories, content-sets, suggestions, research, style-profiles, inspirations, banners, bio, engagement. Mỗi story ghi rõ module chủ bị chạm; story cần module, bảng hoặc cột ngoài spine thì không tự thêm — ghi thành câu hỏi mở và đề xuất cập nhật spine.",
+  "Mục Deferred của spine là điều kiện tiên quyết của story: chốt nhà cung cấp AI trước story đầu tiên của nhóm FR-6..FR-15; chốt backend lưu file trước story upload đầu tiên; cách đọc video trước story FR-2; hạ tầng production trước story deploy. Ghi điều kiện này vào phần phụ thuộc của story liên quan.",
+  "Không có story cào dữ liệu Shopee (ScrapingBee, tự chuyển link) — đang tạm hoãn. Không có story e2e/Playwright (AD-16); test là Vitest unit + tích hợp DB.",
+  "Viết epics và stories bằng tiếng Việt; thuật ngữ miền theo PRD.",
+  "file:docs/quy-dinh.md",
+  "file:_bmad-output/planning-artifacts/architecture/architecture-affiliate-project-2026-11-03/ARCHITECTURE-SPINE.md",
+]

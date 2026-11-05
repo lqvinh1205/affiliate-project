@@ -1,0 +1,10 @@
+# Ghi đè của dự án cho bmad-sprint-planning (commit cùng repo, áp dụng cho mọi người).
+# Kiểm kết quả gộp:
+#   uv run _bmad/scripts/resolve_customization.py --skill .claude/skills/bmad-sprint-planning --project-root . --key workflow
+
+[workflow]
+persistent_facts = [
+  "Nguồn quy tắc theo thứ tự ưu tiên: docs/quy-dinh.md (luật) → spine kiến trúc → docs/quy-uoc-code.md, docs/nen-tang-ky-thuat/*. Spine thắng docs khi mâu thuẫn.",
+  "Kiểm sẵn sàng: epic nền (AD-17) phải là epic đầu tiên và xong trước mọi epic nghiệp vụ. Epic hoặc story vướng mục Deferred của spine (nhà cung cấp AI, backend lưu file, đọc video, hạ tầng production) chưa sẵn sàng cho tới khi mục đó được chốt trong spine — báo là blocker, không tự chọn.",
+  "file:_bmad-output/planning-artifacts/architecture/architecture-affiliate-project-2026-11-03/ARCHITECTURE-SPINE.md",
+]

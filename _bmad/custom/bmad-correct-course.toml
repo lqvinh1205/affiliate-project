@@ -1,0 +1,11 @@
+# Ghi đè của dự án cho bmad-correct-course (commit cùng repo, áp dụng cho mọi người).
+# Kiểm kết quả gộp:
+#   uv run _bmad/scripts/resolve_customization.py --skill .claude/skills/bmad-correct-course --project-root . --key workflow
+
+[workflow]
+persistent_facts = [
+  "Nguồn quy tắc theo thứ tự ưu tiên: docs/quy-dinh.md (luật) → spine kiến trúc → docs/quy-uoc-code.md, docs/nen-tang-ky-thuat/*. Spine thắng docs khi mâu thuẫn.",
+  "Tài liệu có thể bị ảnh hưởng: PRD `_bmad-output/planning-artifacts/prds/prd-affiliate-project-2026-11-03/` (sửa qua bmad-prd); UX `_bmad-output/planning-artifacts/ux-designs/ux-affiliate-project-2026-11-03/` (qua bmad-ux); spine `_bmad-output/planning-artifacts/architecture/architecture-affiliate-project-2026-11-03/` (qua bmad-architecture intent update — ghi vào .memlog.md, giữ ổn định ID AD-n); docs/ (quy-dinh, quy-uoc-code, cong-thuc/*, nen-tang-ky-thuat/*); AGENTS.md (qua bmad-project-context); ghi đè skill trong _bmad/custom/*.toml nếu đổi đường dẫn tài liệu.",
+  "Không git commit/push; để thay đổi trong working tree cho người dùng review.",
+  "file:_bmad-output/planning-artifacts/architecture/architecture-affiliate-project-2026-11-03/ARCHITECTURE-SPINE.md",
+]

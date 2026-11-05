@@ -1,0 +1,179 @@
+{
+ "name": "assets/722221a8647d42239f6bace86ff5e57e",
+ "designSystem": {
+  "displayName": "Botanical Living Editorial",
+  "styleGuidelines": "## Brand & Style\n\nThis design system expresses a serene, botanical slow-living aesthetic designed for intentional home curation, sustainable kitchen living, and mindful lifestyle journalism. Moving away from generic mass-market commerce palettes and hyper-active consumer interfaces, it embraces a grounded editorial sensibility rooted in wabi-sabi philosophy, natural textures, and organic craftsmanship.\n\n### Brand Personality & Emotional Tone\n- **Mộc mạc & Bản sắc (Earthy & Grounded):** Anchored by deep moss and evergreen foliage tones, balanced by the tactile warmth of handcrafted pottery and unbleached paper.\n- **Sang trọng & Thư thái (Quiet Luxury & Slow Living):** Unhurried visual pacing, expansive negative space, and refined typographical details that transform shopping and tip-reading into a restorative sanctuary.\n- **Minh bạch & Độc bản (Authentic & Discerning):** Rejecting flashing commercial patterns. Curated links, product vignettes, and housekeeping essays read like trusted recommendations from a seasoned designer's personal journal.\n\n### Design Movement\n**Botanical Editorial Minimalism with Tactile Wabi-Sabi Sensibilities.** The interface draws directly from premium indie publications and architectural monographs. Structure is defined by delicate 1px natural stone hairlines, warm unbleached parchment canvas, organic deep forest moss, and accents of terracotta stoneware clay.\n\n## Layout & Spacing\n\nLayout geometry follows an asymmetric editorial grid inspired by modern culinary and architectural journals. \n\n### Grid & Viewport Structure\n- **Max Canvas Width:** Constrained to `1160px` centered on wide viewports to preserve comfortable editorial line lengths (60–75 characters per line).\n- **Mobile (320px – 767px):** Single-column layout with `1rem` outer canvas padding and `1rem` vertical stacking gap.\n- **Tablet (768px – 1023px):** 6-column grid with `1.5rem` gutters and `2rem` screen margin.\n- **Desktop (1024px+):** 12-column editorial grid. Long-form articles and curation collections span an 8-column main track, with a 4-column sticky sidebar for seasonal pantry picks, curated Shopee finds, and curated taxonomy.\n\n### Spacing Cadence\n- Content sections are spaced rhythmically using `space-xl` (40px) to prevent cognitive overload.\n- Component-level spacing relies on clean 4px/8px multiples (`space-xs` = 4px, `space-sm` = 8px, `space-md` = 16px, `space-lg` = 24px).\n\n## Elevation & Depth\n\nVisual hierarchy is constructed through tonal surface layering and tactile print hairlines rather than dramatic drop shadows or synthetic glass blurs.\n\n### Tonal Hierarchy\n- **Base Layer (Elevation 0):** The natural parchment canvas (`#FAF7F2`) serves as the ground plane.\n- **Resting Containers & Cards (Elevation 1):** Crisp white (`#FFFFFF`) or warm sand (`#F2ECE2`) surfaces framed cleanly by a 1px solid stoneware hairline border (`#E3DCD1`). Zero resting shadow creates a flat, tactile index-card feel.\n- **Floating & Interactive State (Elevation 2):** When interacting with product cards, dropdown menus, or contextual cards, elements apply an ambient, warm-tinted shadow with a slight olive undertone:\n  - `box-shadow: 0 6px 20px -4px rgba(36, 40, 36, 0.06), 0 2px 6px -1px rgba(36, 40, 36, 0.03)`\n- **Sticky Headers & Drawers:** Filter bars and sticky recommendation trays feature 92% opacity on `#FAF7F2` with `backdrop-filter: blur(12px)` and a crisp 1px hairline bottom border (`#E3DCD1`), ensuring quiet continuity while scrolling.\n\n## Components\n\n### 1. Affiliate & Editorial Disclosure Banner\n- **Container:** Background `#F2ECE2`, border 1px solid `#E3DCD1`, border radius 6px, padding `12px 16px`.\n- **Icon:** Lucide `Sprout` or `HeartHandshake` (16px, color `#5D6A53`).\n- **Typography:** `body-sm`, color `#6E756B`. Transparent and serene: *\"Một số đề xuất đồ gia dụng đi kèm liên kết tiếp thị liên kết (Shopee). Mỗi đơn hàng nhỏ của bạn giúp duy trì không gian tạp chí mộc này mà không làm tăng giá sản phẩm.\"*\n\n### 2. Shopee Curation / Product Card\n- **Structure:** Horizontal layout on mobile; vertical card on desktop grid. \n- **Image Vignette:** Neutral border 1px `#E3DCD1`, aspect ratio 1:1, corner radius 4px.\n- **Header:** Category tag (\"Góc Bếp\", \"Tổ Ấm Xanh\") in `label-meta`.\n- **Body:** Product title in `headline-sm` (`#242824`), followed by a brief personal review note in `body-sm` (`#6E756B`).\n- **Action Button (\"Xem nơi mua uy tín\"):**\n  - Outlined state: Background `#FAF7F2`, border 1px solid `#2D5A43`, text `#2D5A43`, font `label-sm`.\n  - Icon: Lucide `ExternalLink` (14px).\n  - Hover state: Background `#E8F0EA`, text `#2D5A43`.\n  - Terracotta Highlight Variant (Best Value): Border `#B85D38`, text `#B85D38`, hover background `#F7EDE8`.\n\n### 3. Buttons\n- **Primary Action (Subscribe, Filter, Core CTA):** Solid Deep Olive Moss `#2D5A43` background, white `#FFFFFF` text, radius 6px, height 42px, typography `label-md`. Hover: `#234734`.\n- **Warm Accent Action (Direct Shopee Buy / Limited Highlight):** Solid Terracotta `#B85D38` background, white text. Hover: `#9E4D2C`.\n- **Secondary Action:** Transparent fill, border 1px solid `#E3DCD1`, text `#242824`. Hover: background `#F2ECE2`.\n- **Ghost Action:** Borderless, text `#6E756B`, hover text `#242824` with background `#F2ECE2`.\n\n### 4. Categorical Badges & Chips\n- **Mẹo Tổ Ấm (Green Living & Housekeeping):** Background `#E8F0EA`, text `#2A563E`, border 1px solid rgba(42, 86, 62, 0.15), radius 4px, `label-meta` in uppercase.\n- **Gom Link / Đồ Xinh (Curated Finds):** Background `#F7EDE8`, text `#B85D38`, border 1px solid rgba(184, 93, 56, 0.15), radius 4px, `label-meta` in uppercase.\n- **Đã Dùng & Kiểm Chứng (Verified Pick):** Background `#F2ECE2`, text `#5D6A53`, border 1px solid `#E3DCD1`, radius 4px.\n\n### 5. Input Fields & Search Bars\n- **Surface:** `#FFFFFF` background, border 1px solid `#E3DCD1`, border radius 6px, padding `10px 14px`, text `#242824`, font `body-regular`.\n- **Focus State:** Border 1.5px solid `#2D5A43`, no harsh outer glow.\n- **Placeholder:** `#6E756B` with 70% opacity.\n\n### 6. Iconography Rules\n- **Library:** Lucide Icons.\n- **Weight:** Fixed stroke width of 1.25px to 1.5px to harmonize with the delicate lines of Be Vietnam Pro. Never use 2px heavy strokes.",
+  "theme": {
+   "colorMode": "LIGHT",
+   "font": "BE_VIETNAM_PRO",
+   "roundness": "ROUND_FOUR",
+   "customColor": "#2d5a43",
+   "headlineFont": "BE_VIETNAM_PRO",
+   "bodyFont": "BE_VIETNAM_PRO",
+   "labelFont": "BE_VIETNAM_PRO",
+   "namedColors": {
+    "primary_fixed": "#bceecf",
+    "error": "#ba1a1a",
+    "on_background": "#191d19",
+    "tertiary_fixed": "#d9e7cb",
+    "on_secondary": "#ffffff",
+    "background": "#f7faf4",
+    "secondary_fixed": "#ffdbce",
+    "surface_bright": "#f7faf4",
+    "on_primary_container": "#9fcfb2",
+    "on_secondary_container": "#762c0a",
+    "accent-terracotta": "#B85D38",
+    "on_error": "#ffffff",
+    "secondary_container": "#ff956b",
+    "on_error_container": "#93000a",
+    "on_primary": "#ffffff",
+    "on_tertiary_fixed_variant": "#3e4a35",
+    "surface-card": "#FFFFFF",
+    "tertiary_fixed_dim": "#bdcbb0",
+    "primary_fixed_dim": "#a1d1b4",
+    "surface_variant": "#e0e3dd",
+    "tertiary": "#323e2a",
+    "on_surface_variant": "#414943",
+    "secondary": "#994623",
+    "text-muted": "#6E756B",
+    "on_primary_fixed_variant": "#224f39",
+    "primary": "#14422d",
+    "surface_container_low": "#f2f5ee",
+    "primary_container": "#2d5a43",
+    "on_tertiary": "#ffffff",
+    "surface-warm-sand": "#F2ECE2",
+    "surface_container_highest": "#e0e3dd",
+    "tertiary_container": "#49553f",
+    "outline": "#717973",
+    "surface_container": "#ecefe8",
+    "border-stoneware": "#E3DCD1",
+    "secondary_fixed_dim": "#ffb59a",
+    "inverse_on_surface": "#eff2eb",
+    "surface": "#f7faf4",
+    "inverse_primary": "#a1d1b4",
+    "on_surface": "#191d19",
+    "on_tertiary_container": "#bbc9ae",
+    "surface_container_high": "#e6e9e3",
+    "surface_tint": "#3a674f",
+    "surface_dim": "#d8dbd5",
+    "badge-sage-text": "#2A563E",
+    "moss-container": "#D7E8DC",
+    "on_primary_fixed": "#002112",
+    "on_secondary_fixed_variant": "#7b2f0d",
+    "on_secondary_fixed": "#370e00",
+    "outline_variant": "#c0c9c1",
+    "inverse_surface": "#2d312d",
+    "on_tertiary_fixed": "#131f0d",
+    "surface_container_lowest": "#ffffff",
+    "accent-terracotta-soft": "#F7EDE8",
+    "error_container": "#ffdad6",
+    "badge-sage-surface": "#E8F0EA",
+    "canvas-cream": "#FAF7F2"
+   },
+   "designMd": "---\nname: Botanical Living Editorial\ncolors:\n  surface: '#f7faf4'\n  surface-dim: '#d8dbd5'\n  surface-bright: '#f7faf4'\n  surface-container-lowest: '#ffffff'\n  surface-container-low: '#f2f5ee'\n  surface-container: '#ecefe8'\n  surface-container-high: '#e6e9e3'\n  surface-container-highest: '#e0e3dd'\n  on-surface: '#191d19'\n  on-surface-variant: '#414943'\n  inverse-surface: '#2d312d'\n  inverse-on-surface: '#eff2eb'\n  outline: '#717973'\n  outline-variant: '#c0c9c1'\n  surface-tint: '#3a674f'\n  primary: '#14422d'\n  on-primary: '#ffffff'\n  primary-container: '#2d5a43'\n  on-primary-container: '#9fcfb2'\n  inverse-primary: '#a1d1b4'\n  secondary: '#994623'\n  on-secondary: '#ffffff'\n  secondary-container: '#ff956b'\n  on-secondary-container: '#762c0a'\n  tertiary: '#323e2a'\n  on-tertiary: '#ffffff'\n  tertiary-container: '#49553f'\n  on-tertiary-container: '#bbc9ae'\n  error: '#ba1a1a'\n  on-error: '#ffffff'\n  error-container: '#ffdad6'\n  on-error-container: '#93000a'\n  primary-fixed: '#bceecf'\n  primary-fixed-dim: '#a1d1b4'\n  on-primary-fixed: '#002112'\n  on-primary-fixed-variant: '#224f39'\n  secondary-fixed: '#ffdbce'\n  secondary-fixed-dim: '#ffb59a'\n  on-secondary-fixed: '#370e00'\n  on-secondary-fixed-variant: '#7b2f0d'\n  tertiary-fixed: '#d9e7cb'\n  tertiary-fixed-dim: '#bdcbb0'\n  on-tertiary-fixed: '#131f0d'\n  on-tertiary-fixed-variant: '#3e4a35'\n  background: '#f7faf4'\n  on-background: '#191d19'\n  surface-variant: '#e0e3dd'\n  canvas-cream: '#FAF7F2'\n  surface-card: '#FFFFFF'\n  surface-warm-sand: '#F2ECE2'\n  border-stoneware: '#E3DCD1'\n  accent-terracotta: '#B85D38'\n  accent-terracotta-soft: '#F7EDE8'\n  badge-sage-surface: '#E8F0EA'\n  badge-sage-text: '#2A563E'\n  text-muted: '#6E756B'\n  moss-container: '#D7E8DC'\ntypography:\n  headline-display:\n    fontFamily: Be Vietnam Pro\n    fontSize: 38px\n    fontWeight: '600'\n    lineHeight: 48px\n    letterSpacing: -0.02em\n  headline-display-mobile:\n    fontFamily: Be Vietnam Pro\n    fontSize: 28px\n    fontWeight: '600'\n    lineHeight: 36px\n    letterSpacing: -0.015em\n  headline-lg:\n    fontFamily: Be Vietnam Pro\n    fontSize: 26px\n    fontWeight: '600'\n    lineHeight: 34px\n    letterSpacing: -0.01em\n  headline-lg-mobile:\n    fontFamily: Be Vietnam Pro\n    fontSize: 22px\n    fontWeight: '600'\n    lineHeight: 30px\n    letterSpacing: -0.01em\n  headline-md:\n    fontFamily: Be Vietnam Pro\n    fontSize: 19px\n    fontWeight: '600'\n    lineHeight: 26px\n    letterSpacing: -0.005em\n  headline-sm:\n    fontFamily: Be Vietnam Pro\n    fontSize: 16px\n    fontWeight: '600'\n    lineHeight: 22px\n  body-lead:\n    fontFamily: Be Vietnam Pro\n    fontSize: 17px\n    fontWeight: '400'\n    lineHeight: 28px\n  body-regular:\n    fontFamily: Be Vietnam Pro\n    fontSize: 15px\n    fontWeight: '400'\n    lineHeight: 25px\n  body-sm:\n    fontFamily: Be Vietnam Pro\n    fontSize: 13px\n    fontWeight: '400'\n    lineHeight: 20px\n  label-md:\n    fontFamily: Be Vietnam Pro\n    fontSize: 14px\n    fontWeight: '500'\n    lineHeight: 18px\n  label-sm:\n    fontFamily: Be Vietnam Pro\n    fontSize: 12px\n    fontWeight: '500'\n    lineHeight: 16px\n    letterSpacing: 0.02em\n  label-meta:\n    fontFamily: Be Vietnam Pro\n    fontSize: 11px\n    fontWeight: '600'\n    lineHeight: 14px\n    letterSpacing: 0.04em\nrounded:\n  sm: 0.125rem\n  DEFAULT: 0.25rem\n  md: 0.375rem\n  lg: 0.5rem\n  xl: 0.75rem\n  full: 9999px\nspacing:\n  gutter: 1rem\n  gutter-desktop: 1.5rem\n  margin: 1rem\n  margin-tablet: 2rem\n  margin-desktop: 3rem\n  space-xs: 0.25rem\n  space-sm: 0.5rem\n  space-md: 1rem\n  space-lg: 1.5rem\n  space-xl: 2.5rem\n---\n\n## Brand & Style\n\nThis design system expresses a serene, botanical slow-living aesthetic designed for intentional home curation, sustainable kitchen living, and mindful lifestyle journalism. Moving away from generic mass-market commerce palettes and hyper-active consumer interfaces, it embraces a grounded editorial sensibility rooted in wabi-sabi philosophy, natural textures, and organic craftsmanship.\n\n### Brand Personality & Emotional Tone\n- **Mộc mạc & Bản sắc (Earthy & Grounded):** Anchored by deep moss and evergreen foliage tones, balanced by the tactile warmth of handcrafted pottery and unbleached paper.\n- **Sang trọng & Thư thái (Quiet Luxury & Slow Living):** Unhurried visual pacing, expansive negative space, and refined typographical details that transform shopping and tip-reading into a restorative sanctuary.\n- **Minh bạch & Độc bản (Authentic & Discerning):** Rejecting flashing commercial patterns. Curated links, product vignettes, and housekeeping essays read like trusted recommendations from a seasoned designer's personal journal.\n\n### Design Movement\n**Botanical Editorial Minimalism with Tactile Wabi-Sabi Sensibilities.** The interface draws directly from premium indie publications and architectural monographs. Structure is defined by delicate 1px natural stone hairlines, warm unbleached parchment canvas, organic deep forest moss, and accents of terracotta stoneware clay.\n\n## Colors\n\nThe color palette shifts the visual center of gravity from commercial terracotta red to a commanding, sophisticated **Deep Moss & Forest Green** (`#2D5A43`). This primary foundation evokes herbal apothecary shelves, indoor botanical gardens, and raw moss stone. The terracotta tone is recast as a purposeful artisanal accent (`#B85D38`), reminiscent of baked clay pots and woodfire ceramics.\n\n### Palette Roles & Hierarchy\n- **Primary (`#2D5A43` - Deep Olive Moss):** The anchor for brand identity, prime actions, selected navigation items, and authoritative editorial titles.\n- **Secondary (`#B85D38` - Stoneware Terracotta):** Warm artisanal accent used intentionally for affiliate link calls-to-action, curated pick badges, and focal price tags.\n- **Tertiary (`#5D6A53` - Dried Herb / Olive Sage):** Supporting tone for metadata icons, secondary tags, and subtle contextual borders.\n- **Neutral Canvas (`#FAF7F2` - Linen Parchment):** Gentle, unbleached paper tone that relieves visual fatigue and eliminates stark clinical white glare.\n- **Neutral Text Primary (`#242824` - Smoked Pine Charcoal):** Deep, organic off-black that ensures WCAG AAA readability against linen surfaces without the harshness of pure black.\n- **Border / Structural Lines (`#E3DCD1` - Raw Stoneware Hairline):** Low-contrast dividers and card perimeters reflecting physical stationery edge cuts.\n\n### Dark Mode (Nocturnal Reading)\n- **Canvas / Background:** `#191E1A` (Deep Forest Soil)\n- **Surface / Card:** `#222823` (Charcoal Moss Timber)\n- **Border:** `#333C35`\n- **Primary:** `#669A7D` (Luminous Sage Pine)\n- **Secondary / Accent:** `#D97852` (Sunbaked Clay)\n- **Foreground / Text Primary:** `#EDE9E3` (Soft Natural Linen)\n- **Text Secondary / Muted:** `#9CA599`\n\n## Typography\n\nThe design system standardizes on **Be Vietnam Pro** across all hierarchy levels. Its geometry balances modernist clarity with graceful humanist proportions, offering native support for Vietnamese accents without glyph collision or awkward spacing shifts.\n\n- **Editorial Headlines:** Display and tier-one headings leverage tight negative tracking (`-0.01em` to `-0.02em`) with medium-firm semi-bold weight (`600`), replicating the refined poise of physical lifestyle magazines.\n- **Reading Rhythm:** Long-form editorial narratives utilize generous line heights (`lineHeight: 28px` on `fontSize: 17px`), creating an unhurried, breathable reading experience.\n- **Metadata & Affiliate Microcopy:** Category indicators, affiliate tags, and timestamp labels utilize slightly expanded tracking (`0.02em` to `0.04em`) in medium/semi-bold weights to retain crystal-clear sharpness against muted stone backgrounds.\n\n## Layout & Spacing\n\nLayout geometry follows an asymmetric editorial grid inspired by modern culinary and architectural journals. \n\n### Grid & Viewport Structure\n- **Max Canvas Width:** Constrained to `1160px` centered on wide viewports to preserve comfortable editorial line lengths (60–75 characters per line).\n- **Mobile (320px – 767px):** Single-column layout with `1rem` outer canvas padding and `1rem` vertical stacking gap.\n- **Tablet (768px – 1023px):** 6-column grid with `1.5rem` gutters and `2rem` screen margin.\n- **Desktop (1024px+):** 12-column editorial grid. Long-form articles and curation collections span an 8-column main track, with a 4-column sticky sidebar for seasonal pantry picks, curated Shopee finds, and curated taxonomy.\n\n### Spacing Cadence\n- Content sections are spaced rhythmically using `space-xl` (40px) to prevent cognitive overload.\n- Component-level spacing relies on clean 4px/8px multiples (`space-xs` = 4px, `space-sm` = 8px, `space-md` = 16px, `space-lg` = 24px).\n\n## Elevation & Depth\n\nVisual hierarchy is constructed through tonal surface layering and tactile print hairlines rather than dramatic drop shadows or synthetic glass blurs.\n\n### Tonal Hierarchy\n- **Base Layer (Elevation 0):** The natural parchment canvas (`#FAF7F2`) serves as the ground plane.\n- **Resting Containers & Cards (Elevation 1):** Crisp white (`#FFFFFF`) or warm sand (`#F2ECE2`) surfaces framed cleanly by a 1px solid stoneware hairline border (`#E3DCD1`). Zero resting shadow creates a flat, tactile index-card feel.\n- **Floating & Interactive State (Elevation 2):** When interacting with product cards, dropdown menus, or contextual cards, elements apply an ambient, warm-tinted shadow with a slight olive undertone:\n  - `box-shadow: 0 6px 20px -4px rgba(36, 40, 36, 0.06), 0 2px 6px -1px rgba(36, 40, 36, 0.03)`\n- **Sticky Headers & Drawers:** Filter bars and sticky recommendation trays feature 92% opacity on `#FAF7F2` with `backdrop-filter: blur(12px)` and a crisp 1px hairline bottom border (`#E3DCD1`), ensuring quiet continuity while scrolling.\n\n## Shapes\n\nThe design system employs a soft, grounded shape language (`roundedness: 1`, base 4px to 6px) that mirrors stationery goods, natural wood framing, and ceramic tile edging. Roundedness remains subtle to avoid the casual bubble appearance of generic social or e-commerce apps.\n\n- **Primary Cards & Modals:** `6px` radius (`rounded-md`), establishing an approachable container with disciplined corners.\n- **Buttons, Field Inputs & Search Boxes:** `4px` to `6px` radius (`rounded-sm` / `rounded`), providing deliberate structure.\n- **Badges & Taxonomy Tags:** `4px` corner radius or pill-shaped (`9999px`) exclusively for concise numerical counts and editorial flags.\n- **Media & Product Photography:** `6px` outer corner radius; nested thumbnails inside product cards use `4px` radius to maintain strict concentricity.\n\n## Components\n\n### 1. Affiliate & Editorial Disclosure Banner\n- **Container:** Background `#F2ECE2`, border 1px solid `#E3DCD1`, border radius 6px, padding `12px 16px`.\n- **Icon:** Lucide `Sprout` or `HeartHandshake` (16px, color `#5D6A53`).\n- **Typography:** `body-sm`, color `#6E756B`. Transparent and serene: *\"Một số đề xuất đồ gia dụng đi kèm liên kết tiếp thị liên kết (Shopee). Mỗi đơn hàng nhỏ của bạn giúp duy trì không gian tạp chí mộc này mà không làm tăng giá sản phẩm.\"*\n\n### 2. Shopee Curation / Product Card\n- **Structure:** Horizontal layout on mobile; vertical card on desktop grid. \n- **Image Vignette:** Neutral border 1px `#E3DCD1`, aspect ratio 1:1, corner radius 4px.\n- **Header:** Category tag (\"Góc Bếp\", \"Tổ Ấm Xanh\") in `label-meta`.\n- **Body:** Product title in `headline-sm` (`#242824`), followed by a brief personal review note in `body-sm` (`#6E756B`).\n- **Action Button (\"Xem nơi mua uy tín\"):**\n  - Outlined state: Background `#FAF7F2`, border 1px solid `#2D5A43`, text `#2D5A43`, font `label-sm`.\n  - Icon: Lucide `ExternalLink` (14px).\n  - Hover state: Background `#E8F0EA`, text `#2D5A43`.\n  - Terracotta Highlight Variant (Best Value): Border `#B85D38`, text `#B85D38`, hover background `#F7EDE8`.\n\n### 3. Buttons\n- **Primary Action (Subscribe, Filter, Core CTA):** Solid Deep Olive Moss `#2D5A43` background, white `#FFFFFF` text, radius 6px, height 42px, typography `label-md`. Hover: `#234734`.\n- **Warm Accent Action (Direct Shopee Buy / Limited Highlight):** Solid Terracotta `#B85D38` background, white text. Hover: `#9E4D2C`.\n- **Secondary Action:** Transparent fill, border 1px solid `#E3DCD1`, text `#242824`. Hover: background `#F2ECE2`.\n- **Ghost Action:** Borderless, text `#6E756B`, hover text `#242824` with background `#F2ECE2`.\n\n### 4. Categorical Badges & Chips\n- **Mẹo Tổ Ấm (Green Living & Housekeeping):** Background `#E8F0EA`, text `#2A563E`, border 1px solid rgba(42, 86, 62, 0.15), radius 4px, `label-meta` in uppercase.\n- **Gom Link / Đồ Xinh (Curated Finds):** Background `#F7EDE8`, text `#B85D38`, border 1px solid rgba(184, 93, 56, 0.15), radius 4px, `label-meta` in uppercase.\n- **Đã Dùng & Kiểm Chứng (Verified Pick):** Background `#F2ECE2`, text `#5D6A53`, border 1px solid `#E3DCD1`, radius 4px.\n\n### 5. Input Fields & Search Bars\n- **Surface:** `#FFFFFF` background, border 1px solid `#E3DCD1`, border radius 6px, padding `10px 14px`, text `#242824`, font `body-regular`.\n- **Focus State:** Border 1.5px solid `#2D5A43`, no harsh outer glow.\n- **Placeholder:** `#6E756B` with 70% opacity.\n\n### 6. Iconography Rules\n- **Library:** Lucide Icons.\n- **Weight:** Fixed stroke width of 1.25px to 1.5px to harmonize with the delicate lines of Be Vietnam Pro. Never use 2px heavy strokes.",
+   "colorVariant": "FIDELITY",
+   "overridePrimaryColor": "#2d5a43",
+   "overrideSecondaryColor": "#b85d38",
+   "overrideTertiaryColor": "#5d6a53",
+   "overrideNeutralColor": "#242824",
+   "spacingScale": 2,
+   "typography": {
+    "label-md": {
+     "fontFamily": "Be Vietnam Pro",
+     "fontSize": "14px",
+     "fontWeight": "500",
+     "lineHeight": "18px"
+    },
+    "headline-lg": {
+     "fontFamily": "Be Vietnam Pro",
+     "fontSize": "26px",
+     "fontWeight": "600",
+     "lineHeight": "34px",
+     "letterSpacing": "-0.01em"
+    },
+    "label-meta": {
+     "fontFamily": "Be Vietnam Pro",
+     "fontSize": "11px",
+     "fontWeight": "600",
+     "lineHeight": "14px",
+     "letterSpacing": "0.04em"
+    },
+    "headline-sm": {
+     "fontFamily": "Be Vietnam Pro",
+     "fontSize": "16px",
+     "fontWeight": "600",
+     "lineHeight": "22px"
+    },
+    "headline-md": {
+     "fontFamily": "Be Vietnam Pro",
+     "fontSize": "19px",
+     "fontWeight": "600",
+     "lineHeight": "26px",
+     "letterSpacing": "-0.005em"
+    },
+    "headline-lg-mobile": {
+     "fontFamily": "Be Vietnam Pro",
+     "fontSize": "22px",
+     "fontWeight": "600",
+     "lineHeight": "30px",
+     "letterSpacing": "-0.01em"
+    },
+    "body-lead": {
+     "fontFamily": "Be Vietnam Pro",
+     "fontSize": "17px",
+     "fontWeight": "400",
+     "lineHeight": "28px"
+    },
+    "headline-display-mobile": {
+     "fontFamily": "Be Vietnam Pro",
+     "fontSize": "28px",
+     "fontWeight": "600",
+     "lineHeight": "36px",
+     "letterSpacing": "-0.015em"
+    },
+    "body-regular": {
+     "fontFamily": "Be Vietnam Pro",
+     "fontSize": "15px",
+     "fontWeight": "400",
+     "lineHeight": "25px"
+    },
+    "headline-display": {
+     "fontFamily": "Be Vietnam Pro",
+     "fontSize": "38px",
+     "fontWeight": "600",
+     "lineHeight": "48px",
+     "letterSpacing": "-0.02em"
+    },
+    "body-sm": {
+     "fontFamily": "Be Vietnam Pro",
+     "fontSize": "13px",
+     "fontWeight": "400",
+     "lineHeight": "20px"
+    },
+    "label-sm": {
+     "fontFamily": "Be Vietnam Pro",
+     "fontSize": "12px",
+     "fontWeight": "500",
+     "lineHeight": "16px",
+     "letterSpacing": "0.02em"
+    }
+   },
+   "spacing": {
+    "space-xs": "0.25rem",
+    "gutter-desktop": "1.5rem",
+    "margin-tablet": "2rem",
+    "gutter": "1rem",
+    "margin-desktop": "3rem",
+    "space-lg": "1.5rem",
+    "margin": "1rem",
+    "space-sm": "0.5rem",
+    "space-md": "1rem",
+    "space-xl": "2.5rem"
+   },
+   "headlineFontFamily": "Be Vietnam Pro",
+   "bodyFontFamily": "Be Vietnam Pro",
+   "labelFontFamily": "Be Vietnam Pro"
+  }
+ },
+ "version": "1"
+}

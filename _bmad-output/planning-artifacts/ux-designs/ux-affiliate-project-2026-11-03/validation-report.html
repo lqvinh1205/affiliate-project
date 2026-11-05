@@ -1,0 +1,675 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<title>UX Design Validation: Mẹo Vặt Cuộc Sống (affiliate-project)</title>
+<style>
+  :root {
+    --bg: #fafaf9;
+    --surface: #ffffff;
+    --border: #e7e5e4;
+    --text: #1c1917;
+    --muted: #78716c;
+
+    --verdict-strong: #16a34a;
+    --verdict-adequate: #65a30d;
+    --verdict-thin: #d97706;
+    --verdict-broken: #dc2626;
+
+    --sev-low: #64748b;
+    --sev-medium: #ca8a04;
+    --sev-high: #ea580c;
+    --sev-critical: #dc2626;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    font-size: 15px;
+  }
+  .container { max-width: 960px; margin: 0 auto; padding: 32px 24px 64px; }
+
+  header.report-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 24px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 24px;
+  }
+  .title h1 { margin: 0; font-size: 22px; font-weight: 600; letter-spacing: -0.01em; }
+  .title .subtitle { color: var(--muted); font-size: 13px; margin-top: 4px; font-family: ui-monospace, "SF Mono", Menlo, monospace; }
+
+  .synthesis {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--muted);
+    border-radius: 8px;
+    padding: 18px 22px;
+    margin-bottom: 24px;
+    font-size: 15.5px;
+  }
+  .synthesis p { margin: 0 0 10px; }
+  .synthesis p:last-child { margin-bottom: 0; }
+
+  .dimension-summary {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 10px;
+    margin-bottom: 24px;
+  }
+  .dim-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 14px;
+  }
+  .dim-card .dim-name { font-size: 13px; color: var(--muted); margin-bottom: 6px; }
+  .dim-card .dim-verdict { font-size: 14px; font-weight: 600; }
+
+  section.dimension, section.reviewer-section { margin-bottom: 14px; }
+  section.dimension details, section.reviewer-section details {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  section summary {
+    padding: 14px 20px;
+    cursor: pointer;
+    user-select: none;
+    list-style: none;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  section summary::-webkit-details-marker { display: none; }
+  section summary::before {
+    content: "▸";
+    display: inline-block;
+    color: var(--muted);
+    transition: transform 0.15s ease;
+  }
+  section details[open] summary::before { transform: rotate(90deg); }
+  section summary h2 {
+    display: inline;
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+    letter-spacing: -0.005em;
+    flex: 1;
+  }
+  .verdict-pill {
+    font-size: 11px;
+    padding: 3px 10px;
+    border-radius: 999px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: white;
+  }
+  .verdict-strong { background: var(--verdict-strong); }
+  .verdict-adequate { background: var(--verdict-adequate); }
+  .verdict-thin { background: var(--verdict-thin); }
+  .verdict-broken { background: var(--verdict-broken); }
+
+  .dim-body { padding: 4px 20px 18px; }
+  .dim-judgment { color: var(--text); font-size: 14.5px; }
+  .dim-judgment p { margin: 0 0 10px; }
+
+  .findings-list { padding: 0 20px 4px; }
+  article.finding {
+    padding: 14px 0;
+    border-top: 1px solid var(--border);
+  }
+  article.finding:first-child { border-top: none; }
+  article.finding header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 6px;
+  }
+  .badge {
+    font-size: 10.5px;
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    line-height: 1.4;
+  }
+  .badge-sev-low { background: rgba(100, 116, 139, 0.12); color: var(--sev-low); }
+  .badge-sev-medium { background: rgba(202, 138, 4, 0.14); color: var(--sev-medium); }
+  .badge-sev-high { background: rgba(234, 88, 12, 0.14); color: var(--sev-high); }
+  .badge-sev-critical { background: rgba(220, 38, 38, 0.14); color: var(--sev-critical); }
+  .finding-title { margin: 0; font-size: 15px; font-weight: 500; flex: 1; min-width: 200px; }
+  .finding-location { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 12.5px; color: var(--muted); }
+  .finding-note, .finding-fix { margin-top: 6px; font-size: 14px; }
+  .finding-fix strong { color: var(--muted); font-weight: 500; }
+
+  .reviewer-source {
+    font-size: 12px;
+    color: var(--muted);
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  }
+
+  .mechanical {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px 20px;
+    margin-top: 24px;
+    font-size: 14px;
+  }
+  .mechanical h3 { margin: 0 0 10px; font-size: 14px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; }
+  .mechanical ul { margin: 0; padding-left: 20px; }
+  .mechanical li { margin-bottom: 4px; color: var(--text); }
+
+  footer.report-footer {
+    margin-top: 40px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border);
+    font-size: 12px;
+    color: var(--muted);
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  }
+  footer .meta { display: flex; gap: 24px; flex-wrap: wrap; }
+  .note-banner { background:#fffbeb; border:1px solid #fde68a; border-radius:8px; padding:10px 16px; margin-bottom:20px; font-size:14px; }
+  code { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 0.9em; background: rgba(0,0,0,0.04); padding: 1px 4px; border-radius: 3px; }
+</style>
+</head>
+<body>
+  <div class="container">
+    <header class="report-header">
+      <div class="title">
+        <h1>Mẹo Vặt Cuộc Sống (affiliate-project) — Báo cáo kiểm định UX</h1>
+        <div class="subtitle">_bmad-output/planning-artifacts/ux-designs/ux-affiliate-project-2026-11-03/DESIGN.md + EXPERIENCE.md</div>
+      </div>
+    </header>
+
+    <div class="note-banner">Các finding đang được sửa trong lượt Update ngay sau review; báo cáo phản ánh trạng thái lúc review.</div>
+
+    <div class="synthesis">
+      <p>Cặp spine dùng tốt cho <strong>site public</strong>. Token đủ hex, có cặp dark cho mọi token được dùng, mọi <code>{path.to.token}</code> (71 tham chiếu) đều trỏ đúng, tỉ lệ tương phản đã khai báo khớp với tính toán lại, và cả 4 UJ đều có flow đúng tên, có cao trào và đường lỗi. <strong>Phía CMS còn mỏng.</strong> Màn cao trào của UJ-1 (Bộ nội dung) chưa có bố cục. Chưa có pattern cho bước chọn Người đọc mục tiêu / Góc viết. FR-16 và Bộ nội dung nhiều Sản phẩm (bài Gom link) chưa có lối vào. Ngoài ra còn vài quyết định tự mâu thuẫn: hành vi bấm ProductCard, số SuggestionCard, nút 36px so với sàn 44px. Nên sửa 6 mục high trước khi chuyển sang story-dev.</p>
+      <p>Tổng: 0 critical, 6 high, 14 medium, 12 low. Chỉ có một reviewer (rubric walker) chạy.</p>
+    </div>
+
+    <div class="dimension-summary">
+      <div class="dim-card">
+        <div class="dim-name">1. Độ phủ flow (Flow coverage)</div>
+        <div class="dim-verdict" style="color: var(--verdict-adequate)">adequate</div>
+      </div>
+      <div class="dim-card">
+        <div class="dim-name">2. Độ đầy đủ token (Token completeness)</div>
+        <div class="dim-verdict" style="color: var(--verdict-adequate)">adequate</div>
+      </div>
+      <div class="dim-card">
+        <div class="dim-name">3. Độ phủ component (Component coverage)</div>
+        <div class="dim-verdict" style="color: var(--verdict-thin)">thin</div>
+      </div>
+      <div class="dim-card">
+        <div class="dim-name">4. Độ phủ trạng thái (State coverage)</div>
+        <div class="dim-verdict" style="color: var(--verdict-adequate)">adequate</div>
+      </div>
+      <div class="dim-card">
+        <div class="dim-name">5. Độ phủ tham chiếu hình ảnh (Visual reference coverage)</div>
+        <div class="dim-verdict" style="color: var(--verdict-strong)">strong</div>
+      </div>
+      <div class="dim-card">
+        <div class="dim-name">6. Thừa &amp; đặc tả quá mức (Bloat &amp; overspecification)</div>
+        <div class="dim-verdict" style="color: var(--verdict-adequate)">adequate</div>
+      </div>
+      <div class="dim-card">
+        <div class="dim-name">7. Kỷ luật kế thừa (Inheritance discipline)</div>
+        <div class="dim-verdict" style="color: var(--verdict-adequate)">adequate</div>
+      </div>
+      <div class="dim-card">
+        <div class="dim-name">8. Độ khớp khuôn (Shape fit)</div>
+        <div class="dim-verdict" style="color: var(--verdict-strong)">strong</div>
+      </div>
+    </div>
+
+    <section class="dimension">
+      <details>
+        <summary>
+          <h2>1. Độ phủ flow (Flow coverage)</h2>
+          <span class="verdict-pill verdict-adequate">adequate</span>
+        </summary>
+        <div class="dim-body">
+          <div class="dim-judgment">
+            <p>Đã kiểm: trích UJ-1..UJ-4 từ PRD §2.3 và FR-1..FR-38 có giao diện; đối chiếu với Key Flows (EXPERIENCE L241–292). Cả 4 UJ đều có protagonist (Vinh / người đọc ẩn danh, đã ghi rõ lý do chưa đặt tên), bước đánh số, <strong>Cao trào</strong> và đường lỗi. Có thêm Flow 5 (Ẩn Sản phẩm, FR-5/R-2), là phần bổ sung tốt.</p>
+          </div>
+        </div>
+        <div class="findings-list">
+          <article class="finding">
+            <header>
+              <span class="badge badge-sev-high">high</span>
+              <h3 class="finding-title">Chưa có pattern cho bước chọn Người đọc mục tiêu / Góc viết</h3>
+              <span class="finding-location">EXPERIENCE L62 L134 L249–250</span>
+            </header>
+            <div class="finding-note">UJ-1 bước 3–4 chưa có pattern cho bước chọn: "1–3 Người đọc mục tiêu (chọn một), ≥ 3 Góc viết kèm hook (chọn một)" chỉ nằm trong văn kể flow. Không có component nào (radio/thẻ chọn, sửa lại theo FR-9) và không có điều kiện tiên quyết của "Tạo bộ nội dung": hồ sơ có buộc phải <em>Đã duyệt</em> không, bắt buộc chọn góc không, hồ sơ FAILED/REJECTED thì sao (EXPERIENCE L62, L134, L249–250).</div>
+            <div class="finding-fix"><strong>Fix:</strong> thêm hàng <code>ResearchProfileCard</code> / <code>AnglePicker</code> vào Component Patterns của cả hai spine. Ghi rõ: nút Tạo tắt khi chưa chọn Góc viết, và nêu hành vi khi hồ sơ chưa Duyệt.</div>
+          </article>
+          <article class="finding">
+            <header>
+              <span class="badge badge-sev-high">high</span>
+              <h3 class="finding-title">Thiếu lối vào cho FR-16 và Bộ nội dung nhiều Sản phẩm</h3>
+              <span class="finding-location">EXPERIENCE L60–63</span>
+            </header>
+            <div class="finding-note">Thiếu lối vào cho <strong>FR-16</strong> (từ Bài web có sẵn tạo Bài Threads/Facebook) và cho <strong>Bộ nội dung nhiều Sản phẩm</strong> (PRD §4.3: bài Gom link có nhiều Sản phẩm, Góc viết gợi ý từ mọi hồ sơ). Mọi flow và IA chỉ bắt đầu từ một <code>/cms/san-pham/[id]</code> (EXPERIENCE L60–63; không có chỗ nào nhắc FR-16).</div>
+            <div class="finding-fix"><strong>Fix:</strong> thêm nút "Tạo bài mạng xã hội" ở Soạn Bài web. Định nghĩa cách chọn nhiều Sản phẩm trước "Tạo bộ nội dung" (ví dụ ProductPicker trên màn Bộ nội dung mới). Thêm một flow ngắn hoặc một dòng trong IA.</div>
+          </article>
+          <article class="finding">
+            <header>
+              <span class="badge badge-sev-medium">medium</span>
+              <h3 class="finding-title">Chưa nêu điều hướng giữa Bộ nội dung và Soạn Bài web</h3>
+              <span class="finding-location">EXPERIENCE L251</span>
+            </header>
+            <div class="finding-note">UJ-1 bước 5 "Duyệt bài web, mở bài, chạm Xuất bản. Quay lại…" không nêu điều hướng giữa <code>/cms/bo-noi-dung/[id]</code> và <code>/cms/bai-viet/[id]</code>: link nào, nút nào, quay lại bằng gì (EXPERIENCE L251).</div>
+            <div class="finding-fix"><strong>Fix:</strong> SuggestionCard Bài web đã Duyệt có link "Mở bài web"; Soạn Bài web có link ngược về Bộ nội dung.</div>
+          </article>
+          <article class="finding">
+            <header>
+              <span class="badge badge-sev-medium">medium</span>
+              <h3 class="finding-title">“Gắn sản phẩm” chưa rõ gắn Sản phẩm có sẵn và thao tác Bỏ qua</h3>
+              <span class="finding-location">EXPERIENCE L260 L64</span>
+            </header>
+            <div class="finding-note">UJ-2 bước 3 "Gắn sản phẩm" chỉ tạo Sản phẩm mới. Chưa nói có gắn được Sản phẩm có sẵn không, và trạng thái <em>Bỏ qua</em> của Cảm hứng do thao tác nào đặt (EXPERIENCE L260, L64).</div>
+            <div class="finding-fix"><strong>Fix:</strong> thêm hàng Component Patterns cho "Gắn sản phẩm" (tạo mới hoặc chọn có sẵn) và nút "Bỏ qua" trên chi tiết Cảm hứng.</div>
+          </article>
+          <article class="finding">
+            <header>
+              <span class="badge badge-sev-low">low</span>
+              <h3 class="finding-title">UJ-4 “Mở TableOfContents” mâu thuẫn với TOC mobile mặc định mở</h3>
+              <span class="finding-location">EXPERIENCE L109 L281</span>
+            </header>
+            <div class="finding-note">UJ-4 bước 2 "Mở TableOfContents" mâu thuẫn với TOC mobile <strong>mặc định mở</strong> (EXPERIENCE L109, L281).</div>
+            <div class="finding-fix"><strong>Fix:</strong> đổi thành "Chạm 'Mẹo 2' trong mục lục".</div>
+          </article>
+        </div>
+      </details>
+    </section>
+
+    <section class="dimension">
+      <details>
+        <summary>
+          <h2>2. Độ đầy đủ token (Token completeness)</h2>
+          <span class="verdict-pill verdict-adequate">adequate</span>
+        </summary>
+        <div class="dim-body">
+          <div class="dim-judgment">
+            <p>Đã kiểm: 49 màu light + 32 màu dark, 12 typography, 6 rounded, 12 spacing, 15 component token; toàn bộ <code>{…}</code> trong cả hai file đều có định nghĩa; giá trị đúng kiểu theo <code>design-md-spec.md</code>. Đã tính lại tương phản: 16.25 / 8.89 / 6.57 / 6.26 / 4.54 / 4.58, dark 14.47 / 6.56 / 5.0 / 5.34 — khớp với DESIGN L184. Không có token màu nào thiếu hex.</p>
+          </div>
+        </div>
+        <div class="findings-list">
+          <article class="finding">
+            <header>
+              <span class="badge badge-sev-high">high</span>
+              <h3 class="finding-title">Nút AffiliateLink và chip cao 36px, dưới sàn vùng bấm 44px</h3>
+              <span class="finding-location">DESIGN L140 L143; EXPERIENCE L197</span>
+            </header>
+            <div class="finding-note"><code>affiliate-link-button.height: 36px</code> và <code>chip.height: 36px</code> (DESIGN L140, L143) thấp hơn <code>{spacing.touch-target}</code> 44px, trong khi EXPERIENCE L197 quy định "Mọi vùng bấm ≥ 44px". AffiliateLink là nút tạo ra doanh thu và lại dày đặc trên mobile.</div>
+            <div class="finding-fix"><strong>Fix:</strong> chốt một trong hai cách: (a) nâng lên 44px, hoặc (b) giữ hình 36px nhưng vùng bấm 44px (padding / pseudo-element), ghi rõ trong DESIGN Components.</div>
+          </article>
+          <article class="finding">
+            <header>
+              <span class="badge badge-sev-medium">medium</span>
+              <h3 class="finding-title">15 token light không có cặp -dark</h3>
+              <span class="finding-location">DESIGN L17–65</span>
+            </header>
+            <div class="finding-note">15 token light không có cặp <code>-dark</code>: <code>primary-fixed-dim</code>, <code>on-primary-fixed-variant</code>, <code>inverse-primary</code>, <code>surface-tint</code>, <code>secondary-fixed</code>, <code>secondary-fixed-dim</code>, <code>on-secondary-fixed</code>, <code>on-secondary-fixed-variant</code>, <code>on-tertiary</code>, <code>tertiary-container</code>, <code>on-tertiary-container</code>, <code>tertiary-fixed-dim</code>, <code>on-tertiary-fixed-variant</code>, <code>surface-dim</code>, <code>surface-bright</code> (DESIGN L17–65). Hiện chưa token nào trong số này được dùng, nhưng code mirror toàn bộ frontmatter thành CSS variable thì dark mode sẽ thiếu biến (NFR-11).</div>
+            <div class="finding-fix"><strong>Fix:</strong> ghi chú "chỉ light, không dùng trong component", hoặc bỏ khỏi frontmatter.</div>
+          </article>
+          <article class="finding">
+            <header>
+              <span class="badge badge-sev-medium">medium</span>
+              <h3 class="finding-title">Số rank PostCard dùng outline-variant (1.7:1) cho chữ</h3>
+              <span class="finding-location">DESIGN L244</span>
+            </header>
+            <div class="finding-note">PostCard <em>rank</em> dùng số <code>01</code>–<code>05</code> màu <code>{colors.outline-variant}</code> (1.7:1, DESIGN L244), mâu thuẫn với bảng màu "Đường kẻ — không dùng cho chữ (1.6:1)" (L179).</div>
+            <div class="finding-fix"><strong>Fix:</strong> coi số là trang trí (<code>aria-hidden</code>, thứ tự do <code>&lt;ol&gt;</code> đảm nhận) và ghi rõ ngoại lệ, hoặc đổi sang <code>{colors.on-surface-variant}</code>.</div>
+          </article>
+          <article class="finding">
+            <header>
+              <span class="badge badge-sev-low">low</span>
+              <h3 class="finding-title">Thiếu khai báo tương phản cho vài cặp quan trọng</h3>
+              <span class="finding-location"></span>
+            </header>
+            <div class="finding-note">Thiếu khai báo tương phản cho vài cặp quan trọng: giá <code>{colors.primary-dark}</code> trên thẻ <code>surface-container-lowest-dark</code> chỉ đạt 4.54:1 (sát ngưỡng); badge Gom link (13.3 light / 5.06 dark), badge Mẹo vặt dark (5.88); vòng focus ≥ 3:1 (không phải chữ).</div>
+            <div class="finding-fix"><strong>Fix:</strong> bổ sung vào DESIGN L184.</div>
+          </article>
+          <article class="finding">
+            <header>
+              <span class="badge badge-sev-low">low</span>
+              <h3 class="finding-title">Còn số literal ở chỗ đã có token</h3>
+              <span class="finding-location">DESIGN L209 L213</span>
+            </header>
+            <div class="finding-note">Còn số literal ở chỗ đã có token: gutter tablet "24px" (= <code>{spacing.gutter-desktop}</code>), header "64px" trong văn (DESIGN L209, L213).</div>
+            <div class="finding-fix"><strong>Fix:</strong> dùng tên token.</div>
+          </article>
+        </div>
+      </details>
+    </section>
+
+    <section class="dimension">
+      <details open>
+        <summary>
+          <h2>3. Độ phủ component (Component coverage)</h2>
+          <span class="verdict-pill verdict-thin">thin</span>
+        </summary>
+        <div class="dim-body">
+          <div class="dim-judgment">
+            <p>Đã kiểm: site public có 23 component, đều có hàng trong cả DESIGN.Components (L239–261) và EXPERIENCE.Component Patterns (L99–121), quy tắc thật. CMS có 16 component đủ hàng hành vi (L127–143), <strong>nhưng phần hình ảnh chỉ là một dòng gộp</strong> (DESIGN L262).</p>
+          </div>
+        </div>
+        <div class="findings-list">
+          <article class="finding">
+            <header>
+              <span class="badge badge-sev-high">high</span>
+              <h3 class="finding-title">Màn Bộ nội dung (cao trào UJ-1) chưa có đặc tả bố cục</h3>
+              <span class="finding-location">DESIGN L262</span>
+            </header>
+            <div class="finding-note">Màn Bộ nội dung, nơi diễn ra cao trào UJ-1 và NFR-4, không có đặc tả bố cục. Chưa rõ: thứ tự và cách xếp thẻ trên 360px (xếp chồng hay tab), cách hiển thị chuỗi Threads (mỗi bài một khối + CopyButton + đếm ký tự ≤ 500), vùng sửa nội dung trong SuggestionCard (textarea hay rich text), vị trí nút Duyệt/Từ chối/Tạo lại trên mobile. Toàn bộ chỉ nằm trong DESIGN L262.</div>
+            <div class="finding-fix"><strong>Fix:</strong> tách hàng DESIGN riêng cho SuggestionCard, GeneratingIndicator, RiskWarning, CopyButton (anatomy, mobile). Thêm bảng bố cục màn <code>/cms/bo-noi-dung/[id]</code> trong EXPERIENCE.</div>
+          </article>
+          <article class="finding">
+            <header>
+              <span class="badge badge-sev-high">high</span>
+              <h3 class="finding-title">“4 SuggestionCard” mâu thuẫn với FR-17 / AD-19</h3>
+              <span class="finding-location">EXPERIENCE L63 L250</span>
+            </header>
+            <div class="finding-note">"4 SuggestionCard" (EXPERIENCE L63, L250) mâu thuẫn với FR-17 ("với <strong>mỗi</strong> Bài mạng xã hội") và AD-19 (<code>LINK_COMMENT</code> khoá theo <code>contentSetId + platform</code>). Đủ 3 nền tảng thì có <strong>5</strong> gợi ý: Bài web, Threads, Facebook, 2 Bình luận kèm link. Bỏ chọn nền tảng thì số thẻ cũng đổi.</div>
+            <div class="finding-fix"><strong>Fix:</strong> mô tả theo quy tắc: 1 thẻ cho mỗi nền tảng đã chọn, cộng 1 Bình luận kèm link cho mỗi nền tảng mạng xã hội, và ghi rõ Bình luận nằm trong thẻ của nền tảng hay là thẻ riêng.</div>
+          </article>
+          <article class="finding">
+            <header>
+              <span class="badge badge-sev-high">high</span>
+              <h3 class="finding-title">Hành vi bấm ProductCard tự mâu thuẫn</h3>
+              <span class="finding-location"></span>
+            </header>
+            <div class="finding-note">Hành vi bấm ProductCard tự mâu thuẫn. L106 viết "Chỉ AffiliateLink bấm được (ảnh và tên cũng mở cùng link affiliate)", còn L306 ghi "thẻ Sản phẩm bấm cả thẻ". Câu này ảnh hưởng số thẻ <code>&lt;a rel="sponsored"&gt;</code>, link trùng cho trình đọc màn hình và vùng bấm.</div>
+            <div class="finding-fix"><strong>Fix:</strong> chốt một cách, ví dụ: ảnh + tên + nút là một link duy nhất (stretched link), nút chỉ là phần hiển thị; ghi lại trong Accessibility Floor.</div>
+          </article>
+          <article class="finding">
+            <header>
+              <span class="badge badge-sev-medium">medium</span>
+              <h3 class="finding-title">ProductCard thiếu biến thể tile; /bio chưa có bố cục nhóm</h3>
+              <span class="finding-location">DESIGN L246; EXPERIENCE L229</span>
+            </header>
+            <div class="finding-note">ProductCard chỉ có một biến thể ngang (ảnh 80px bên trái; DESIGN L246) nhưng được dùng ở dải cuộn ngang và lưới 4 cột trang chủ (EXPERIENCE L229) và ở <code>/bio</code>. FR-30 "nhóm theo Danh mục" chưa có bố cục nhóm: có tiêu đề nhóm không, chỉ ở chip "Tất cả" hay không, Sản phẩm ghim nằm trên hay trong nhóm.</div>
+            <div class="finding-fix"><strong>Fix:</strong> thêm biến thể <em>tile</em> (dọc) cho dải/lưới và bảng bố cục <code>/bio</code>.</div>
+          </article>
+          <article class="finding">
+            <header>
+              <span class="badge badge-sev-medium">medium</span>
+              <h3 class="finding-title">Banner “render qua AffiliateLink” nhưng AffiliateLink là nút cố định</h3>
+              <span class="finding-location">EXPERIENCE L103</span>
+            </header>
+            <div class="finding-note">Banner trỏ Shopee "render qua AffiliateLink" (EXPERIENCE L103, AD-11), nhưng AffiliateLink trong DESIGN là nút cố định chữ "Xem trên Shopee" (L247), còn CTA Banner là pill <code>{colors.primary}</code>.</div>
+            <div class="finding-fix"><strong>Fix:</strong> nêu AffiliateLink là component thuộc tính link (nhận children / variant) và tách phần hình ảnh của nút.</div>
+          </article>
+          <article class="finding">
+            <header>
+              <span class="badge badge-sev-medium">medium</span>
+              <h3 class="finding-title">Thiếu component cho nhiều thứ đang được nhắc tới</h3>
+              <span class="finding-location"></span>
+            </header>
+            <div class="finding-note">Thiếu component cho các thứ đang được nhắc tới: trình soạn thân Bài web (Soạn Bài web, FR-13/27), bộ chọn / ghim / sắp xếp Sản phẩm cho <code>/cms/bio</code> (FR-31; ProductPicker chỉ ghi "Soạn Bài web"), hiển thị thẻ/hashtag trên bài (FR-26; chỉ có dòng Do's L276), dải thông báo <code>skipped</code> trong Hồ sơ nghiên cứu (L182), khu "bài liên quan" dùng biến thể PostCard nào.</div>
+            <div class="finding-fix"><strong>Fix:</strong> thêm hàng tương ứng vào cả hai spine.</div>
+          </article>
+          <article class="finding">
+            <header>
+              <span class="badge badge-sev-medium">medium</span>
+              <h3 class="finding-title">Màu StatusBadge chưa phủ hết các trạng thái</h3>
+              <span class="finding-location">DESIGN L262; EXPERIENCE L129</span>
+            </header>
+            <div class="finding-note">Màu StatusBadge chưa phủ hết: DESIGN L262 chỉ có chờ duyệt / đã duyệt–đã đăng / lỗi / đang tạo. Thiếu Nháp, Đã xuất bản, Hiện, Ẩn, Mới, Đã dùng, Bỏ qua, Đã từ chối, Chưa đăng và trạng thái Banner (Tắt / Chờ lịch / Hết hạn / Đang hiện). Hàng StatusBadge trong EXPERIENCE L129 cũng chưa có nhóm Banner (nhóm này chỉ có ở L189).</div>
+            <div class="finding-fix"><strong>Fix:</strong> thêm bảng nhãn → token đầy đủ.</div>
+          </article>
+        </div>
+      </details>
+    </section>
+
+    <section class="dimension">
+      <details>
+        <summary>
+          <h2>4. Độ phủ trạng thái (State coverage)</h2>
+          <span class="verdict-pill verdict-adequate">adequate</span>
+        </summary>
+        <div class="dim-body">
+          <div class="dim-judgment">
+            <p>Đã kiểm từng bề mặt trong IA. Site public: đang tải, lỗi, ngoại tuyến (đã duyệt bỏ qua), các kiểu rỗng (0 Banner, Xem nhiều, liên quan, Danh mục, bio), slug cũ, trang vượt quá, focus, tìm kiếm (chưa gõ / đang tìm / rỗng / lỗi), 404. CMS: đang tải, không tìm thấy, danh sách rỗng, lọc không ra, vòng đời Gợi ý AI, <code>skipped</code>, lỗi trường, xoá bị chặn, upload, lỗi AI. Phủ tốt; còn thiếu:</p>
+          </div>
+        </div>
+        <div class="findings-list">
+          <article class="finding">
+            <header>
+              <span class="badge badge-sev-medium">medium</span>
+              <h3 class="finding-title">“Bài nổi bật” chưa có nguồn; “Xem tất cả” chưa có đích</h3>
+              <span class="finding-location">EXPERIENCE L31 L154; DESIGN L193</span>
+            </header>
+            <div class="finding-note">"Bài nổi bật" chưa có nguồn: schema không có trường featured, spine không nói lấy bài mới nhất, ghim hay gì khác (EXPERIENCE L31, L154; DESIGN L193). Link "Xem tất cả" của khu Xem nhiều và Mới cập nhật cũng chưa có đích (L31 chỉ có <code>/meo-vat</code>, <code>/gom-link</code>, không có route "mọi bài").</div>
+            <div class="finding-fix"><strong>Fix:</strong> chốt quy tắc chọn, ví dụ "bài đã xuất bản mới nhất có ảnh", và đích của từng link "Xem tất cả".</div>
+          </article>
+          <article class="finding">
+            <header>
+              <span class="badge badge-sev-medium">medium</span>
+              <h3 class="finding-title">Chưa có trạng thái ảnh lỗi tải</h3>
+              <span class="finding-location"></span>
+            </header>
+            <div class="finding-note">Chưa có trạng thái ảnh lỗi tải: ảnh Sản phẩm/Banner từ host ngoài (Shopee CDN) hỏng hoặc bị gỡ, trên ProductCard / PostCard / Banner.</div>
+            <div class="finding-fix"><strong>Fix:</strong> fallback là khung <code>{colors.surface-container}</code> cùng tỉ lệ + icon, alt giữ nguyên.</div>
+          </article>
+          <article class="finding">
+            <header>
+              <span class="badge badge-sev-low">low</span>
+              <h3 class="finding-title">Thiếu vài trạng thái tìm kiếm / sao chép / chia sẻ</h3>
+              <span class="finding-location">EXPERIENCE L112 L117</span>
+            </header>
+            <div class="finding-note">Còn thiếu vài trạng thái: tìm kiếm khi mới gõ 1 ký tự (dưới ngưỡng 2), sao chép link thất bại (clipboard bị chặn), người dùng huỷ <code>navigator.share</code> (EXPERIENCE L112, L117).</div>
+            <div class="finding-fix"><strong>Fix:</strong> thêm ba dòng vào State Patterns.</div>
+          </article>
+          <article class="finding">
+            <header>
+              <span class="badge badge-sev-low">low</span>
+              <h3 class="finding-title">CMS chưa xử lý mất mạng hoặc Basic Auth hỏi lại khi gửi form</h3>
+              <span class="finding-location"></span>
+            </header>
+            <div class="finding-note">CMS chưa nói gì về mất mạng hoặc Basic Auth hỏi lại khi đang gửi form (NFR-2 "không mất dữ liệu").</div>
+            <div class="finding-fix"><strong>Fix:</strong> một dòng: giữ dữ liệu form, Toast "Chưa gửi được, kiểm tra mạng rồi thử lại".</div>
+          </article>
+        </div>
+      </details>
+    </section>
+
+    <section class="dimension">
+      <details>
+        <summary>
+          <h2>5. Độ phủ tham chiếu hình ảnh (Visual reference coverage)</h2>
+          <span class="verdict-pill verdict-strong">strong</span>
+        </summary>
+        <div class="dim-body">
+          <div class="dim-judgment">
+            <p>Tệp trong <code>imports/stitch/</code>: 7 <code>.html</code>, 7 <code>.png</code>, <code>ds-warm-editorial-living.{json,md}</code>, <code>ds-botanical-living-editorial.{json,md}</code>, <code>project-DESIGN.md</code>. Không có <code>mockups/</code> hay <code>wireframes/</code>. Cả 7 HTML đều được dẫn inline ở IA (EXPERIENCE L31–36) và cột Mockup (DESIGN L239–261), có nói rõ minh hoạ gì, kể cả màn "chi tiết danh mục" = trạng thái bio đã lọc. Botanical được ghi rõ là không dùng. Câu "spine thắng" có ở cả hai file và nhất quán.</p>
+          </div>
+        </div>
+        <div class="findings-list">
+          <article class="finding">
+            <header>
+              <span class="badge badge-sev-low">low</span>
+              <h3 class="finding-title">ds-warm-editorial-living.md và .png chỉ được nhắc chung chung</h3>
+              <span class="finding-location">DESIGN L163</span>
+            </header>
+            <div class="finding-note"><code>ds-warm-editorial-living.md</code> chỉ có trong <code>sources</code> của frontmatter, không được nhắc trong thân bài; file <code>.png</code> chỉ được nhắc chung một câu (DESIGN L163).</div>
+            <div class="finding-fix"><strong>Fix:</strong> nhắc một lần trong Colors hoặc bỏ khỏi <code>sources</code>.</div>
+          </article>
+          <article class="finding">
+            <header>
+              <span class="badge badge-sev-low">low</span>
+              <h3 class="finding-title">Một số tham chiếu mockup chưa cụ thể</h3>
+              <span class="finding-location">DESIGN L242–246</span>
+            </header>
+            <div class="finding-note">Một số tham chiếu chưa cụ thể: SiteFooter "các màn mobile", PostTypeBadge "mọi màn", glob <code>trang-chu-<em></code>. ProductCard dẫn <code>chi-tiet-danh-muc-</em></code>, màn có giá gạch và sao (đã bị loại) (DESIGN L242–246).</div>
+            <div class="finding-fix"><strong>Fix:</strong> nêu tên file cụ thể và chỉ rõ phần nào là chuẩn ("chỉ bố cục ảnh–tên–giá").</div>
+          </article>
+        </div>
+      </details>
+    </section>
+
+    <section class="dimension">
+      <details>
+        <summary>
+          <h2>6. Thừa &amp; đặc tả quá mức (Bloat &amp; overspecification)</h2>
+          <span class="verdict-pill verdict-adequate">adequate</span>
+        </summary>
+        <div class="dim-body">
+          <div class="dim-judgment">
+            <p>DESIGN giữ giọng biên tập vừa phải, mỗi đoạn đều gắn với một quyết định. EXPERIENCE gần như toàn bảng, không có văn kể trang trí. Phần Foundation nhắc lại ràng buộc AD-7/AD-12 nhưng có ích vì đó là ràng buộc UX trực tiếp.</p>
+          </div>
+        </div>
+        <div class="findings-list">
+          <article class="finding">
+            <header>
+              <span class="badge badge-sev-medium">medium</span>
+              <h3 class="finding-title">Nhãn [ASSUMPTION] và status: draft dù đã được duyệt</h3>
+              <span class="finding-location">memlog L21–22</span>
+            </header>
+            <div class="finding-note">Nhãn <code>[ASSUMPTION]</code> rải khoảng 25 chỗ, dòng L306 vẫn ghi "Giả định khác <strong>cần duyệt</strong>", và cả hai file đều <code>status: draft</code>, trong khi memlog L21–22 ghi Vinh đã duyệt toàn bộ và bỏ Reviewer Gate. Agent story-dev sẽ hiểu đây là quyết định chưa chốt.</div>
+            <div class="finding-fix"><strong>Fix:</strong> đổi tiêu đề thành "Giả định đã duyệt (2026-11-04)", sửa L306, đặt <code>status: final</code> sau khi xử lý các mục high; có thể đổi nhãn thành <code>[ĐÃ DUYỆT]</code>.</div>
+          </article>
+          <article class="finding">
+            <header>
+              <span class="badge badge-sev-low">low</span>
+              <h3 class="finding-title">Danh sách phần Stitch bị loại lặp ở ba nơi</h3>
+              <span class="finding-location"></span>
+            </header>
+            <div class="finding-note">Danh sách phần Stitch bị loại lặp ở ba nơi: DESIGN Do's L272/L277, EXPERIENCE Inspiration L238, <code>reconcile-stitch.md</code> §3a. Ba bản có thể lệch nhau dần.</div>
+            <div class="finding-fix"><strong>Fix:</strong> giữ danh sách đủ ở DESIGN Do's and Don'ts; EXPERIENCE chỉ dẫn tới đó.</div>
+          </article>
+        </div>
+      </details>
+    </section>
+
+    <section class="dimension">
+      <details>
+        <summary>
+          <h2>7. Kỷ luật kế thừa (Inheritance discipline)</h2>
+          <span class="verdict-pill verdict-adequate">adequate</span>
+        </summary>
+        <div class="dim-body">
+          <div class="dim-judgment">
+            <p>Đã kiểm: mọi đường dẫn trong <code>sources</code> đều tồn tại. Tên UJ-1..UJ-4 khớp nguyên văn PRD. Thuật ngữ PRD §3 (Bộ nội dung, Gợi ý AI, Hồ sơ nghiên cứu, Góc viết, Người đọc mục tiêu, Bình luận kèm link, Giá tham khảo, Trang bio, Loại bài) dùng đúng. Trạng thái khớp PRD/AD-18. Tham chiếu token trong EXPERIENCE (<code>{spacing.touch-target}</code>, <code>{colors.primary}</code>) đều có trong DESIGN.</p>
+          </div>
+        </div>
+        <div class="findings-list">
+          <article class="finding">
+            <header>
+              <span class="badge badge-sev-medium">medium</span>
+              <h3 class="finding-title">Ý nghĩa màu tự mâu thuẫn giữa bảng màu và CMS</h3>
+              <span class="finding-location"></span>
+            </header>
+            <div class="finding-note">Ý nghĩa màu tự mâu thuẫn trong DESIGN: <code>tertiary-fixed</code> (Gom link) ghi "Không dùng cho: cảnh báo" (L177) nhưng RiskWarning và trạng thái "chờ duyệt" lại dùng chính nó (L262). <code>secondary-container</code> (Mẹo vặt) ghi "Không dùng cho: trạng thái thành công" (L176) nhưng "đã duyệt / đã đăng" dùng nó (L262).</div>
+            <div class="finding-fix"><strong>Fix:</strong> giới hạn cột "Không dùng cho" trong site public, hoặc cho CMS cặp token riêng.</div>
+          </article>
+          <article class="finding">
+            <header>
+              <span class="badge badge-sev-medium">medium</span>
+              <h3 class="finding-title">Route phân trang Loại bài không có trong Architecture</h3>
+              <span class="finding-location">EXPERIENCE L34</span>
+            </header>
+            <div class="finding-note">Route <code>/meo-vat/trang/[n]</code>, <code>/gom-link/trang/[n]</code> (EXPERIENCE L34) không có trong cây route của Architecture (Structural Seed chỉ có <code>[danh-muc]/trang/[n]</code>; AD-7). Pagination L115 cũng chỉ mô tả mẫu Danh mục.</div>
+            <div class="finding-fix"><strong>Fix:</strong> hoặc bỏ phân trang Loại bài, hoặc đánh dấu là thay đổi cần cập nhật Arch và viết quy tắc đường dẫn cho cả hai loại.</div>
+          </article>
+          <article class="finding">
+            <header>
+              <span class="badge badge-sev-medium">medium</span>
+              <h3 class="finding-title">Định dạng ngày cập nhật giá không thống nhất</h3>
+              <span class="finding-location">DESIGN L246; EXPERIENCE L80; EXPERIENCE L272</span>
+            </header>
+            <div class="finding-note">Định dạng ngày cập nhật giá không thống nhất: "cập nhật dd/mm" (DESIGN L246), "cập nhật 12/10" (EXPERIENCE L80), "cập nhật hôm qua" (EXPERIENCE L272).</div>
+            <div class="finding-fix"><strong>Fix:</strong> chốt một cách; nếu dùng thời gian tương đối thì ghi rõ nó đi qua <code>relative-time.client.tsx</code> (AD-27) và có fallback tuyệt đối.</div>
+          </article>
+          <article class="finding">
+            <header>
+              <span class="badge badge-sev-low">low</span>
+              <h3 class="finding-title">Tên component lệch nhau giữa spine, frontmatter và AD-18</h3>
+              <span class="finding-location">EXPERIENCE L143</span>
+            </header>
+            <div class="finding-note">Tên component lệch nhau: GeneratingIndicator (spine) và <code>generating-poller.client.tsx</code> (AD-18); "Form CMS" chỉ có ở EXPERIENCE L143; key frontmatter <code>affiliate-link-button</code> / <code>toc</code> khác tên AffiliateLink / TableOfContents.</div>
+            <div class="finding-fix"><strong>Fix:</strong> ghi ánh xạ tên, hoặc nêu GeneratingIndicator bọc poller của AD-18.</div>
+          </article>
+          <article class="finding">
+            <header>
+              <span class="badge badge-sev-low">low</span>
+              <h3 class="finding-title">Thứ tự các khu Trang chủ khác nhau giữa IA và Responsive</h3>
+              <span class="finding-location"></span>
+            </header>
+            <div class="finding-note">Thứ tự các khu trên Trang chủ khác nhau: IA (L31) đặt Xem nhiều trước dải Gom link, Responsive (L227) đặt Gom link trước Xem nhiều.</div>
+            <div class="finding-fix"><strong>Fix:</strong> để Responsive làm nguồn duy nhất cho thứ tự; IA chỉ liệt kê.</div>
+          </article>
+        </div>
+      </details>
+    </section>
+
+    <section class="dimension">
+      <details>
+        <summary>
+          <h2>8. Độ khớp khuôn (Shape fit)</h2>
+          <span class="verdict-pill verdict-strong">strong</span>
+        </summary>
+        <div class="dim-body">
+          <div class="dim-judgment">
+            <p>DESIGN đúng thứ tự chuẩn: Brand &amp; Style → Colors → Typography → Layout &amp; Spacing → Elevation &amp; Depth → Shapes → Components → Do's and Don'ts. EXPERIENCE có đủ mục mặc định (Foundation, IA, Voice and Tone, Component Patterns, State Patterns, Interaction Primitives, Accessibility Floor, Key Flows). Có thêm Responsive &amp; Platform (cần, vì có nhiều breakpoint) và Inspiration &amp; Anti-patterns (xứng đáng, vì ghi lại các phần bị loại khỏi Stitch). Tách subsection Site public / CMS rõ ràng.</p>
+          </div>
+        </div>
+        <div class="findings-list">
+          <article class="finding">
+            <header>
+              <span class="badge badge-sev-low">low</span>
+              <h3 class="finding-title">Mục “Giả định cần duyệt” không còn câu hỏi mở</h3>
+              <span class="finding-location"></span>
+            </header>
+            <div class="finding-note">Mục tự thêm "Open Questions / Giả định cần duyệt" không còn câu hỏi nào mở, nên tên mục gây hiểu nhầm (xem finding medium ở mục 6).</div>
+            <div class="finding-fix"><strong>Fix:</strong> đổi tên thành "Giả định đã chốt".</div>
+          </article>
+          <article class="finding">
+            <header>
+              <span class="badge badge-sev-low">low</span>
+              <h3 class="finding-title">Frontmatter EXPERIENCE thiếu name; sources không thống nhất</h3>
+              <span class="finding-location"></span>
+            </header>
+            <div class="finding-note">Frontmatter EXPERIENCE không có <code>name</code> (các ví dụ đều có); <code>sources</code> của DESIGN không có <code>addendum.md</code> trong khi EXPERIENCE có.</div>
+            <div class="finding-fix"><strong>Fix:</strong> thêm <code>name: Mẹo Vặt Cuộc Sống</code> và thống nhất danh sách sources.</div>
+          </article>
+        </div>
+      </details>
+    </section>
+
+    <div class="mechanical">
+      <h3>Ghi chú kỹ thuật (Mechanical notes)</h3>
+      <ul>
+        <li><strong>Cross-ref:</strong> 71 tham chiếu <code>{colors|typography|rounded|spacing|components.*}</code> duy nhất trong hai file, tất cả đều trỏ đúng. Không có tham chiếu gãy. <code>button-primary</code> có định nghĩa nhưng thân bài không nhắc tới (không hại gì).</li>
+        <li><strong>YAML:</strong> frontmatter của cả hai file parse được (PyYAML). DESIGN dùng inline flow map và comment <code>(S)/(A)</code>, hợp lệ.</li>
+        <li><strong>Frontmatter:</strong> DESIGN có <code>name</code>, <code>description</code> và đủ khối token; EXPERIENCE thiếu <code>name</code>. Cả hai đều <code>status: draft</code>, cần đổi khi chốt.</li>
+        <li><strong>Tên lệch:</strong> GeneratingIndicator ↔ GeneratingPoller (AD-18); "Đồ hay" ↔ "Trang bio" (đã duyệt, chỉ là nhãn điều hướng); <code>affiliate-link-button</code> ↔ AffiliateLink; <code>toc</code> ↔ TableOfContents.</li>
+        <li><strong>Mâu thuẫn số liệu:</strong> "4 SuggestionCard" ↔ AD-19/FR-17; chiều cao 36px ↔ touch-target 44px; định dạng ngày giá (3 kiểu).</li>
+        <li><strong>Route:</strong> <code>/meo-vat/trang/[n]</code>, <code>/gom-link/trang/[n]</code> không có trong Structural Seed của Arch.</li>
+        <li><strong>Mermaid:</strong> không có sơ đồ nào; không cần kiểm.</li>
+        <li><strong>Tương phản:</strong> tính lại khớp với số trong DESIGN L184 (sai lệch ≤ 0.02).</li>
+      </ul>
+    </div>
+
+    <footer class="report-footer">
+      <div class="meta">
+        <span>Rubric: _bmad-output/planning-artifacts/ux-designs/ux-affiliate-project-2026-11-03/review-rubric.md</span>
+        <span>Generated: 2026-11-04</span>
+      </div>
+    </footer>
+  </div>
+</body>
+</html>
