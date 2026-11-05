@@ -189,7 +189,7 @@ Nguồn: `docs/01-app/03-api-reference/03-file-conventions/error.md`, `not-found
 
 | URL | File | Chế độ | Ghi chú |
 | --- | --- | --- | --- |
-| (mọi trang) | `app/layout.tsx` | Tĩnh | Root layout: font, `ThemeProvider`, `Toaster`, `metadata` gốc — `app/layout.tsx:14-23` |
+| (mọi trang) | `app/layout.tsx` | Tĩnh | Root layout: font, `Toaster`, `metadata` gốc — `app/layout.tsx:13-22` |
 | `/`, `/[category]`, `/bai-viet/[slug]` | `app/(site)/layout.tsx` | **Tĩnh hoàn toàn** | Route group `(site)` không thêm segment URL; `ensureStatic = "navigation"` — `app/(site)/layout.tsx:4-6` |
 | `/` | `app/(site)/page.tsx` | Tĩnh | 3 truy vấn cached song song — `app/(site)/page.tsx:11-15` |
 | `/meo-vat`, `/gom-link` | `app/(site)/[category]/page.tsx` | Tĩnh | `generateStaticParams` từ hằng `CATEGORIES` — `:7-9`; slug lạ → `notFound()` — `:24` |

@@ -1,17 +1,25 @@
 import Link from "next/link";
 import { Suspense } from "react";
 import { connection } from "next/server";
-import { ChevronRight } from "lucide-react";
-import { CategoryBadge } from "@/components/site/category-badge";
-import { StatusBadge } from "@/components/cms/status-badge";
-import { Skeleton } from "@/components/ui/skeleton";
+import { ChevronRight, Plus } from "lucide-react";
 import { db } from "@/platform/db";
 import { formatDate } from "@/platform/format";
+import { CategoryBadge } from "@/components/site/category-badge";
+import { StatusBadge } from "@/components/cms/status-badge";
+import { buttonVariants } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
+import { cn } from "@/components/ui/lib/utils";
 
 export default function CmsHome() {
   return (
     <>
       <h1 className="mb-4 text-2xl">Bài viết</h1>
+      <Link
+        href="/cms/new"
+        className={cn(buttonVariants({ size: "lg" }), "mb-4 min-h-touch-target w-full lg:min-h-0 lg:w-auto")}
+      >
+        <Plus /> Tạo bài web
+      </Link>
       <Suspense fallback={<ListSkeleton />}>
         <PostList />
       </Suspense>
@@ -29,7 +37,7 @@ async function PostList() {
   if (posts.length === 0) {
     return (
       <p className="rounded-md bg-background p-6 text-center text-muted-foreground">
-        Chưa có bài nào. Bấm <Link href="/cms/new" className="font-semibold text-primary">Tạo mới</Link> để bắt đầu.
+        Chưa có bài nào. Bấm <Link href="/cms/new" className="font-semibold text-primary">Tạo bài web</Link> để bắt đầu.
       </p>
     );
   }

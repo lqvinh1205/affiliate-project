@@ -45,7 +45,7 @@ Mỗi hạng mục một dòng; không có thì ghi "không có":
 | Query | `queries.ts`, `cms-queries.ts`; query module khác gọi tới (AD-2) | xoá / sửa |
 | Prompt AI | `modules/<m>/prompts/*.prompt.ts`; `lib/ai.ts` (code cũ) | xoá |
 | `kind` của Gợi ý AI | enum `kind` của `Suggestion`, bảng đích AD-19 | xem Bước 4 |
-| Điều hướng | bottom nav CMS, nav site, footer | gỡ mục |
+| Điều hướng | `NAV_ITEMS` của CmsShell (`app/cms/_components/cms-shell.client.tsx`), nav site, footer | gỡ mục |
 | Sitemap, robots | `app/sitemap.ts`, `app/robots.ts` | gỡ URL |
 | Slug dành riêng | `RESERVED_ROOT_SLUGS` trong `platform/slug.ts` (AD-20) | gỡ khi xoá thư mục gốc `app/(site)` |
 | Cache tag | `tags.ts`, mọi `cacheTag`/`updateTag` dùng tag đó | gỡ |

@@ -23,7 +23,7 @@ Code cũ chờ chuyển (bảng ở `docs/cong-thuc/chuyen-code-cu.md`), không 
 
 - `components/site/` — component của site public, đa số là Server Component (`components/site/post-card.tsx`, `components/site/product-card.tsx`).
 - `components/cms/` — form và widget CMS, đa số `"use client"` (`components/cms/post-editor.tsx:1`, `components/cms/fields.tsx:1`).
-- `components/` gốc — `components/json-ld.tsx`, `components/theme-toggle.tsx`.
+- `components/` gốc — `components/json-ld.tsx`.
 - Component CMS cũ dùng component site cũ (`app/cms/page.tsx:5` dùng `CategoryBadge`).
 
 ### [QU-02] Route group và nơi đặt route
@@ -56,7 +56,7 @@ Hạ tầng chung ở `platform/` theo cây Structural Seed của spine: mỗi f
 
 Import chéo thư mục bằng `@/` (`tsconfig.json:21-23`), ví dụ `app/cms/actions.ts:5-21`. Không import `../`: ESLint chặn trong `modules/**`, `platform/**`, `components/shared|ui/**` và `app/**` trừ file trong `LEGACY_APP_FILES`, để luật tầng kiểm được (`eslint.config.mjs:49`). `lib/**`, `components/site|cms/**`, `components/*.tsx` gốc không có luật ranh giới; "không file mới ở `lib/`" chỉ được giữ bằng review. Ngoại lệ đang có:
 
-- Import file cùng thư mục bằng `./`: `components/cms/post-editor.tsx:15-17`, `components/site/site-header.tsx:3-4` (code cũ).
+- Import file cùng thư mục bằng `./`: `components/cms/post-editor.tsx:15-17`, `components/site/mobile-nav.tsx:8` (code cũ).
 - File chạy ngoài Next dùng đường dẫn tương đối: `next.config.ts:2`, `prisma/seed.ts:3`.
 - `components/ui/*` import `cn` thẳng từ package `cn` (`components/ui/button.tsx:3`); code tự viết import `cn` từ `@/components/ui/lib/utils` (`components/site/category-badge.tsx:1`) — `[NO-22]`.
 
@@ -84,7 +84,7 @@ Action trả `Result<T>` = `({ ok: true } & T) | { ok: false; error: string }` (
 ### [QU-11] Props typed inline, dùng kiểu route toàn cục của Next 16
 
 - Props component khai báo inline trong tham số (`components/cms/seo-score.tsx:3`), tách `type XxxData` chỉ khi cần export (`components/site/post-card.tsx:6-13`).
-- Page/layout dùng kiểu toàn cục `PageProps<"/route">` và `LayoutProps<"/route">`, `params` là Promise phải `await` (`app/(site)/[category]/page.tsx:11-12`, `app/layout.tsx:25`, `app/cms/posts/[id]/page.tsx:15-16`).
+- Page/layout dùng kiểu toàn cục `PageProps<"/route">` và `LayoutProps<"/route">`, `params` là Promise phải `await` (`app/(site)/[category]/page.tsx:11-12`, `app/layout.tsx:24`, `app/cms/posts/[id]/page.tsx:15-16`).
 
 ### [QU-12] Optional: DB là `null`, form là `""`
 
@@ -134,7 +134,7 @@ Không comment diễn giải lại dòng code. Chia khối lớn trong một fil
 
 ### [QU-16] Chuỗi UI tiếng Việt có dấu
 
-Mọi chữ hiển thị, `aria-label`, `toast`, `confirm`, metadata viết tiếng Việt có dấu: `aria-label="Xóa sản phẩm"` (`components/cms/fields.tsx:76`), `aria-label="Đổi giao diện sáng/tối"` (`components/theme-toggle.tsx:13`), `toast.success("Đã lưu")` (`components/cms/post-editor.tsx:66`), `confirm("Xóa vĩnh viễn bài viết này?")` (`:79`). `<html lang="vi">` (`app/layout.tsx:28`). Chuỗi viết thẳng trong JSX, không có lớp i18n.
+Mọi chữ hiển thị, `aria-label`, `toast`, `confirm`, metadata viết tiếng Việt có dấu: `aria-label="Xóa sản phẩm"` (`components/cms/fields.tsx:76`), `aria-label="Mở menu"` (`app/cms/_components/cms-shell.client.tsx`), `toast.success("Đã lưu")` (`components/cms/post-editor.tsx:66`), `confirm("Xóa vĩnh viễn bài viết này?")` (`:79`). `<html lang="vi">` (`app/layout.tsx:26`). Chuỗi viết thẳng trong JSX, không có lớp i18n.
 
 ## Định dạng và lint
 
@@ -178,11 +178,11 @@ Hiển thị ngày bằng `formatDate()` (`@/platform/format`, `platform/format.
 
 ### [QU-23] Màu theo Loại bài qua token Tailwind
 
-Màu Loại bài dùng token `text-meo-vat`, `text-gom-link`, `bg-meo-vat-soft` (khai báo `app/globals.css:13-16`), map bằng `Record<CategoryKey, string>` (`components/site/category-badge.tsx:4-7`). Ghép class bằng `cn()` (`components/cms/status-badge.tsx:6-9`). Không dùng mã màu cứng trong JSX (ngoại lệ: CSS nội tuyến của iframe xem trước, `components/cms/post-editor.tsx:176`).
+Màu Loại bài dùng token DESIGN.md: badge Mẹo vặt `bg-secondary-container text-on-secondary-container`, badge Gom link `bg-tertiary-fixed text-on-tertiary-fixed` (khai báo `app/globals.css`, `[GD-07]`), map bằng `Record<CategoryKey, string>` (`components/site/category-badge.tsx:4-7`). `meo-vat*`/`gom-link*` chỉ là alias cũ cho component chưa chuyển; không dùng mới. Ghép class bằng `cn()` (`components/cms/status-badge.tsx:6-9`). Không dùng mã màu cứng trong JSX (ngoại lệ: CSS nội tuyến của iframe xem trước, `components/cms/post-editor.tsx:176`).
 
 ### [QU-24] Component client tối thiểu
 
-`"use client"` chỉ đặt ở component cần state/hook (`components/cms/*` form, `components/site/mobile-nav.tsx:1`, `components/theme-toggle.tsx:1`). Page luôn là Server Component, truyền dữ liệu qua props. Hook đọc dữ liệu runtime như `usePathname()` phải nằm trong `Suspense` vì `cacheComponents` (`components/cms/bottom-nav.tsx:9-16`).
+`"use client"` chỉ đặt ở component cần state/hook (`components/cms/*` form, `components/site/mobile-nav.tsx:1`, `app/cms/_components/cms-shell.client.tsx:1`). Page luôn là Server Component, truyền dữ liệu qua props. Hook đọc dữ liệu runtime như `usePathname()` phải nằm trong `Suspense` vì `cacheComponents` (`WithPathname` trong `app/cms/_components/cms-shell.client.tsx`).
 
 ### [QU-25] Thứ tự Sản phẩm theo vị trí mảng
 

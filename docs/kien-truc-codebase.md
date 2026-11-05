@@ -123,8 +123,8 @@ Không tạo file mới ở đây (Policy trong `AGENTS.md`, spine AD-17). Vị 
 
 | File | Sở hữu | Ai gọi / phụ thuộc |
 |---|---|---|
-| `app/layout.tsx` | Root layout: font Be Vietnam Pro, `metadata` gốc (`metadataBase`, title template, OpenGraph `vi_VN`), `ThemeProvider`, `Toaster` | Next.js; dùng `platform/site.ts` |
-| `app/globals.css` | Tailwind 4, token màu (`--meo-vat`, `--gom-link`), plugin typography, biến thể `dark` | `app/layout.tsx` |
+| `app/layout.tsx` | Root layout: font Be Vietnam Pro, `metadata` gốc (`metadataBase`, title template, OpenGraph `vi_VN`), `Toaster` (sáng/tối theo hệ điều hành, không provider) | Next.js; dùng `platform/site.ts` |
+| `app/globals.css` | Tailwind 4, token DESIGN.md (màu sáng/tối, bo góc, spacing, typography, elevation), alias shadcn và alias cũ `meo-vat*`/`gom-link*`, plugin typography, biến thể `dark` theo `prefers-color-scheme` | `app/layout.tsx`; `platform/design-tokens.ts` đọc màu |
 | `app/robots.ts` | `robots.txt`: chặn `/cms`, `/api/` | Next.js |
 | `app/sitemap.ts` | `sitemap.xml`: trang chủ, 2 trang Loại bài, mọi bài đã xuất bản | `getPublishedSlugs()` |
 | `app/(site)/layout.tsx` | Header/footer site; `ensureStatic = "navigation"` bắt toàn bộ route public phải tĩnh (`:4-6`) | mọi trang trong `(site)` |

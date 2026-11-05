@@ -70,7 +70,7 @@ Quyết định chỉ là `dùng lại`, `mở rộng qua props` hoặc `tạo m
 3. `service.ts`, rồi `actions.ts` theo đường ghi AD-6: `run()` → `safeParse` → `service` → `updateTag`.
 4. `queries.ts` (public, có cache, AD-7) hoặc `cms-queries.ts` (CMS, không cache, đọc trong `<Suspense>`).
 5. Component của module, rồi `_components/<x>-screen.tsx`, rồi `page.tsx` mỏng (AD-12).
-6. Nối điều hướng: bottom nav CMS hoặc nav site nếu là màn chính; `app/sitemap.ts` nếu là trang public được index.
+6. Nối điều hướng: mục `NAV_ITEMS` của CmsShell (`app/cms/_components/cms-shell.client.tsx`, đúng thứ tự IA) hoặc nav site nếu là màn chính; `app/sitemap.ts` nếu là trang public được index.
 
 ## Bước 4: Kiểm chứng
 

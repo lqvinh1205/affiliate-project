@@ -43,9 +43,10 @@ Dòng ghi **Đã chuyển** là lịch sử của epic nền: file cũ không c�
 | `components/site/affiliate-disclosure.tsx` | `modules/products/components/` | AD-11 |
 | `components/site/product-card.tsx` | `modules/products/components/` (link qua `AffiliateLink`) | AD-11 |
 | `components/site/post-card.tsx` | `modules/posts/components/` | AD-11 (hiển thị một thực thể) |
-| `components/site/site-header.tsx`, `site-footer.tsx`, `mobile-nav.tsx`, `nav-links.tsx`, `section-heading.tsx`, `components/json-ld.tsx` | `app/(site)/_components/` (hiện chỉ site dùng, ngoài `/cms/styleguide`) | AD-11 |
-| `components/theme-toggle.tsx` | `components/shared/theme-toggle.client.tsx` (site header và `/cms/styleguide` cùng dùng) | AD-11 |
-| `components/cms/bottom-nav.tsx` | `app/cms/_components/` | AD-11 |
+| `components/site/site-header.tsx` | **Đã chuyển một phần** (story 2.1): `app/(site)/_components/site-header.tsx`; vẫn import `components/site/mobile-nav`, `nav-links` nên còn trong `LEGACY_APP_FILES` | AD-11 |
+| `components/site/site-footer.tsx`, `mobile-nav.tsx`, `nav-links.tsx`, `section-heading.tsx`, `components/json-ld.tsx` | `app/(site)/_components/` (hiện chỉ site dùng, ngoài `/cms/styleguide`) | AD-11 |
+| `components/theme-toggle.tsx` | **Đã xoá** (story 2.1): sáng/tối theo hệ điều hành, không có nút đổi tay (UX-DR2) | UX-DR2 |
+| `components/cms/bottom-nav.tsx` | **Đã xoá** (story 2.1): thay bằng `app/cms/_components/cms-shell.client.tsx` | AD-11, UX-DR38 |
 | `components/site/category-badge.tsx` | `modules/posts/components/post-type-badge.tsx` | AD-11, `[NO-20]` |
 | `components/cms/status-badge.tsx` | `modules/posts/components/post-status-badge.tsx` | AD-11 |
 | `components/cms/post-editor.tsx`, `new-post-form.tsx` | `modules/posts/components/post-form.client.tsx`, `new-post-form.client.tsx` | AD-11 (form của thực thể) |

@@ -20,16 +20,18 @@ const AD9_TARGETS = ["posts", "products", "content-sets", "research"];
 // File cũ được miễn luật `app/**` (import `@/lib/*`, `@/components/site|cms/*`, `@/platform/db`).
 // Chuyển file nào sang cấu trúc mới thì bỏ nó khỏi danh sách (AD-17). Không dùng glob.
 const LEGACY_APP_FILES = [
+  // Chuyển ở story 2.1; còn import `@/components/site/{mobile-nav,nav-links}` chưa chuyển.
+  "app/(site)/_components/site-header.tsx",
   "app/(site)/[category]/page.tsx",
   "app/(site)/bai-viet/[slug]/page.tsx",
   "app/(site)/layout.tsx",
   "app/(site)/page.tsx",
   "app/cms/actions.ts",
-  "app/cms/layout.tsx",
   "app/cms/new/page.tsx",
   "app/cms/page.tsx",
   "app/cms/posts/[id]/page.tsx",
-  "app/cms/styleguide/page.tsx",
+  // Mẫu component cũ (`@/components/site|cms/*`) cho styleguide; bỏ khi các component đó chuyển.
+  "app/cms/styleguide/_components/styleguide-screen.tsx",
   "app/sitemap.ts",
 ];
 

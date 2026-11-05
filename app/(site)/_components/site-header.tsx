@@ -1,7 +1,6 @@
 import Link from "next/link";
-import { ThemeToggle } from "@/components/theme-toggle";
-import { MobileNav } from "./mobile-nav";
-import { NAV_LINKS } from "./nav-links";
+import { MobileNav } from "@/components/site/mobile-nav";
+import { NAV_LINKS } from "@/components/site/nav-links";
 
 export function SiteHeader() {
   return (
@@ -17,10 +16,7 @@ export function SiteHeader() {
             </Link>
           ))}
         </nav>
-        <div className="flex items-center">
-          <ThemeToggle />
-          <MobileNav />
-        </div>
+        <MobileNav />
       </div>
     </header>
   );

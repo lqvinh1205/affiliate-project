@@ -229,7 +229,7 @@ export const IMAGE_HOSTS = ["down-vn.img.susercontent.com", "cf.shopee.vn"];
 ### [BM-16] Quyền riêng tư người đọc (NFR-7)
 
 - **NFR-7:** "không thu thập dữ liệu cá nhân của người đọc. Lượt xem và Lượt tim chỉ dùng định danh ẩn danh tối thiểu để chống trùng." FR-33 nhắc lại: "Không lưu dữ liệu định danh người đọc."
-- Hiện trạng đã kiểm bằng `grep`: site public không có analytics, cookie hay `localStorage` do code ứng dụng đặt, không có pixel. Chỉ `next-themes` (`app/layout.tsx:33`) lưu lựa chọn sáng/tối trong `localStorage` của trình duyệt — không gửi về server. Ảnh public đi qua `next/image` (được tối ưu và phục vụ từ domain của site); thân bài không còn `<img>` ([BM-08]).
+- Hiện trạng đã kiểm bằng `grep`: site public không có analytics, cookie hay `localStorage` do code ứng dụng đặt, không có pixel. Sáng/tối theo `prefers-color-scheme` của hệ điều hành, không lưu gì ở trình duyệt. Ảnh public đi qua `next/image` (được tối ưu và phục vụ từ domain của site); thân bài không còn `<img>` ([BM-08]).
 - Quy tắc khi thêm tính năng tương tác (Dự kiến FR-33, FR-35): không lưu IP, User-Agent đầy đủ, email hay id tài khoản bên thứ ba; không thêm script bên thứ ba; định danh chống trùng chỉ là giá trị ngẫu nhiên ẩn danh hoặc băm có muối và có hạn dùng.
 
 ## Công thức
