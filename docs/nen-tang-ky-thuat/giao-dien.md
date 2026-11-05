@@ -80,7 +80,7 @@ Liên quan: Next.js (`docs/nen-tang-ky-thuat/nextjs-16.md`: caching `[NX-01]`–
 - `next.config.ts:5-8`: `images.remotePatterns` sinh từ `IMAGE_HOSTS` (`lib/images.ts:3`: `down-vn.img.susercontent.com`, `cf.shopee.vn`, `*.supabase.co`).
 - `app/(site)/layout.tsx:6`: `ensureStatic = "navigation"` cho mọi trang public.
 - `app/cms/layout.tsx:11`: `maxDuration = 60` (gọi AI mất 20–40 giây); `metadata.robots` noindex (dòng 5-8).
-- `proxy.ts:12-14`: Basic auth chặn `/cms/:path*` **và** `/api/:path*`.
+- `proxy.ts`: Basic auth chặn `/cms`, `/cms/*` (trừ `/cms/upload`, tự `requireAdmin()` — AD-24) **và** `/api/:path*`.
 
 ### [GD-07] Design token
 

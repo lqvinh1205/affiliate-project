@@ -52,7 +52,7 @@ flowchart LR
     RA -->|có| Z[Zod safeParse] --> S[sanitize] --> DB[(Postgres)]
 ```
 
-- Lớp 1, `proxy.ts` (Next 16 đổi tên `middleware` thành Proxy, chạy Node.js runtime — `proxy.md:255`): chặn **trang** `/cms/:path*` và `/api/:path*` (`proxy.ts:12-14`), trả 401 để trình duyệt hiện hộp đăng nhập.
+- Lớp 1, `proxy.ts` (Next 16 đổi tên `middleware` thành Proxy, chạy Node.js runtime — `proxy.md:255`): chặn **trang** `/cms`, `/cms/*` trừ đúng `/cms/upload`, và `/api/:path*` (`proxy.ts`; `/cms/upload` tự `requireAdmin()` theo AD-24), trả 401 để trình duyệt hiện hộp đăng nhập.
 - Lớp 2, `requireAdmin()` (`lib/require-admin.ts:5-9`): kiểm lại header `authorization` **bên trong** mỗi action. Đây là lớp bắt buộc. Tài liệu Next: Server Function "are handled as POST requests to the route where they are used, so a Proxy matcher that excludes a path will also skip Server Function calls on that path" và "Always verify authentication and authorization inside each Server Function rather than relying on Proxy alone" (`proxy.md:249-251`; `data-security.md:281-291`).
 - Trình duyệt tự gửi lại header Basic Auth cho request cùng origin sau khi đăng nhập, nên action gọi từ trang CMS mang theo credentials.
 - CSRF: Server Action chỉ nhận POST và Next so `Origin` với `Host`/`X-Forwarded-Host`, lệch là huỷ (`data-security.md:546-552`). Không tắt cơ chế này; chỉ thêm `serverActions.allowedOrigins` khi có reverse proxy đổi host.
@@ -141,7 +141,7 @@ Hiện trạng: allowlist **vẫn cho** `a` và `img`; chỉ prompt AI (`lib/ai.
 ### [BM-10] `proxy.ts`
 
 - `proxy()` trả `NextResponse.next()` khi hợp lệ, ngược lại 401 + `WWW-Authenticate: Basic realm="CMS", charset="UTF-8"` (`proxy.ts:4-10`).
-- `matcher: ["/cms/:path*", "/api/:path*"]` (`proxy.ts:12-14`). Giá trị matcher phải là hằng số để Next phân tích lúc build (`proxy.md:136`).
+- `matcher: ["/cms", "/cms/((?!upload$).*)", "/api/:path*"]` (`proxy.ts`). Loại trừ `/cms/upload` vì proxy chỉ đệm body tối đa 10 MB (AD-24); đã kiểm 2026-11-05: `/cms`, `/cms.rsc`, `/cms/uploads` trả 401, `/cms/upload` lọt proxy. Giá trị matcher phải là hằng số để Next phân tích lúc build (`proxy.md:136`).
 - Route **ngoài** matcher là public: `/`, `/[category]`, `/bai-viet/*`, `/styleguide`, `robots.txt`, `sitemap.xml`. `robots.ts` chặn index `/cms`, `/api/`, `/styleguide` (`app/robots.ts:6`) — đó là SEO, không phải bảo mật.
 
 ### [BM-11] `requireAdmin()` và `run()`

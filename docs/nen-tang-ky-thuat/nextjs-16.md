@@ -242,7 +242,7 @@ Nguồn: `docs/01-app/03-api-reference/03-file-conventions/error.md`, `not-found
 ### [NX-25] Proxy và xác thực
 
 - `proxy.ts:4-10`: Basic Auth — header `authorization` hợp lệ → `NextResponse.next()`; ngược lại trả 401 + `WWW-Authenticate: Basic realm="CMS"`.
-- `proxy.ts:12-14`: `matcher: ["/cms/:path*", "/api/:path*"]`.
+- `proxy.ts`: `matcher: ["/cms", "/cms/((?!upload$).*)", "/api/:path*"]` (AD-24; `/cms/upload` tự `requireAdmin()`).
 - `lib/auth.ts:7-13`: so khớp `ADMIN_USERNAME:ADMIN_PASSWORD` bằng `timingSafeEqual` trên SHA-256; thiếu biến môi trường → luôn từ chối.
 - `lib/require-admin.ts:5-9`: `requireAdmin()` đọc `(await headers()).get("authorization")` và ném `Error("Unauthorized")`. Comment `:4` ghi rõ lý do: action có thể bị POST trực tiếp.
 - Vì action được POST tới route đang dùng chúng (`/cms/...`), action CMS hiện được kiểm tra **hai lớp**: Proxy (matcher `/cms`) và `requireAdmin()`.
@@ -351,7 +351,7 @@ export async function getPostsByTag(tag: string) {
 
 ### [NX-33] Thêm một màn CMS
 
-1. Tạo `app/cms/<man>/page.tsx` — tự được Proxy bảo vệ (matcher `/cms/:path*`) và kế thừa `noindex` + `maxDuration` từ `app/cms/layout.tsx`.
+1. Tạo `app/cms/<man>/page.tsx` — tự được Proxy bảo vệ (matcher `/cms/((?!upload$).*)`) và kế thừa `noindex` + `maxDuration` từ `app/cms/layout.tsx`.
 2. Phần khung (tiêu đề, nút) để ngoài; phần đọc DB đặt trong một async component con bọc `<Suspense fallback={<Skeleton .../>}>`.
 3. Trong component con đọc DB trực tiếp (không cache) — CMS cần dữ liệu mới nhất. Nếu component không có `params`/API runtime nào khác, gọi `await connection()` trước truy vấn (giống `app/cms/page.tsx:23`) để truy vấn không chạy lúc build.
 4. Có tham số: truyền Promise `params` vào component con và `await` bên trong `<Suspense>` (giống `app/cms/posts/[id]/page.tsx:7-16`); không cần `generateStaticParams`.

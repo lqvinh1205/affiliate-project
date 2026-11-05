@@ -115,7 +115,7 @@ Ghi chú: trang CMS server (`app/cms/page.tsx:24`, `app/cms/posts/[id]/page.tsx:
 
 ### Khác
 
-- `proxy.ts` — kiểm Basic Auth cho `matcher: ["/cms/:path*", "/api/:path*"]` (`proxy.ts:12-14`). Next.js 16 dùng file `proxy.ts` (xem `node_modules/next/dist/docs/01-app/03-api-reference/03-file-conventions/proxy.md`).
+- `proxy.ts` — kiểm Basic Auth cho `matcher: ["/cms", "/cms/((?!upload$).*)", "/api/:path*"]` (`proxy.ts`; riêng `/cms/upload` nằm ngoài proxy, route đó tự `requireAdmin()` — AD-24). Next.js 16 dùng file `proxy.ts` (xem `node_modules/next/dist/docs/01-app/03-api-reference/03-file-conventions/proxy.md`).
 - `next.config.ts` — `remotePatterns` từ `IMAGE_HOSTS`, `cacheComponents`, `partialPrefetching`, loader Tailwind cho Turbopack.
 - `prisma/schema.prisma` — model `Post`, `Product`, enum `Category`, `Status`. `prisma.config.ts` dùng `DIRECT_URL` cho CLI (`:10-13`). `prisma/seed.ts` xoá sạch bài rồi tạo lại bài mẫu đã xuất bản (`:163`).
 - `components/json-ld.tsx` — render `<script type="application/ld+json">`, escape `<` (`:1-8`).
@@ -235,7 +235,7 @@ Theo PRD (`_bmad-output/planning-artifacts/prds/prd-affiliate-project-2026-11-03
 - [ ] Host ảnh mới chỉ thêm ở `lib/images.ts` ([KT-03]).
 - [ ] Loại bài mới đồng bộ `CATEGORIES`, enum Prisma và `z.enum` ([KT-08]).
 - [ ] `lib/ai.ts` không bị import vào component client ngoài `import type` ([KT-09]).
-- [ ] Route mới cần auth nằm dưới `/cms` hoặc `/api` để khớp `proxy.ts` matcher.
+- [ ] Route mới cần auth nằm dưới `/cms` hoặc `/api` để khớp `proxy.ts` matcher; ngoại lệ `/cms/upload` không qua proxy, phải tự `requireAdmin()` (AD-24).
 - [ ] Bảng module trong tài liệu này được cập nhật khi thêm/xoá file trong `lib/` hoặc `app/`.
 
 ## Tham khảo

@@ -35,7 +35,7 @@ Danh sách những chỗ code đang lệch với quy định, PRD hoặc chính 
 - **[NO-21]** `README.md` ở gốc repo vẫn là mẫu create-next-app.
 - **[NO-22]** Kiểu import `cn` lẫn lộn: `components/ui/*` import từ gói `cn`, phần còn lại từ `@/lib/utils` (cả hai cùng một hàm). Xem `[GD-05]`.
 
-## Chưa xác minh — cần chạy thử
+## Đã xác minh — kết quả chạy thử
 
-- **[NO-23]** `updateTag(POSTS_TAG)` có tái tạo các trang đã prerender (`/bai-viet/[slug]`, `sitemap.xml`) hay chỉ dữ liệu cache: kiểm bằng `npm run build && npm start` rồi sửa một bài. Xem `nextjs-16.md` mục chưa xác minh.
-- **[NO-24]** Server Action công khai gọi từ trang có `ensureStatic = "navigation"` (công thức `[NX-35]`) có vướng ràng buộc nào không.
+- **[NO-23]** **Đạt** (2026-11-05, Story 1.1, Next.js 16.4.3). `updateTag(POSTS_TAG)` trong Server Action làm mới cả trang đã prerender lẫn `sitemap.xml`, không cần build lại. Cách tái hiện: `npm run build && PORT=3100 npm start`; gọi action `setPostStatus(id, "DRAFT")` (POST tới `/cms` kèm Basic Auth, header `Next-Action: <id trong .next/server/server-reference-manifest.json>`, body JSON `["<id>","DRAFT"]`) → sau ≤ 1 giây `/bai-viet/<slug>` (vốn prerender `○`) trả 404 và slug biến khỏi `sitemap.xml`; gọi lại với `"PUBLISHED"` → 200 và có lại trong sitemap. Sửa nội dung: gọi `savePost` đổi tiêu đề → tiêu đề mới hiện trên `/bai-viet/<slug>` sau ≤ 1 giây, khôi phục lại cũng vậy. Lưu ý: cách thử này sửa dữ liệu thật trong DB cục bộ (`savePost` tạo lại Sản phẩm của bài nên id Sản phẩm đổi); dùng bài thử hoặc chạy lại seed.
+- **[NO-24]** **Đạt** (2026-11-05, Story 1.1). Server Action công khai (không `requireAdmin`) import từ Client Component trên trang `(site)` có `ensureStatic = "navigation"`: build không lỗi, trang vẫn prerender tĩnh (`○`, `x-nextjs-cache: HIT`), POST tới action trả kết quả đúng (`{"ok":true,"n":42}`). Cách tái hiện: dựng tạm `app/(site)/thu-no-24/` (page + client button + `actions.ts` `"use server"`), `npm run build`, gọi action như [NO-23] nhưng không kèm auth; đã xoá thư mục tạm sau khi kiểm.

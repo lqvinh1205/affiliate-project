@@ -10,5 +10,6 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/cms/:path*", "/api/:path*"],
+  // /cms/upload nằm ngoài proxy (proxy chỉ đệm body 10 MB): route đó tự gọi requireAdmin() — spine AD-24.
+  matcher: ["/cms", "/cms/((?!upload$).*)", "/api/:path*"],
 };
