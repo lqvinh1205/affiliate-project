@@ -10,7 +10,7 @@ import { ProductCard } from "@/components/site/product-card";
 import { AffiliateDisclosure } from "@/components/site/affiliate-disclosure";
 import { SeoScore } from "@/components/cms/seo-score";
 
-// Trang tạm để duyệt design system — xóa trước khi deploy.
+// Trang nội bộ duyệt design system dưới /cms (noindex, sau Basic Auth).
 export const metadata: Metadata = { title: "Styleguide", robots: { index: false } };
 
 const SWATCHES = [

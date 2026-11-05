@@ -1,4 +1,4 @@
-import { cn } from "@/lib/utils";
+import { cn } from "@/components/ui/lib/utils";
 import { CATEGORIES, type CategoryKey } from "@/lib/categories";
 
 const STYLES: Record<CategoryKey, string> = {

@@ -1,4 +1,4 @@
-import { cn } from "@/lib/utils";
+import { cn } from "@/components/ui/lib/utils";
 
 export function StatusBadge({ status }: { status: "DRAFT" | "PUBLISHED" }) {
   return (

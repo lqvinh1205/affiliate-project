@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Suspense } from "react";
 import { FileText, Plus } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn } from "@/components/ui/lib/utils";
 
 // usePathname() là dữ liệu runtime → bọc Suspense, fallback là thanh nav chưa đánh dấu mục đang mở.
 export function CmsBottomNav() {

@@ -7,8 +7,8 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-// Gọi AI có thể mất 20–40 giây.
-export const maxDuration = 60;
+// Gọi AI có thể mất 20–40 giây; AD-18 đặt trần 120 giây cho route kích hoạt AI.
+export const maxDuration = 120;
 
 export default function CmsLayout({ children }: LayoutProps<"/cms">) {
   return (

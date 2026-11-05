@@ -17,7 +17,6 @@ Không còn mục mở. [NO-01]–[NO-05] đã sửa ở Story 1.2, có unit tes
 - **[NO-12]** Giới hạn tóm tắt không khớp: editor và prompt AI dùng 200, Zod và DB cho 500 (`components/cms/post-editor.tsx`, `lib/post-input.ts`, `prisma/schema.prisma`).
 - **[NO-13]** `next/image` còn dùng `priority` (đã deprecate ở Next 16) — `app/(site)/page.tsx`, `app/(site)/bai-viet/[slug]/page.tsx`. Xem `[GD-30]`.
 - **[NO-14]** `proxy.ts` matcher chặn `/api/:path*` nhưng không có `app/api`; endpoint công khai tương lai không đặt được ở `/api`. Xem `[NX-57]`.
-- **[NO-15]** `app/styleguide/page.tsx` là trang công khai (chỉ `noindex`), ghi chú "xoá trước khi deploy" (PRD NFR-10).
 
 ## Thấp — nhất quán và dọn dẹp
 
@@ -27,7 +26,7 @@ Không còn mục mở. [NO-01]–[NO-05] đã sửa ở Story 1.2, có unit tes
 - **[NO-19]** Literal `"DRAFT" | "PUBLISHED"` và `["MEO_VAT","GOM_LINK"]` gõ lại ở nhiều file thay vì suy ra từ enum Prisma hoặc `CategoryKey` (`[KT-08]`, `[PR-27]`).
 - **[NO-20]** UI gọi enum Category là "Chuyên mục", trong khi PRD gọi là **Loại bài**; **Danh mục** là khái niệm khác, chưa có trong code.
 - **[NO-21]** `README.md` ở gốc repo vẫn là mẫu create-next-app.
-- **[NO-22]** Kiểu import `cn` lẫn lộn: `components/ui/*` import từ gói `cn`, phần còn lại từ `@/lib/utils` (cả hai cùng một hàm). Xem `[GD-05]`.
+- **[NO-22]** Kiểu import `cn` lẫn lộn: `components/ui/*` import từ gói `cn`, phần còn lại từ `@/components/ui/lib/utils` (cả hai cùng một hàm). Xem `[GD-05]`.
 
 ## Đã xác minh — kết quả chạy thử
 

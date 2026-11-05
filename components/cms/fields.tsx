@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { CATEGORIES, type CategoryKey } from "@/lib/categories";
 import type { ProductInput } from "@/lib/post-input";
-import { cn } from "@/lib/utils";
+import { cn } from "@/components/ui/lib/utils";
 
 export const emptyProduct = (): ProductInput => ({ name: "", image: "", price: "", affiliateUrl: "" });
 
