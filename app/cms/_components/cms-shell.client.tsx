@@ -18,6 +18,7 @@ const NAV_ITEMS: NavItem[] = [
     href: "/cms",
     match: (p) => p === "/cms" || p === "/cms/new" || p.startsWith("/cms/posts/"),
   },
+  { label: "Danh mục", href: "/cms/danh-muc", match: (p) => p === "/cms/danh-muc" || p.startsWith("/cms/danh-muc/") },
   { label: "Styleguide", href: "/cms/styleguide", match: (p) => p.startsWith("/cms/styleguide") },
 ];
 

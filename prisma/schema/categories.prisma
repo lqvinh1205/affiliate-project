@@ -1,9 +1,9 @@
 // Danh mục dùng chung cho Bài web và Sản phẩm; không xoá được khi còn tham chiếu (FR-28).
 model Category {
   id          String    @id @default(uuid())
-  name        String
-  slug        String    @unique
-  description String?
+  name        String    @db.VarChar(60) // CATEGORY_NAME_MAX (modules/categories/constants.ts)
+  slug        String    @unique @db.VarChar(80) // CATEGORY_SLUG_MAX
+  description String?   @db.VarChar(300) // CATEGORY_DESCRIPTION_MAX
   sortOrder   Int       @default(0)
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt

@@ -14,6 +14,7 @@ export default defineConfig({
   },
   test: {
     include: ["**/*.test.ts"],
-    exclude: ["node_modules/**", ".next/**", "generated/**"],
+    // Test tích hợp DB chạy riêng bằng `npm run test:db` (vitest.db.config.ts).
+    exclude: ["node_modules/**", ".next/**", "generated/**", "**/*.db.test.ts"],
   },
 });

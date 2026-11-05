@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { imageUrl, optionalText, shopeeAffiliateUrl } from "@/platform/validation/fields";
+import { imageUrl, optionalText, requiredText, shopeeAffiliateUrl, slugField } from "@/platform/validation/fields";
 
 const SHOPEE_ERROR = "Link phải thuộc Shopee (shopee.vn, s.shopee.vn, shope.ee)";
 
@@ -41,5 +41,39 @@ describe("optionalText", () => {
   it("cắt khoảng trắng, rỗng thành null", () => {
     expect(optionalText.parse("  a ")).toBe("a");
     expect(optionalText.parse("   ")).toBeNull();
+  });
+});
+
+describe("requiredText", () => {
+  const name = requiredText(5, "Nhập tên");
+
+  it("cắt khoảng trắng và nhận chuỗi trong giới hạn", () => {
+    expect(name.parse("  abc ")).toBe("abc");
+    expect(name.parse("abcde")).toBe("abcde");
+  });
+
+  it("rỗng báo thông báo truyền vào", () => {
+    expect(name.safeParse("   ").error?.issues[0]?.message).toBe("Nhập tên");
+  });
+
+  it("quá dài báo giới hạn tiếng Việt", () => {
+    expect(name.safeParse("abcdef").error?.issues[0]?.message).toBe("Tối đa 5 ký tự");
+  });
+});
+
+describe("slugField", () => {
+  const slug = slugField(10);
+
+  it.each(["do-bep", "a", "top-10", "2026"])("nhận %s", (s) => {
+    expect(slug.parse(s)).toBe(s);
+  });
+
+  it.each(["Do-bep", "đồ-bếp", "do bep", "-do", "do-", "do--bep", "do_bep"])("từ chối %s bằng lỗi tiếng Việt", (s) => {
+    expect(slug.safeParse(s).error?.issues[0]?.message).toMatch(/^Đường dẫn chỉ gồm/);
+  });
+
+  it("rỗng và quá dài báo lỗi riêng", () => {
+    expect(slug.safeParse("").error?.issues[0]?.message).toBe("Nhập đường dẫn");
+    expect(slug.safeParse("a".repeat(11)).error?.issues[0]?.message).toBe("Tối đa 10 ký tự");
   });
 });

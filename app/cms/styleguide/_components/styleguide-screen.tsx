@@ -10,6 +10,7 @@ import { PostCard } from "@/components/site/post-card";
 import { ProductCard } from "@/components/site/product-card";
 import { AffiliateDisclosure } from "@/components/site/affiliate-disclosure";
 import { SeoScore } from "@/components/cms/seo-score";
+import { ConfirmDialogDemo, FormDemo } from "@/app/cms/styleguide/_components/form-demo.client";
 import { ToastDemo } from "@/app/cms/styleguide/_components/toast-demo.client";
 
 // Màu đọc thẳng từ `app/globals.css` (một nguồn): hiện giá trị light và dark cạnh nhau
@@ -201,6 +202,11 @@ export function StyleguideScreen() {
           <CategoryBadge category="GOM_LINK" />
         </div>
         <Input placeholder="Dán link affiliate Shopee..." className="h-11 max-w-md" />
+      </Section>
+
+      <Section title="Form CMS: Field, CmsForm, ConfirmDialog">
+        <FormDemo />
+        <ConfirmDialogDemo />
       </Section>
 
       <Section title="Thẻ bài viết">

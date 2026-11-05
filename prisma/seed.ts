@@ -6,9 +6,24 @@ const db = new PrismaClient({
   adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL }),
 });
 
+// 8 Danh mục Vinh đã duyệt (2026-11-05), theo thứ tự hiển thị; upsert theo slug.
+const CATEGORIES = [
+  { slug: "nha-bep", name: "Nhà bếp" },
+  { slug: "nha-cua-decor", name: "Nhà cửa & Decor" },
+  { slug: "giat-giu-tu-do", name: "Giặt giũ & Tủ đồ" },
+  { slug: "lam-dep", name: "Làm đẹp" },
+  { slug: "thoi-trang", name: "Thời trang" },
+  { slug: "cay-canh", name: "Cây cảnh" },
+  { slug: "hoc-tap-lam-viec", name: "Học tập & Làm việc" },
+  { slug: "du-lich", name: "Du lịch" },
+] as const;
+
+type CategorySlug = (typeof CATEGORIES)[number]["slug"];
+
 type SeedPost = {
   slug: string;
   category: PostType;
+  categorySlug: CategorySlug;
   title: string;
   excerpt: string;
   tags: string[];
@@ -23,6 +38,7 @@ const placeholderLink = (name: string) =>
 const POSTS: SeedPost[] = [
   {
     slug: "meo-tay-vet-o-vang-noi-chien-khong-dau",
+    categorySlug: "nha-bep",
     category: "MEO_VAT",
     title: "Mẹo tẩy vết ố vàng, dầu mỡ bám nồi chiên không dầu bằng baking soda và giấm",
     excerpt: "Hai nguyên liệu có sẵn trong bếp giúp lòng nồi chiên sạch mỡ két chỉ sau 15 phút ngâm.",
@@ -38,6 +54,7 @@ const POSTS: SeedPost[] = [
   },
   {
     slug: "tong-hop-do-decor-phong-ngu-han-quoc-gia-re",
+    categorySlug: "nha-cua-decor",
     category: "GOM_LINK",
     title: "Tổng hợp đồ decor phòng ngủ phong cách Hàn Quốc dưới 100k",
     excerpt: "Đèn ngủ vintage, thảm nỉ màu be và tranh canvas — ba món nhỏ đủ biến phòng ngủ thành góc chill.",
@@ -53,6 +70,7 @@ const POSTS: SeedPost[] = [
   },
   {
     slug: "cach-gap-quan-ao-nhanh-gon-khong-bi-nhau",
+    categorySlug: "giat-giu-tu-do",
     category: "MEO_VAT",
     title: "Cách gấp quần áo nhanh gọn, không bị nhàu theo phương pháp KonMari",
     excerpt: "Gấp đứng thay vì chồng lên nhau giúp nhìn thấy mọi món đồ và tủ gọn hơn hẳn.",
@@ -66,6 +84,7 @@ const POSTS: SeedPost[] = [
   },
   {
     slug: "top-do-gia-dung-thong-minh-cho-nha-bep-nho",
+    categorySlug: "nha-bep",
     category: "GOM_LINK",
     title: "Top đồ gia dụng thông minh cho căn bếp chung cư nhỏ",
     excerpt: "Những món nhỏ gọn giúp tiết kiệm diện tích mà vẫn nấu nướng tiện tay.",
@@ -79,6 +98,7 @@ const POSTS: SeedPost[] = [
   },
   {
     slug: "meo-giu-quan-ao-khong-bi-phai-mau-khi-giat",
+    categorySlug: "giat-giu-tu-do",
     category: "MEO_VAT",
     title: "Mẹo giữ quần áo không bị phai màu khi giặt, nhất là quần jeans mới",
     excerpt: "Ngâm giấm trắng trước lần giặt đầu tiên giúp hạn chế ra màu đáng kể.",
@@ -92,6 +112,7 @@ const POSTS: SeedPost[] = [
   },
   {
     slug: "phu-kien-thoi-trang-hot-trend-gia-sinh-vien",
+    categorySlug: "thoi-trang",
     category: "GOM_LINK",
     title: "Phụ kiện thời trang hot trend giá sinh viên, chỉ từ 10k",
     excerpt: "Kẹp tóc đính đá và khuyên tai bạc nhỏ xinh giúp outfit đơn giản trở nên nổi bật.",
@@ -105,6 +126,7 @@ const POSTS: SeedPost[] = [
   },
   {
     slug: "meo-cham-soc-cay-thiet-moc-lan-trong-nha-luon-xanh-tot",
+    categorySlug: "cay-canh",
     category: "MEO_VAT",
     title: "Mẹo chăm sóc cây thiết mộc lan trong nhà luôn xanh tốt, không thối rễ",
     excerpt: "Tưới ít nhưng đúng lúc và giữ lá ẩm là bí quyết để cây phát triển ổn định.",
@@ -120,6 +142,7 @@ const POSTS: SeedPost[] = [
   },
   {
     slug: "goc-hoc-tap-cute-tang-nang-suat",
+    categorySlug: "hoc-tap-lam-viec",
     category: "GOM_LINK",
     title: "Gom link đồ setup góc học tập cute, tăng hứng thú làm việc",
     excerpt: "Bàn học gọn gàng giúp bạn ngồi vào bàn dễ hơn — và vài món nhỏ xinh làm việc đó vui hơn.",
@@ -133,6 +156,7 @@ const POSTS: SeedPost[] = [
   },
   {
     slug: "meo-lam-sach-sau-lo-chan-long-tai-nha",
+    categorySlug: "lam-dep",
     category: "MEO_VAT",
     title: "Mẹo làm sạch sâu lỗ chân lông tại nhà bằng mặt nạ đất sét",
     excerpt: "Đắp mặt nạ đất sét đúng cách 1–2 lần mỗi tuần giúp da bớt bóng dầu và trông thông thoáng hơn.",
@@ -146,6 +170,7 @@ const POSTS: SeedPost[] = [
   },
   {
     slug: "nhung-mon-do-du-lich-tien-loi-phai-co-trong-vali",
+    categorySlug: "du-lich",
     category: "GOM_LINK",
     title: "Những món đồ du lịch tiện lợi nên có trong vali",
     excerpt: "Vali gọn hơn, đi xa nhẹ nhàng hơn với vài món nhỏ mà có võ.",
@@ -160,16 +185,15 @@ const POSTS: SeedPost[] = [
 ];
 
 async function main() {
-  // Danh mục mẫu: upsert theo slug để chạy lại không lỗi.
-  const category = await db.category.upsert({
-    where: { slug: "nha-cua-doi-song" },
-    update: {},
-    create: {
-      name: "Nhà cửa & Đời sống",
-      slug: "nha-cua-doi-song",
-      description: "Mẹo và đồ dùng cho nhà cửa, sinh hoạt hằng ngày.",
-    },
-  });
+  const categoryIds = new Map<string, string>();
+  for (const [sortOrder, c] of CATEGORIES.entries()) {
+    const row = await db.category.upsert({
+      where: { slug: c.slug },
+      update: { name: c.name, sortOrder },
+      create: { name: c.name, slug: c.slug, sortOrder },
+    });
+    categoryIds.set(c.slug, row.id);
+  }
 
   // Xoá bài (PostProduct theo cascade) rồi Sản phẩm không còn bài nào dùng.
   await db.post.deleteMany();
@@ -181,7 +205,7 @@ async function main() {
       data: {
         slug: p.slug,
         postType: p.category,
-        categoryId: category.id,
+        categoryId: categoryIds.get(p.categorySlug),
         title: p.title,
         excerpt: p.excerpt,
         content: p.content,
@@ -199,7 +223,16 @@ async function main() {
       },
     });
   }
-  console.log(`Seeded ${POSTS.length} posts, 1 category`);
+
+  // Danh mục ngoài danh sách (vd `nha-cua-doi-song` cũ) bị bỏ khi không còn Bài web/Sản phẩm nào dùng.
+  await db.category.deleteMany({
+    where: {
+      slug: { notIn: CATEGORIES.map((c) => c.slug) },
+      posts: { none: {} },
+      products: { none: {} },
+    },
+  });
+  console.log(`Seeded ${POSTS.length} posts, ${CATEGORIES.length} categories`);
 }
 
 main()
