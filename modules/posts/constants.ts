@@ -22,3 +22,33 @@ export const POST_STATUS_LABEL = { DRAFT: "Nháp", PUBLISHED: "Đã xuất bản
 
 // Số Bài web mỗi trang ở trang Danh mục và Loại bài (`/…/trang/[n]`, spine AD-7).
 export const PAGE_SIZE = 12;
+
+// Giới hạn cứng của Bài web (spine AD-14, AD-25). `excerpt` = `@db.VarChar(500)` của `prisma/schema/posts.prisma`;
+// các cột còn lại là `String`/`Text` nên giới hạn chỉ ở Zod, để form không gửi khối chữ vô hạn.
+export const POST_TITLE_MAX = 200;
+export const POST_SLUG_MAX = 200;
+export const POST_EXCERPT_MAX = 500;
+export const POST_SEO_TITLE_MAX = 200;
+export const POST_SEO_DESCRIPTION_MAX = 500;
+export const POST_CONTENT_MAX = 200_000;
+export const POST_TAGS_MAX = 20;
+export const POST_TAG_MAX = 60;
+export const POST_PRODUCTS_MAX = 30;
+
+// Mục tiêu mềm hiện ở bộ đếm trong form (không chặn lưu).
+export const POST_TITLE_TARGET = 70;
+export const POST_SEO_TITLE_TARGET = 60;
+export const POST_SEO_DESCRIPTION_TARGET = { min: 140, max: 160 } as const;
+
+// Lọc trạng thái ở `/cms/bai-viet?trang-thai=…` (giá trị trên URL tiếng Việt, không dấu).
+export const POST_STATUS_FILTERS = { nhap: "DRAFT", "da-xuat-ban": "PUBLISHED" } as const satisfies Record<string, Status>;
+export type PostStatusFilter = keyof typeof POST_STATUS_FILTERS;
+
+// Số Bài web mỗi trang ở `/cms/bai-viet` (`?trang=n`).
+export const CMS_POST_PAGE_SIZE = 20;
+
+// Số bài liên quan cuối trang bài (UX-DR17).
+export const RELATED_POSTS_LIMIT = 3;
+
+// Id khối Sản phẩm trên trang bài: nút "Sản phẩm" của ArticleActionBar cuộn tới đây.
+export const PRODUCTS_SECTION_ID = "san-pham";

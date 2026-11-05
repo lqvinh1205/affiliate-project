@@ -17,6 +17,7 @@ model Post {
   createdAt      DateTime      @default(now())
   updatedAt      DateTime      @updatedAt
   postProducts   PostProduct[]
+  slugRedirects  PostSlugRedirect[]
 
   @@index([status, postType, publishedAt])
   @@index([categoryId])
@@ -33,6 +34,19 @@ model PostProduct {
 
   @@unique([postId, productId])
   @@index([productId])
+}
+
+// Lịch sử đổi slug Bài web đã xuất bản (FR-27, spine AD-20): `/bai-viet/{oldSlug}` trả 308 sang slug hiện tại
+// của bài. Ghi khi `savePostRecord` đổi slug bài đã xuất bản; slug được dùng lại thì bản ghi trùng bị xoá.
+model PostSlugRedirect {
+  id        String   @id @default(uuid())
+  oldSlug   String   @unique
+  postId    String
+  /// Xoá bài thì xoá lịch sử của nó: slug cũ trả 404 như slug hiện tại.
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@index([postId])
 }
 
 enum PostType {

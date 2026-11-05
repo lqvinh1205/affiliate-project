@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import { MAIN_CONTENT_ID } from "@/platform/site";
 import { listNavCategories } from "@/modules/posts/queries";
 import { BottomTabBar, BottomTabBarView } from "@/app/(site)/_components/bottom-tab-bar.client";
 import { SiteFooter } from "@/app/(site)/_components/site-footer";
@@ -13,7 +14,9 @@ export default async function SiteLayout({ children }: LayoutProps<"/">) {
   return (
     <>
       <SiteHeader categories={categories} />
-      <main className="flex-1">{children}</main>
+      <main id={MAIN_CONTENT_ID} tabIndex={-1} className="flex-1 outline-none">
+        {children}
+      </main>
       <SiteFooter categories={categories} />
       {/* `usePathname` treo ở trang có tham số chưa prerender: fallback là thanh tab chưa chọn mục nào. */}
       <Suspense fallback={<BottomTabBarView categories={categories} active={null} />}>

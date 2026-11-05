@@ -1,18 +1,18 @@
 "use server";
 
-import { updateTag } from "next/cache";
 import { analyzeSeo, generatePost, toThreads, type SeoReport } from "@/lib/ai";
 import { Prisma } from "@/generated/prisma/client";
-import { CATEGORIES_TAG } from "@/modules/categories/tags";
-import { POSTS_TAG } from "@/modules/posts/tags";
-import { newPostSchema, postInputSchema, type NewPostInput, type PostInput } from "@/lib/post-input";
+import { newPostSchema, postDraftSchema, type NewPostInput } from "@/modules/posts/schema";
+import { freePostSlug } from "@/modules/posts/service";
 import { run } from "@/platform/auth/run";
 import { db } from "@/platform/db";
 import { UserError, type Result } from "@/platform/errors";
 import { sanitizePostHtml } from "@/platform/html/sanitize";
 import { SITE_URL } from "@/platform/site";
-import { slugify } from "@/platform/slug";
 import { firstError } from "@/platform/validation/errors";
+
+// Chỉ còn các action AI cũ, giữ nguyên chỗ tới Epic 4 (`platform/ai`). Ghi Bài web (`savePost`, `setPostStatus`,
+// `deletePost`) đã chuyển sang `modules/posts/actions.ts`.
 
 const CATEGORY_GONE = "Danh mục đã chọn không còn tồn tại. Tải lại trang rồi chọn lại.";
 
@@ -26,36 +26,26 @@ async function withCategoryCheck<T>(fn: () => Promise<T>) {
   }
 }
 
-async function uniqueSlug(base: string, excludeId?: string) {
-  const root = slugify(base) || "bai-viet";
-  for (let i = 1; ; i++) {
-    const slug = i === 1 ? root : `${root}-${i}`;
-    const hit = await db.post.findFirst({ where: { slug, NOT: { id: excludeId } }, select: { id: true } });
-    if (!hit) return slug;
-  }
-}
-
 export async function createPost(input: NewPostInput) {
   return run(async () => {
     const parsed = newPostSchema.safeParse(input);
     if (!parsed.success) throw new UserError(firstError(parsed.error));
-    const { category, categoryId, topic, useAi } = parsed.data;
+    const { postType, categoryId, topic, useAi } = parsed.data;
 
     let data;
     if (useAi) {
-      // Bài mới không nhận Sản phẩm (gắn từ Kho là Epic 3): AI viết theo chủ đề.
+      // Bài mới không nhận Sản phẩm (gắn từ Kho trong trình soạn): AI viết theo chủ đề.
       if (!topic) throw new UserError("Nhập chủ đề để AI viết bài");
-      const draft = await generatePost({ category, topic });
+      const draft = await generatePost({ category: postType, topic });
       // Bản nháp AI qua cùng schema với bài viết tay.
-      const nonEmpty = (xs: string[]) => xs.map((x) => x.trim()).filter(Boolean);
-      const checked = postInputSchema.safeParse({
+      const checked = postDraftSchema.safeParse({
         ...draft,
-        tags: nonEmpty(draft.tags),
-        seoKeywords: nonEmpty(draft.seoKeywords),
+        tags: draft.tags.join(", "),
+        seoKeywords: draft.seoKeywords.join(", "),
         slug: "",
         excerpt: draft.excerpt.slice(0, 500),
         featuredImage: "",
-        category,
+        postType,
         categoryId: categoryId ?? "",
       });
       if (!checked.success) throw new UserError(`AI trả về bản nháp chưa hợp lệ: ${firstError(checked.error)}`);
@@ -68,72 +58,18 @@ export async function createPost(input: NewPostInput) {
         tags,
         seoKeywords,
         content: sanitizePostHtml(content),
-        slug: await uniqueSlug(title),
+        slug: await freePostSlug(db, title),
       };
     } else {
       const title = topic || "Bài viết mới";
-      data = { title, content: "", tags: [], seoKeywords: [], slug: await uniqueSlug(title) };
+      data = { title, content: "", tags: [], seoKeywords: [], slug: await freePostSlug(db, title) };
     }
 
     // Bài mới luôn là nháp: không có trên site, không cần updateTag.
     const post = await withCategoryCheck(() =>
-      db.post.create({ data: { ...data, postType: category, categoryId }, select: { id: true } }),
+      db.post.create({ data: { ...data, postType, categoryId }, select: { id: true } }),
     );
     return { id: post.id };
-  });
-}
-
-export async function savePost(id: string, input: PostInput) {
-  return run(async () => {
-    const parsed = postInputSchema.safeParse(input);
-    if (!parsed.success) throw new UserError(firstError(parsed.error));
-    const { slug, content, category, ...rest } = parsed.data;
-    const uniq = await uniqueSlug(slug || rest.title, id);
-
-    // Không chạm `PostProduct`/`Product`: Sản phẩm của bài giữ nguyên id, thứ tự, dữ liệu.
-    const post = await withCategoryCheck(() =>
-      db.post.update({
-        where: { id },
-        data: { ...rest, postType: category, content: sanitizePostHtml(content), slug: uniq },
-        select: { slug: true },
-      }),
-    );
-    // Đổi Danh mục của bài làm đổi trang Danh mục, điều hướng (Danh mục có bài) — AD-7.
-    updateTag(POSTS_TAG);
-    updateTag(CATEGORIES_TAG);
-    return { slug: post.slug };
-  });
-}
-
-export async function setPostStatus(id: string, status: "DRAFT" | "PUBLISHED") {
-  return run(async () => {
-    const current = await db.post.findUnique({ where: { id }, select: { publishedAt: true, content: true } });
-    if (!current) throw new UserError("Không tìm thấy bài viết");
-    if (status === "PUBLISHED" && !current.content.trim()) {
-      throw new UserError("Bài chưa có nội dung, chưa thể xuất bản");
-    }
-    await db.post.update({
-      where: { id },
-      data: {
-        status,
-        // Giữ ngày đăng gốc khi gỡ rồi đăng lại.
-        publishedAt: status === "PUBLISHED" ? (current.publishedAt ?? new Date()) : current.publishedAt,
-      },
-    });
-    // Xuất bản/gỡ làm Danh mục có hoặc hết bài đã xuất bản (điều hướng site).
-    updateTag(POSTS_TAG);
-    updateTag(CATEGORIES_TAG);
-    return {};
-  });
-}
-
-export async function deletePost(id: string) {
-  return run(async () => {
-    // `PostProduct` của bài xoá theo cascade; Sản phẩm trong Kho giữ nguyên (FR-4).
-    await db.post.delete({ where: { id } });
-    updateTag(POSTS_TAG);
-    updateTag(CATEGORIES_TAG);
-    return {};
   });
 }
 

@@ -31,5 +31,5 @@ export async function resetTestDb() {
   actionTest.authorization = adminAuthorization();
   actionTest.updatedTags = [];
   actionTest.cacheTags = [];
-  await db.$executeRawUnsafe(`TRUNCATE "PostProduct", "Post", "Product", "CategorySlugRedirect", "Category" CASCADE`);
+  await db.$executeRawUnsafe(`TRUNCATE "PostSlugRedirect", "PostProduct", "Post", "Product", "CategorySlugRedirect", "Category" CASCADE`);
 }

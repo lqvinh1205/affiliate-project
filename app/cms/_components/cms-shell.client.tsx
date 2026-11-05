@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Suspense, useState, type ReactNode } from "react";
 import { ExternalLink, Menu } from "lucide-react";
+import { MAIN_CONTENT_ID } from "@/platform/site";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { cn } from "@/components/ui/lib/utils";
@@ -13,11 +14,7 @@ type NavItem = { label: string; href: string; match: (pathname: string) => boole
 // Thứ tự theo IA CMS (EXPERIENCE.md › CMS); chỉ khai báo mục đã có màn. Mục sau thêm đúng chỗ:
 // Bài web, Sản phẩm, Cảm hứng, Danh mục, Banner, Trang bio, Hồ sơ phong cách, Styleguide.
 const NAV_ITEMS: NavItem[] = [
-  {
-    label: "Bài web",
-    href: "/cms",
-    match: (p) => p === "/cms" || p === "/cms/new" || p.startsWith("/cms/posts/"),
-  },
+  { label: "Bài web", href: "/cms/bai-viet", match: (p) => p === "/cms/bai-viet" || p.startsWith("/cms/bai-viet/") },
   { label: "Sản phẩm", href: "/cms/san-pham", match: (p) => p === "/cms/san-pham" || p.startsWith("/cms/san-pham/") },
   { label: "Danh mục", href: "/cms/danh-muc", match: (p) => p === "/cms/danh-muc" || p.startsWith("/cms/danh-muc/") },
   { label: "Styleguide", href: "/cms/styleguide", match: (p) => p.startsWith("/cms/styleguide") },
@@ -127,7 +124,13 @@ export function CmsShell({ children }: { children: ReactNode }) {
             <WithPathname>{currentLabel}</WithPathname>
           </p>
         </header>
-        <main className="mx-auto w-full max-w-2xl px-margin pb-space-xl pt-space-md lg:pt-space-xl">{children}</main>
+        <main
+          id={MAIN_CONTENT_ID}
+          tabIndex={-1}
+          className="mx-auto w-full max-w-2xl px-margin pb-space-xl pt-space-md outline-none lg:pt-space-xl"
+        >
+          {children}
+        </main>
       </div>
     </div>
   );

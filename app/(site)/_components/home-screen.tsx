@@ -1,84 +1,69 @@
-import Image from "next/image";
 import Link from "next/link";
-import { formatDate } from "@/platform/format";
+import { SITE_NAME } from "@/platform/site";
 import { POST_TYPES } from "@/modules/posts/constants";
 import { getLatestPosts, getPostsByType } from "@/modules/posts/queries";
-import { PostCard, PostListItem } from "@/modules/posts/components/post-card";
-import { PostTypeBadge } from "@/modules/posts/components/post-type-badge";
+import { PostCard } from "@/modules/posts/components/post-card";
+import { EmptyState } from "@/components/shared/empty-state";
 import { SectionHeading } from "@/app/(site)/_components/section-heading";
 
-// Màn Trang chủ (route `/` — `app/(site)/page.tsx`).
-export async function HomeScreen() {
-  const [latest, meoVat, gomLink] = await Promise.all([
-    getLatestPosts(7),
-    getPostsByType("MEO_VAT", 4),
-    getPostsByType("GOM_LINK", 8),
-  ]);
-  const [hero, ...rest] = latest;
+// Số bài khu "Mới cập nhật" (không tính Bài nổi bật) và "Mẹo vặt hay".
+const LATEST_COUNT = 6;
+const MEO_VAT_COUNT = 4;
 
-  if (!hero) {
-    return <p className="px-4 py-24 text-center text-muted-foreground">Chưa có bài viết nào.</p>;
-  }
+const TYPE_LINK =
+  "inline-flex min-h-touch-target items-center rounded-full border px-space-md text-label-md hover:border-primary hover:text-primary";
+
+// Màn Trang chủ (UX-DR62): Bài nổi bật (PostCard *featured*, bài xuất bản mới nhất) → Mới cập nhật (bỏ bài nổi bật;
+// cuối khu link "Mẹo vặt", "Gom link") → Mẹo vặt hay (PostCard *row*, "Xem tất cả" → `/meo-vat`). Banner, Gom link đồ
+// xinh, Xem nhiều thuộc epic sau: chưa render, không chừa chỗ. Khu rỗng thì ẩn. Không JSON-LD (AD-26).
+export async function HomeScreen() {
+  const [latest, meoVat] = await Promise.all([getLatestPosts(LATEST_COUNT + 1), getPostsByType("MEO_VAT", MEO_VAT_COUNT)]);
+  const [featured, ...rest] = latest;
 
   return (
-    <div className="mx-auto max-w-6xl space-y-16 px-4 py-8 sm:py-12">
-      {/* Bài nổi bật */}
-      <Link href={`/bai-viet/${hero.slug}`} className="group grid items-center gap-6 md:grid-cols-[1.4fr_1fr] md:gap-10">
-        <div className="relative aspect-[4/3] overflow-hidden rounded-sm bg-muted">
-          <Image
-            src={hero.featuredImage || "/placeholder.svg"}
-            alt={hero.title}
-            fill
-            priority
-            sizes="(max-width: 768px) 100vw, 60vw"
-            className="object-cover transition duration-700 group-hover:scale-[1.03] motion-reduce:transform-none"
-          />
-        </div>
-        <div className="space-y-4">
-          <PostTypeBadge postType={hero.postType} />
-          <h1 className="text-3xl leading-tight decoration-primary/40 decoration-2 underline-offset-[6px] group-hover:underline sm:text-4xl lg:text-[2.75rem]">
-            {hero.title}
-          </h1>
-          {hero.excerpt && <p className="text-lg text-muted-foreground">{hero.excerpt}</p>}
-          <p className="text-sm text-muted-foreground">
-            {formatDate(hero.publishedAt)} · {hero.readingMinutes} phút đọc
-          </p>
-        </div>
-      </Link>
+    <div className="mx-auto max-w-container-max space-y-space-xl px-margin py-space-lg lg:px-margin-desktop lg:py-space-xl">
+      <h1 className="sr-only">{SITE_NAME}</h1>
+      {!featured ? (
+        <EmptyState title="Chưa có bài viết nào" description="Mình đang viết những mẹo đầu tiên, bạn ghé lại sau nhé." />
+      ) : (
+        <>
+          <section aria-label="Bài nổi bật">
+            <PostCard post={featured} variant="featured" headingLevel="h2" preload />
+          </section>
 
-      <section>
-        <SectionHeading title="Mới cập nhật" />
-        <div className="grid gap-x-6 gap-y-10 sm:grid-cols-2 lg:grid-cols-3">
-          {rest.slice(0, 6).map((p) => (
-            <PostCard key={p.slug} post={p} />
-          ))}
-        </div>
-      </section>
+          {rest.length > 0 && (
+            <section aria-labelledby="moi-cap-nhat">
+              <SectionHeading id="moi-cap-nhat" title="Mới cập nhật" />
+              <ul className="grid gap-gutter md:grid-cols-2 lg:grid-cols-3 lg:gap-gutter-desktop">
+                {rest.map((p) => (
+                  <li key={p.slug}>
+                    <PostCard post={p} />
+                  </li>
+                ))}
+              </ul>
+              <nav aria-label="Xem theo Loại bài" className="mt-space-lg flex flex-wrap gap-space-sm">
+                {Object.values(POST_TYPES).map((t) => (
+                  <Link key={t.slug} href={`/${t.slug}`} className={TYPE_LINK}>
+                    {t.label}
+                  </Link>
+                ))}
+              </nav>
+            </section>
+          )}
 
-      {gomLink.length > 0 && (
-        <section>
-          <SectionHeading title="Gom link đồ xinh" href={`/${POST_TYPES.GOM_LINK.slug}`} />
-          <div className="-mx-4 flex snap-x snap-mandatory gap-5 overflow-x-auto px-4 pb-2 sm:mx-0 sm:px-0 [scrollbar-width:thin]">
-            {gomLink.map((p) => (
-              <div key={p.slug} className="w-64 shrink-0 snap-start sm:w-72">
-                <PostCard post={p} />
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
-
-      {meoVat.length > 0 && (
-        <section>
-          <SectionHeading title="Mẹo vặt hay" href={`/${POST_TYPES.MEO_VAT.slug}`} />
-          <div className="grid divide-y sm:grid-cols-2 sm:gap-x-10 sm:divide-y-0">
-            {meoVat.map((p) => (
-              <div key={p.slug} className="sm:border-b">
-                <PostListItem post={p} />
-              </div>
-            ))}
-          </div>
-        </section>
+          {meoVat.length > 0 && (
+            <section aria-labelledby="meo-vat-hay">
+              <SectionHeading id="meo-vat-hay" title="Mẹo vặt hay" href={`/${POST_TYPES.MEO_VAT.slug}`} />
+              <ul className="divide-y md:grid md:grid-cols-2 md:gap-x-gutter-desktop md:divide-y-0">
+                {meoVat.map((p) => (
+                  <li key={p.slug} className="md:border-b">
+                    <PostCard post={p} variant="row" />
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
+        </>
       )}
     </div>
   );

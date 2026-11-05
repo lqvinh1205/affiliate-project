@@ -58,7 +58,7 @@ export async function ProductEditScreen({ params }: Pick<PageProps<"/cms/san-pha
             {posts.map((post) => (
               <li key={post.id}>
                 <Link
-                  href={`/cms/posts/${post.id}`}
+                  href={`/cms/bai-viet/${post.id}`}
                   className="flex min-h-touch-target items-center justify-between gap-space-sm px-space-md py-2 hover:bg-surface-container"
                 >
                   <span className="min-w-0 truncate font-medium">{post.title}</span>

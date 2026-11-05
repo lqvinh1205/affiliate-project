@@ -21,3 +21,20 @@ describe("sanitizePostHtml", () => {
     expect(sanitizePostHtml(html)).toBe(html);
   });
 });
+
+describe("sanitizePostHtml — chỉ định dạng của trình soạn bài (UX-DR50)", () => {
+  it("bỏ bảng, ảnh, link khi dán HTML lạ, giữ chữ", () => {
+    const pasted =
+      '<table><tr><td>ô</td></tr></table><p><a href="https://x.vn">link</a><img src="https://x.vn/a.jpg"></p><script>x()</script>';
+    const out = sanitizePostHtml(pasted);
+    expect(out).not.toMatch(/<(table|tr|td|a|img|script)\b/);
+    expect(out).toContain("ô");
+    expect(out).toContain("<p>link</p>");
+  });
+
+  it("đổi b/i/h4 sang strong/em/h3, bỏ h1, hr, figure", () => {
+    expect(sanitizePostHtml("<h1>A</h1><h4>B</h4><p><b>c</b><i>d</i></p><hr><figure>e</figure>")).toBe(
+      "A<h3>B</h3><p><strong>c</strong><em>d</em></p>e",
+    );
+  });
+});

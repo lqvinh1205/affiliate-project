@@ -6,6 +6,7 @@ import {
   getLatestPosts,
   getPostBySlug,
   getPostsByType,
+  getPostSlugRedirect,
   getRelatedPosts,
   listCategoriesWithPostCounts,
   listNavCategories,
@@ -74,7 +75,7 @@ describe("ẩn Sản phẩm biến mất khỏi mọi query public (AD-16)", () 
     const lists = [
       await getLatestPosts(10),
       await getPostsByType("GOM_LINK"),
-      await getRelatedPosts("khac", "GOM_LINK"),
+      await getRelatedPosts("khac", category.id),
       (await listPostsByCategory(category.id, 1)).items,
       (await listPostsByType("GOM_LINK", 1)).items,
     ];
@@ -145,7 +146,8 @@ describe("tag cache của query public (AD-7)", () => {
     const cases: [string, () => Promise<unknown>, string[]][] = [
       ["getLatestPosts", () => getLatestPosts(1), ["posts", "products"]],
       ["getPostsByType", () => getPostsByType("GOM_LINK"), ["posts", "products"]],
-      ["getRelatedPosts", () => getRelatedPosts("x", "GOM_LINK"), ["posts", "products"]],
+      ["getRelatedPosts", () => getRelatedPosts("x", c.id), ["posts", "products"]],
+      ["getPostSlugRedirect", () => getPostSlugRedirect("x"), ["posts"]],
       ["getPostBySlug", () => getPostBySlug("t"), ["posts", "products", "categories"]],
       ["listCategoriesWithPostCounts", () => listCategoriesWithPostCounts(), ["posts", "categories"]],
       ["listNavCategories", () => listNavCategories(), ["posts", "categories"]],
@@ -155,5 +157,30 @@ describe("tag cache của query public (AD-7)", () => {
     for (const [name, fn, expected] of cases) {
       expect([name, (await cacheTagsOf(fn)).sort()]).toEqual([name, [...expected].sort()]);
     }
+  });
+});
+
+describe("getRelatedPosts (UX-DR17)", () => {
+  it("tối đa 3 bài cùng Danh mục, mới nhất trước, bỏ chính bài đó và bài khác Danh mục", async () => {
+    const c = await db.category.create({ data: { name: "C", slug: "c" } });
+    const other = await db.category.create({ data: { name: "D", slug: "d" } });
+    for (const slug of ["r1", "r2", "r3", "r4"]) await publish(slug, { categoryId: c.id });
+    await publish("khac-danh-muc", { categoryId: other.id });
+    await db.post.create({ data: { title: "n", slug: "nhap", content: "", postType: "MEO_VAT", categoryId: c.id } });
+
+    expect((await getRelatedPosts("r4", c.id)).map((p) => p.slug)).toEqual(["r3", "r2", "r1"]);
+    expect((await getRelatedPosts("khac-danh-muc", other.id)).map((p) => p.slug)).toEqual([]);
+    expect(await getRelatedPosts("r1", null)).toEqual([]);
+  });
+});
+
+describe("getPostSlugRedirect (AD-20)", () => {
+  it("slug cũ trả slug hiện tại của bài đã xuất bản; bài nháp hoặc slug lạ trả null", async () => {
+    const p = await publish("moi");
+    await db.postSlugRedirect.create({ data: { oldSlug: "cu", postId: p.id } });
+    expect(await getPostSlugRedirect("cu")).toBe("moi");
+    expect(await getPostSlugRedirect("khong-co")).toBeNull();
+    await db.post.update({ where: { id: p.id }, data: { status: "DRAFT" } });
+    expect(await getPostSlugRedirect("cu")).toBeNull();
   });
 });

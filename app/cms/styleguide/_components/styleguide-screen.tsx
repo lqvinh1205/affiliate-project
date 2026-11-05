@@ -12,8 +12,8 @@ import { AffiliateLink } from "@/modules/products/components/affiliate-link";
 import { ProductCard } from "@/modules/products/components/product-card";
 import { ProductStatusBadge } from "@/modules/products/components/product-status-badge";
 import { ImageFallback } from "@/components/shared/image-fallback.client";
-import { SeoScore } from "@/components/cms/seo-score";
-import { Breadcrumb } from "@/app/(site)/_components/breadcrumb";
+import { SeoScore } from "@/modules/posts/components/seo-score";
+import { Breadcrumb } from "@/components/shared/breadcrumb";
 import { Pagination } from "@/app/(site)/_components/pagination";
 import { ConfirmDialogDemo, FormDemo } from "@/app/cms/styleguide/_components/form-demo.client";
 import { ToastDemo } from "@/app/cms/styleguide/_components/toast-demo.client";
@@ -240,6 +240,7 @@ export function StyleguideScreen() {
               featuredImage: null,
               postType: "MEO_VAT",
               readingMinutes: 4,
+              publishedAt: new Date("2026-11-01T03:00:00Z"),
             }}
           />
           <PostCard
@@ -250,10 +251,37 @@ export function StyleguideScreen() {
               featuredImage: "https://down-vn.img.susercontent.com/file/anh-loi-de-thu-fallback",
               postType: "GOM_LINK",
               readingMinutes: 6,
+              publishedAt: null,
+            }}
+          />
+          <div className="sm:col-span-2">
+            <PostCard
+              variant="featured"
+              post={{
+                slug: "meo-tay-vet-o-vang-noi-chien-khong-dau",
+                title: "PostCard featured: Mẹo tẩy vết ố vàng nồi chiên không dầu",
+                excerpt: "Bài nổi bật Trang chủ: badge trên ảnh, tiêu đề lớn.",
+                featuredImage: null,
+                postType: "MEO_VAT",
+                readingMinutes: 4,
+                publishedAt: new Date("2026-11-01T03:00:00Z"),
+              }}
+            />
+          </div>
+          <PostCard
+            variant="row"
+            post={{
+              slug: "tong-hop-do-decor-phong-ngu-han-quoc-gia-re",
+              title: "PostCard row: thumbnail trái 80px",
+              excerpt: null,
+              featuredImage: null,
+              postType: "GOM_LINK",
+              readingMinutes: 6,
+              publishedAt: new Date("2026-11-01T03:00:00Z"),
             }}
           />
           <div className="space-y-3">
-            <Skeleton className="aspect-[4/3] rounded-sm" />
+            <Skeleton className="aspect-video rounded-xl" />
             <Skeleton className="h-4 w-1/3" />
             <Skeleton className="h-5 w-full" />
             <Skeleton className="h-5 w-2/3" />

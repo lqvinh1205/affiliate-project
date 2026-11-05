@@ -265,6 +265,87 @@
   backdrop-filter: blur(12px);
 }
 
+/* ArticleBody (UX-DR24, DESIGN.md › ArticleBody, Callout): thân Bài web đã sanitize — trang bài, bản xem trước và
+   vùng soạn PostEditor dùng chung lớp này. H2 đánh số trong vòng tròn `primary-fixed`; `blockquote` = Callout "Mẹo nhỏ". */
+@utility article-body {
+  counter-reset: muc;
+  font-size: var(--text-body-lead);
+  line-height: var(--text-body-lead--line-height);
+  color: var(--on-surface);
+  overflow-wrap: anywhere;
+
+  & > * + * {
+    margin-top: 1rem;
+  }
+  & h2 {
+    counter-increment: muc;
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    margin-top: 2.5rem;
+    font-size: var(--text-headline-lg-mobile);
+    line-height: var(--text-headline-lg-mobile--line-height);
+    scroll-margin-top: 5rem;
+  }
+  & h2::before {
+    content: counter(muc);
+    flex: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    margin-top: -0.0625rem;
+    border-radius: 9999px;
+    background: var(--primary-fixed);
+    color: var(--on-primary-fixed);
+    font-size: var(--text-label-md);
+  }
+  & h3 {
+    margin-top: 1.75rem;
+    font-size: var(--text-headline-md);
+    line-height: var(--text-headline-md--line-height);
+  }
+  & ul,
+  & ol {
+    padding-left: 1.5rem;
+  }
+  & ul {
+    list-style: disc;
+  }
+  & ol {
+    list-style: decimal;
+  }
+  & li + li {
+    margin-top: 0.375rem;
+  }
+  & li::marker {
+    color: var(--primary);
+  }
+  & strong {
+    font-weight: 600;
+  }
+  & blockquote {
+    border-radius: var(--radius-xl);
+    background: var(--primary-fixed);
+    color: var(--on-surface);
+    padding: 1rem;
+  }
+  & blockquote::before {
+    content: "Mẹo nhỏ";
+    display: block;
+    margin-bottom: 0.25rem;
+    font-size: var(--text-label-sm);
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--on-primary-fixed);
+  }
+  & blockquote > * + * {
+    margin-top: 0.5rem;
+  }
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;
@@ -291,8 +372,13 @@
   }
 }
 
+/* UX-DR91: tắt cuộn mượt, nhấp nháy Skeleton, icon quay khi người dùng chọn giảm chuyển động. */
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;
+  }
+  .animate-pulse,
+  .animate-spin {
+    animation: none;
   }
 }

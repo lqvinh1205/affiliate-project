@@ -13,13 +13,14 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 
-// Xác nhận thao tác xoá (UX-DR58): tiêu đề nêu đối tượng, một câu hậu quả, focus mặc định vào "Huỷ".
+// Xác nhận thao tác xoá và chuyển bài về nháp (UX-DR58): tiêu đề nêu đối tượng, một câu hậu quả, focus mặc định vào "Huỷ".
 export function ConfirmDialog({
   open,
   onOpenChange,
   title,
   description,
   confirmLabel = "Xoá",
+  pendingLabel = "Đang xoá…",
   pending = false,
   onConfirm,
 }: {
@@ -28,6 +29,7 @@ export function ConfirmDialog({
   title: string;
   description: string;
   confirmLabel?: string;
+  pendingLabel?: string;
   pending?: boolean;
   onConfirm: () => void;
 }) {
@@ -45,7 +47,7 @@ export function ConfirmDialog({
           </AlertDialogCancel>
           <Button variant="destructive" disabled={pending} onClick={onConfirm}>
             {pending && <Loader2 className="animate-spin" aria-hidden />}
-            {pending ? "Đang xoá…" : confirmLabel}
+            {pending ? pendingLabel : confirmLabel}
           </Button>
         </AlertDialogFooter>
       </AlertDialogContent>

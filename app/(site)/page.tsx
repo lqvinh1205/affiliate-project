@@ -1,10 +1,14 @@
+import type { Metadata } from "next";
 import { Suspense } from "react";
 import { HomeScreen } from "@/app/(site)/_components/home-screen";
-import { PostListSkeleton } from "@/app/(site)/_components/post-list-skeleton";
+import { HomeSkeleton } from "@/app/(site)/_components/home-skeleton";
+
+// Trang chủ: canonical chính nó, không JSON-LD (AD-26); title mặc định ở `app/layout.tsx`.
+export const metadata: Metadata = { alternates: { canonical: "/" } };
 
 export default function HomePage() {
   return (
-    <Suspense fallback={<PostListSkeleton />}>
+    <Suspense fallback={<HomeSkeleton />}>
       <HomeScreen />
     </Suspense>
   );

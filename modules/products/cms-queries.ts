@@ -1,6 +1,7 @@
 import "server-only";
 import { db } from "@/platform/db";
-import { PRODUCT_PAGE_SIZE } from "@/modules/products/constants";
+import { PRODUCT_PAGE_SIZE, PRODUCT_PICKER_LIMIT } from "@/modules/products/constants";
+import { publicProductSelect, visibleProductWhere } from "@/modules/products/queries";
 
 // Danh sách Kho cho CMS: lọc tên chứa `q` (không phân biệt hoa thường), mới nhất trước.
 // `page` từ 1; vượt trang cuối thì kẹp về trang cuối (trả `page` đã kẹp).
@@ -43,5 +44,16 @@ export async function getProductForCms(id: string) {
       rawImageUrls: true,
       hidden: true,
     },
+  });
+}
+
+// Kết quả tìm của ProductPicker (gắn Sản phẩm vào bài — UX-DR48): chỉ Sản phẩm đang hiện, tên chứa `q`,
+// mới nhất trước; `q` trống thì trả các Sản phẩm mới nhất. Đọc qua URL `?sp=` ở Screen, không có action đọc (AD-12).
+export async function searchProductsForPicker(q: string) {
+  return db.product.findMany({
+    where: { ...visibleProductWhere, ...(q && { name: { contains: q, mode: "insensitive" as const } }) },
+    orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+    take: PRODUCT_PICKER_LIMIT,
+    select: { ...publicProductSelect, hidden: true },
   });
 }

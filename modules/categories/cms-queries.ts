@@ -8,10 +8,10 @@ export async function getCategoryForCms(id: string) {
   });
 }
 
-// Danh mục để chọn trong form (Sản phẩm…), theo thứ tự hiển thị.
+// Danh mục để chọn trong form (Sản phẩm, Bài web), theo thứ tự hiển thị; `slug` cho Breadcrumb của bản xem trước bài.
 export async function listCategoryOptionsForCms() {
   return db.category.findMany({
     orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }, { id: "asc" }],
-    select: { id: true, name: true },
+    select: { id: true, name: true, slug: true },
   });
 }

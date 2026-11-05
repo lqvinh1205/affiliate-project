@@ -3,8 +3,8 @@ import type { ReactNode } from "react";
 import { SITE_URL } from "@/platform/site";
 import type { PostListPage } from "@/modules/posts/types";
 import { PostCard } from "@/modules/posts/components/post-card";
+import { Breadcrumb } from "@/components/shared/breadcrumb";
 import { buttonVariants } from "@/components/ui/button";
-import { Breadcrumb } from "@/app/(site)/_components/breadcrumb";
 import { JsonLd } from "@/app/(site)/_components/json-ld";
 import { Pagination } from "@/app/(site)/_components/pagination";
 

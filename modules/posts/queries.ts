@@ -7,7 +7,7 @@ import { readingMinutes } from "@/platform/html/content";
 import { CATEGORIES_TAG } from "@/modules/categories/tags";
 import { publicProductSelect, visibleProductWhere } from "@/modules/products/queries";
 import { PRODUCTS_TAG } from "@/modules/products/tags";
-import { PAGE_SIZE } from "@/modules/posts/constants";
+import { PAGE_SIZE, RELATED_POSTS_LIMIT } from "@/modules/posts/constants";
 import { POSTS_TAG } from "@/modules/posts/tags";
 
 // Query public của Bài web (spine AD-7): `"use cache"` + `cacheLife` + `cacheTag` của mọi module có bảng
@@ -70,14 +70,17 @@ export async function getPostsByType(postType: PostType, limit?: number) {
   return rows.map(toCard);
 }
 
-export async function getRelatedPosts(slug: string, postType: PostType, limit = 3) {
+// Bài liên quan cuối trang bài (UX-DR17): tối đa `RELATED_POSTS_LIMIT` bài cùng Danh mục, mới nhất trước;
+// bài chưa có Danh mục thì không có bài liên quan.
+export async function getRelatedPosts(slug: string, categoryId: string | null) {
   "use cache";
   cacheLife("days");
   cacheTag(POSTS_TAG, PRODUCTS_TAG);
+  if (!categoryId) return [];
   const rows = await db.post.findMany({
-    where: { ...published, postType, slug: { not: slug } },
+    where: { ...published, categoryId, slug: { not: slug } },
     orderBy: [...newestFirst],
-    take: limit,
+    take: RELATED_POSTS_LIMIT,
     select: cardSelect,
   });
   return rows.map(toCard);
@@ -108,6 +111,19 @@ export async function getPostBySlug(slug: string) {
     featuredImage: post.featuredImage ?? products[0]?.image ?? null,
     readingMinutes: readingMinutes(post.content),
   };
+}
+
+// Slug hiện tại của Bài web đã xuất bản từng dùng `oldSlug` (AD-20); null nếu không có lịch sử hoặc bài không còn
+// xuất bản (khi đó slug cũ trả 404 như slug hiện tại).
+export async function getPostSlugRedirect(oldSlug: string) {
+  "use cache";
+  cacheLife("days");
+  cacheTag(POSTS_TAG);
+  const row = await db.postSlugRedirect.findUnique({
+    where: { oldSlug },
+    select: { post: { select: { slug: true, status: true } } },
+  });
+  return row?.post.status === "PUBLISHED" ? row.post.slug : null;
 }
 
 export async function getPublishedSlugs() {
