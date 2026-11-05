@@ -16,7 +16,9 @@ async function Editor({ params }: Pick<PageProps<"/cms/posts/[id]">, "params">) 
   const { id } = await params;
   const post = await db.post.findUnique({
     where: { id },
-    include: { postProducts: { orderBy: { sortOrder: "asc" }, include: { product: true } } },
+    include: {
+      postProducts: { orderBy: { sortOrder: "asc" }, select: { product: { select: { id: true, name: true } } } },
+    },
   });
   if (!post) notFound();
 
@@ -36,13 +38,8 @@ async function Editor({ params }: Pick<PageProps<"/cms/posts/[id]">, "params">) 
         seoTitle: post.seoTitle ?? "",
         seoDescription: post.seoDescription ?? "",
         seoKeywords: post.seoKeywords,
-        products: post.postProducts.map(({ product: p }) => ({
-          name: p.name,
-          image: p.image ?? "",
-          price: p.price ?? "",
-          affiliateUrl: p.affiliateUrl,
-        })),
       }}
+      products={post.postProducts.map(({ product }) => product)}
     />
   );
 }

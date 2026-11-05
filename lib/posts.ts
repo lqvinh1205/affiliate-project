@@ -2,8 +2,9 @@ import { cacheLife, cacheTag } from "next/cache";
 import { db } from "@/platform/db";
 import type { CategoryKey } from "@/lib/categories";
 import { readingMinutes } from "@/platform/html/content";
+import { PRODUCTS_TAG } from "@/modules/products/tags";
 
-// Mọi truy vấn bài public gắn tag "posts"; khi publish/sửa bài gọi revalidateTag("posts").
+// Mọi truy vấn bài public gắn tag "posts"; truy vấn có đọc Sản phẩm gắn thêm "products" (AD-7).
 export const POSTS_TAG = "posts";
 
 const cardSelect = {
@@ -45,7 +46,7 @@ const newestFirst = { publishedAt: "desc" } as const;
 export async function getLatestPosts(limit: number) {
   "use cache";
   cacheLife("days");
-  cacheTag(POSTS_TAG);
+  cacheTag(POSTS_TAG, PRODUCTS_TAG);
   const rows = await db.post.findMany({
     where: published,
     orderBy: newestFirst,
@@ -58,7 +59,7 @@ export async function getLatestPosts(limit: number) {
 export async function getPostsByCategory(category: CategoryKey, limit?: number) {
   "use cache";
   cacheLife("days");
-  cacheTag(POSTS_TAG);
+  cacheTag(POSTS_TAG, PRODUCTS_TAG);
   const rows = await db.post.findMany({
     where: { ...published, postType: category },
     orderBy: newestFirst,
@@ -71,7 +72,7 @@ export async function getPostsByCategory(category: CategoryKey, limit?: number) 
 export async function getRelatedPosts(slug: string, category: CategoryKey, limit = 3) {
   "use cache";
   cacheLife("days");
-  cacheTag(POSTS_TAG);
+  cacheTag(POSTS_TAG, PRODUCTS_TAG);
   const rows = await db.post.findMany({
     where: { ...published, postType: category, slug: { not: slug } },
     orderBy: newestFirst,
@@ -84,10 +85,19 @@ export async function getRelatedPosts(slug: string, category: CategoryKey, limit
 export async function getPostBySlug(slug: string) {
   "use cache";
   cacheLife("days");
-  cacheTag(POSTS_TAG);
+  cacheTag(POSTS_TAG, PRODUCTS_TAG);
   const post = await db.post.findFirst({
     where: { ...published, slug },
-    include: { postProducts: { orderBy: { sortOrder: "asc" }, include: { product: true } } },
+    include: {
+      postProducts: {
+        orderBy: { sortOrder: "asc" },
+        select: {
+          product: {
+            select: { id: true, name: true, image: true, priceText: true, priceUpdatedAt: true, affiliateUrl: true },
+          },
+        },
+      },
+    },
   });
   if (!post) return null;
   const { postType, postProducts, ...rest } = post;

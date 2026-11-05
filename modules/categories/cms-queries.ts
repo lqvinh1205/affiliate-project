@@ -7,3 +7,11 @@ export async function getCategoryForCms(id: string) {
     select: { id: true, name: true, slug: true, description: true },
   });
 }
+
+// Danh mục để chọn trong form (Sản phẩm…), theo thứ tự hiển thị.
+export async function listCategoryOptionsForCms() {
+  return db.category.findMany({
+    orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }, { id: "asc" }],
+    select: { id: true, name: true },
+  });
+}

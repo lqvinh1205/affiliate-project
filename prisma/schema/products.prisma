@@ -1,12 +1,25 @@
+// Sản phẩm là dữ liệu nguồn độc lập trong Kho (FR-3, FR-4): Bài web chỉ tham chiếu qua `PostProduct`,
+// trình soạn bài không tạo/sửa/xoá Sản phẩm.
 model Product {
-  id           String        @id @default(uuid())
-  name         String
-  image        String?
-  price        String?
-  affiliateUrl String // link affiliate do admin tạo sẵn từ Shopee Affiliate
-  categoryId   String?
-  category     Category?     @relation(fields: [categoryId], references: [id], onDelete: Restrict)
-  postProducts PostProduct[]
+  id             String        @id @default(uuid())
+  name           String        @db.VarChar(200) // PRODUCT_NAME_MAX (modules/products/constants.ts)
+  image          String?
+  /// "Giá tham khảo" người nhập (vd "~89.000đ"); migration `add_product_price_and_raw_data` đổi tên từ cột `price` cũ.
+  priceText      String?       @db.VarChar(50) // PRODUCT_PRICE_TEXT_MAX
+  /// Lúc `priceText` đổi lần cuối; null khi không có giá. Migration đặt = lúc áp cho giá cũ có sẵn.
+  priceUpdatedAt DateTime?
+  affiliateUrl   String // link affiliate do admin tạo sẵn từ Shopee Affiliate
+  // Dữ liệu thô (FR-3): chữ, đánh giá, URL ảnh dán tay từ trang Shopee; nguồn cho AI viết sau này.
+  rawText        String?       @db.Text
+  rawReviews     String?       @db.Text
+  rawImageUrls   String[]      @default([])
+  categoryId     String?
+  category       Category?     @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  postProducts   PostProduct[]
+  /// Migration đặt `createdAt`/`updatedAt` = lúc áp cho Sản phẩm có sẵn.
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
 
   @@index([categoryId])
+  @@index([createdAt])
 }

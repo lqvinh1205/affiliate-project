@@ -9,3 +9,13 @@ export async function listCategoriesForCms() {
     select: { id: true, name: true, slug: true, _count: { select: { posts: true, products: true } } },
   });
 }
+
+// "Nơi đang dùng" của một Sản phẩm: các Bài web gắn nó, theo tiêu đề (chạm `PostProduct` + `Post` — AD-2).
+export async function listPostsUsingProductForCms(productId: string) {
+  const rows = await db.postProduct.findMany({
+    where: { productId },
+    orderBy: [{ post: { title: "asc" } }, { postId: "asc" }],
+    select: { post: { select: { id: true, title: true, status: true } } },
+  });
+  return rows.map((r) => r.post);
+}

@@ -1,17 +1,9 @@
 "use server";
 
 import { updateTag } from "next/cache";
-import type { z } from "zod";
-import type { Prisma } from "@/generated/prisma/client";
 import { analyzeSeo, generatePost, toThreads, type SeoReport } from "@/lib/ai";
 import { POSTS_TAG } from "@/lib/posts";
-import {
-  newPostSchema,
-  postInputSchema,
-  productInputSchema,
-  type NewPostInput,
-  type PostInput,
-} from "@/lib/post-input";
+import { newPostSchema, postInputSchema, type NewPostInput, type PostInput } from "@/lib/post-input";
 import { run } from "@/platform/auth/run";
 import { db } from "@/platform/db";
 import { UserError, type Result } from "@/platform/errors";
@@ -29,32 +21,17 @@ async function uniqueSlug(base: string, excludeId?: string) {
   }
 }
 
-type ProductRow = z.output<typeof productInputSchema>;
-
-// Thay danh sách Sản phẩm của bài theo thứ tự form; Sản phẩm vừa gỡ mà không còn bài nào dùng thì xoá.
-async function replacePostProducts(tx: Prisma.TransactionClient, postId: string, products: ProductRow[]) {
-  const old = await tx.postProduct.findMany({ where: { postId }, select: { productId: true } });
-  await tx.postProduct.deleteMany({ where: { postId } });
-  await tx.product.deleteMany({
-    where: { id: { in: old.map((o) => o.productId) }, postProducts: { none: {} } },
-  });
-  const rows = products.map((p) => ({ ...p, id: crypto.randomUUID() }));
-  await tx.product.createMany({ data: rows });
-  await tx.postProduct.createMany({
-    data: rows.map((p, sortOrder) => ({ postId, productId: p.id, sortOrder })),
-  });
-}
-
 export async function createPost(input: NewPostInput) {
   return run(async () => {
     const parsed = newPostSchema.safeParse(input);
     if (!parsed.success) throw new UserError(firstError(parsed.error));
-    const { category, topic, products, useAi } = parsed.data;
+    const { category, topic, useAi } = parsed.data;
 
     let data;
     if (useAi) {
-      if (products.length === 0) throw new UserError("Cần ít nhất 1 sản phẩm để AI viết bài");
-      const draft = await generatePost({ category, topic, products });
+      // Bài mới không nhận Sản phẩm (gắn từ Kho là Epic 3): AI viết theo chủ đề.
+      if (!topic) throw new UserError("Nhập chủ đề để AI viết bài");
+      const draft = await generatePost({ category, topic });
       // Bản nháp AI qua cùng schema với bài viết tay.
       const nonEmpty = (xs: string[]) => xs.map((x) => x.trim()).filter(Boolean);
       const checked = postInputSchema.safeParse({
@@ -65,7 +42,6 @@ export async function createPost(input: NewPostInput) {
         excerpt: draft.excerpt.slice(0, 500),
         featuredImage: "",
         category,
-        products: input.products,
       });
       if (!checked.success) throw new UserError(`AI trả về bản nháp chưa hợp lệ: ${firstError(checked.error)}`);
       const { title, excerpt, seoTitle, seoDescription, tags, seoKeywords, content } = checked.data;
@@ -84,11 +60,7 @@ export async function createPost(input: NewPostInput) {
       data = { title, content: "", tags: [], seoKeywords: [], slug: await uniqueSlug(title) };
     }
 
-    const post = await db.$transaction(async (tx) => {
-      const created = await tx.post.create({ data: { ...data, postType: category }, select: { id: true } });
-      await replacePostProducts(tx, created.id, products);
-      return created;
-    });
+    const post = await db.post.create({ data: { ...data, postType: category }, select: { id: true } });
     return { id: post.id };
   });
 }
@@ -97,17 +69,14 @@ export async function savePost(id: string, input: PostInput) {
   return run(async () => {
     const parsed = postInputSchema.safeParse(input);
     if (!parsed.success) throw new UserError(firstError(parsed.error));
-    const { products, slug, content, category, ...rest } = parsed.data;
+    const { slug, content, category, ...rest } = parsed.data;
     const uniq = await uniqueSlug(slug || rest.title, id);
 
-    const post = await db.$transaction(async (tx) => {
-      const updated = await tx.post.update({
-        where: { id },
-        data: { ...rest, postType: category, content: sanitizePostHtml(content), slug: uniq },
-        select: { slug: true },
-      });
-      await replacePostProducts(tx, id, products);
-      return updated;
+    // Không chạm `PostProduct`/`Product`: Sản phẩm của bài giữ nguyên id, thứ tự, dữ liệu.
+    const post = await db.post.update({
+      where: { id },
+      data: { ...rest, postType: category, content: sanitizePostHtml(content), slug: uniq },
+      select: { slug: true },
     });
     updateTag(POSTS_TAG);
     return { slug: post.slug };
@@ -136,10 +105,8 @@ export async function setPostStatus(id: string, status: "DRAFT" | "PUBLISHED") {
 
 export async function deletePost(id: string) {
   return run(async () => {
-    await db.$transaction(async (tx) => {
-      await replacePostProducts(tx, id, []);
-      await tx.post.delete({ where: { id } });
-    });
+    // `PostProduct` của bài xoá theo cascade; Sản phẩm trong Kho giữ nguyên (FR-4).
+    await db.post.delete({ where: { id } });
     updateTag(POSTS_TAG);
     return {};
   });

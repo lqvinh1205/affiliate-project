@@ -12,7 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import type { SeoReport } from "@/lib/ai";
 import type { PostInput } from "@/lib/post-input";
-import { CategoryPicker, Field, ProductFields } from "./fields";
+import { CategoryPicker, Field } from "./fields";
 import { SeoScore } from "./seo-score";
 import { StatusBadge } from "./status-badge";
 
@@ -26,7 +26,19 @@ function Counter({ value, max, min }: { value: string; max: number; min?: number
   return <span className={bad ? "text-destructive" : undefined}>{n}/{max}</span>;
 }
 
-export function PostEditor({ id, initial, initialStatus }: { id: string; initial: PostInput; initialStatus: Status }) {
+type LinkedProduct = { id: string; name: string };
+
+export function PostEditor({
+  id,
+  initial,
+  initialStatus,
+  products,
+}: {
+  id: string;
+  initial: PostInput;
+  initialStatus: Status;
+  products: LinkedProduct[];
+}) {
   const router = useRouter();
   const [post, setPost] = useState(initial);
   const [status, setStatus] = useState(initialStatus);
@@ -211,8 +223,25 @@ export function PostEditor({ id, initial, initialStatus }: { id: string; initial
         </TabsContent>
 
         <TabsContent value="products" className="pt-4">
-          <ProductFields products={post.products} onChange={(products) => set({ products })} />
-          <p className="mt-3 text-xs text-muted-foreground">Nhớ bấm “Lưu” sau khi sửa sản phẩm.</p>
+          {/* Chỉ đọc: Sản phẩm sửa trong Kho; gắn/bỏ/sắp Sản phẩm vào bài là Epic 3. */}
+          {products.length === 0 ? (
+            <p className="text-sm text-muted-foreground">Bài chưa gắn Sản phẩm nào.</p>
+          ) : (
+            <ul className="divide-y rounded-md border bg-background">
+              {products.map((p) => (
+                <li key={p.id} className="flex items-center justify-between gap-3 px-3 py-2">
+                  <span className="min-w-0 truncate text-sm font-medium">{p.name}</span>
+                  <Link
+                    href={`/cms/san-pham/${p.id}`}
+                    className="inline-flex min-h-11 shrink-0 items-center text-sm text-primary hover:underline"
+                  >
+                    Sửa trong Kho
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          )}
+          <p className="mt-3 text-xs text-muted-foreground">Gắn Sản phẩm từ kho sẽ có ở bản sau.</p>
         </TabsContent>
 
         <TabsContent value="threads" className="space-y-4 pt-4">

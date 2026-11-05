@@ -10,9 +10,10 @@ Không còn mục mở. [NO-01]–[NO-05] đã sửa ở Story 1.2, có unit tes
 
 ## Vừa — hành vi sai hoặc dễ gây lỗi
 
+[NO-09] (Sản phẩm bị xoá và tạo lại mỗi lần lưu bài) đã sửa ở Story 2.3: Kho Sản phẩm độc lập, trình soạn bài không ghi `Product`/`PostProduct`.
+
 - **[NO-07]** `savePost` tính lại slug mỗi lần lưu; đổi slug bài đã xuất bản làm hỏng URL cũ, không có chuyển hướng 301 (`permanentRedirect`, HTTP 308 — AD-20; PRD FR-27).
 - **[NO-08]** `prisma/seed.ts` chạy `deleteMany()` toàn bộ bài trước khi seed — phá huỷ dữ liệu. Xem `[PR-14]`.
-- **[NO-09]** Sản phẩm bị xoá và tạo lại (đổi id) mỗi lần lưu bài, dù mô hình đã cho dùng chung qua `PostProduct` — CMS chưa chọn được Sản phẩm có sẵn nên chưa chia sẻ Sản phẩm giữa các bài được. Xem `[PR-26]`.
 - **[NO-10]** `toThreads` (`lib/ai.ts`) đặt link website ở bài cuối chuỗi, trái PRD FR-14 (link affiliate nằm ở Bình luận kèm link).
 - **[NO-12]** Giới hạn tóm tắt không khớp: editor và prompt AI dùng 200, Zod và DB cho 500 (`components/cms/post-editor.tsx`, `lib/post-input.ts`, `prisma/schema/posts.prisma`).
 - **[NO-13]** `next/image` còn dùng `priority` (đã deprecate ở Next 16) — `app/(site)/page.tsx`, `app/(site)/bai-viet/[slug]/page.tsx`. Xem `[GD-30]`.
@@ -20,9 +21,9 @@ Không còn mục mở. [NO-01]–[NO-05] đã sửa ở Story 1.2, có unit tes
 
 ## Thấp — nhất quán và dọn dẹp
 
+[NO-16] (comment `lib/posts.ts` ghi `revalidateTag`) đã sửa ở Story 2.3.
 
-- **[NO-16]** Comment `lib/posts.ts:6` ghi `revalidateTag`, code dùng `updateTag`. Xem `[NX-50]`.
-- **[NO-17]** Kiểu `ProductInput` khai báo hai lần, hai hình dạng khác nhau (`lib/ai.ts`, `lib/post-input.ts`).
+- **[NO-17]** Hai kiểu cùng tên `ProductInput`, khác hình dạng: `lib/ai.ts` (`{ name, priceText? }`, Sản phẩm đưa cho AI) và `modules/products/schema.ts` (dữ liệu Kho đã parse). Bản ở `lib/post-input.ts` đã bỏ ở Story 2.3; bản ở `lib/ai.ts` hết khi prompt chuyển sang `modules/posts/prompts/` (AD-10).
 - **[NO-18]** Kiểu `PostCard` trong `lib/posts.ts` không được dùng, trùng tên component; hình dạng bị chép tay thành `PostCardData`.
 - **[NO-19]** Literal `"DRAFT" | "PUBLISHED"` và `["MEO_VAT","GOM_LINK"]` gõ lại ở nhiều file thay vì suy ra từ enum Prisma hoặc `CategoryKey` (`[KT-08]`, `[PR-27]`).
 - **[NO-20]** UI gọi enum `PostType` (trước là `Category`) là "Chuyên mục", trong khi PRD gọi là **Loại bài**; **Danh mục** là khái niệm khác (model `Category`, chưa có giao diện). Khoá `category` trong form, prop (`CategoryBadge category=`), `CategoryKey` và kết quả `lib/posts.ts` vẫn mang nghĩa Loại bài (`Post.postType`), trong khi `Post.category` của Prisma giờ là quan hệ Danh mục.

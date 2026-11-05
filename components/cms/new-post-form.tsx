@@ -8,23 +8,19 @@ import { createPost } from "@/app/cms/actions";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import type { CategoryKey } from "@/lib/categories";
-import type { ProductInput } from "@/lib/post-input";
-import { CategoryPicker, Field, ProductFields, emptyProduct } from "./fields";
+import { CategoryPicker, Field } from "./fields";
 
 export function NewPostForm() {
   const router = useRouter();
   const [category, setCategory] = useState<CategoryKey>("GOM_LINK");
   const [topic, setTopic] = useState("");
-  const [products, setProducts] = useState<ProductInput[]>([emptyProduct()]);
   const [pending, startTransition] = useTransition();
   const [mode, setMode] = useState<"ai" | "blank">("ai");
 
   const submit = (useAi: boolean) => {
     setMode(useAi ? "ai" : "blank");
     startTransition(async () => {
-      // Bỏ các ô sản phẩm để trống hoàn toàn.
-      const filled = products.filter((p) => p.name || p.affiliateUrl);
-      const res = await createPost({ category, topic, products: filled, useAi });
+      const res = await createPost({ category, topic, useAi });
       if (!res.ok) {
         toast.error(res.error);
         return;
@@ -39,7 +35,7 @@ export function NewPostForm() {
       <Field label="Chuyên mục">
         <CategoryPicker value={category} onChange={setCategory} />
       </Field>
-      <Field label="Chủ đề / ý tưởng" hint="không bắt buộc">
+      <Field label="Chủ đề / ý tưởng" hint="bắt buộc khi AI viết">
         <Textarea
           rows={3}
           placeholder="VD: Đồ decor phòng trọ dưới 100k cho sinh viên"
@@ -47,9 +43,6 @@ export function NewPostForm() {
           onChange={(e) => setTopic(e.target.value)}
           className="bg-background"
         />
-      </Field>
-      <Field label="Sản phẩm">
-        <ProductFields products={products} onChange={setProducts} />
       </Field>
 
       <div className="space-y-2">

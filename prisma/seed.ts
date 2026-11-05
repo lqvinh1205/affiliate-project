@@ -28,7 +28,7 @@ type SeedPost = {
   excerpt: string;
   tags: string[];
   content: string;
-  products: string[];
+  products: { name: string; priceText: string }[];
 };
 
 // Link tạm trỏ tới trang tìm kiếm Shopee — thay bằng link affiliate thật trong CMS.
@@ -50,7 +50,7 @@ const POSTS: SeedPost[] = [
 <p>Rút điện và để nồi nguội hẳn. Trộn baking soda với một ít nước thành hỗn hợp sệt, phủ lên các vết ố và để 10 phút. Xịt giấm lên trên cho sủi bọt, sau đó lau nhẹ bằng bọt biển rồi rửa lại bằng nước ấm.</p>
 <h2>Giữ nồi sạch lâu hơn</h2>
 <p>Lót giấy nến khi chiên đồ nhiều dầu và lau lòng nồi sau mỗi lần dùng — chỉ mất 1 phút nhưng tiết kiệm cả buổi cọ rửa.</p>`,
-    products: ["Giấy nến lót nồi chiên không dầu", "Bột baking soda đa năng"],
+    products: [{ name: "Giấy nến lót nồi chiên không dầu", priceText: "~35.000đ" }, { name: "Bột baking soda đa năng", priceText: "~25.000đ" }],
   },
   {
     slug: "tong-hop-do-decor-phong-ngu-han-quoc-gia-re",
@@ -66,7 +66,7 @@ const POSTS: SeedPost[] = [
 <p>Một tấm thảm nỉ màu be giúp sàn nhà bớt trống và đồng bộ với chăn ga sáng màu.</p>
 <h2>Điểm nhấn trên tường</h2>
 <p>Tranh canvas tối giản treo đầu giường là cách rẻ nhất để có góc "sống ảo".</p>`,
-    products: ["Đèn ngủ vintage để bàn", "Thảm nỉ trải sàn màu be", "Tranh canvas tối giản treo tường"],
+    products: [{ name: "Đèn ngủ vintage để bàn", priceText: "~89.000đ" }, { name: "Thảm nỉ trải sàn màu be", priceText: "~75.000đ" }, { name: "Tranh canvas tối giản treo tường", priceText: "~59.000đ" }],
   },
   {
     slug: "cach-gap-quan-ao-nhanh-gon-khong-bi-nhau",
@@ -80,7 +80,7 @@ const POSTS: SeedPost[] = [
 <p>Gập hai bên áo vào giữa, gấp đôi theo chiều dọc rồi gấp tiếp thành 3 phần để áo tự đứng được.</p>
 <h2>Xếp đứng trong hộp chia ngăn</h2>
 <p>Hộp chia ngăn giúp từng nếp áo không bị đổ, lấy một món không làm xô lệch cả chồng.</p>`,
-    products: ["Hộp chia ngăn vải oxford đựng quần áo"],
+    products: [{ name: "Hộp chia ngăn vải oxford đựng quần áo", priceText: "~45.000đ" }],
   },
   {
     slug: "top-do-gia-dung-thong-minh-cho-nha-bep-nho",
@@ -94,7 +94,7 @@ const POSTS: SeedPost[] = [
 <p>Gom chai lọ vào một chỗ, xoay là lấy được, không còn cảnh lục tìm.</p>
 <h2>Máy xay tỏi kéo tay</h2>
 <p>Không cần điện, rửa nhanh và cất gọn trong ngăn kéo.</p>`,
-    products: ["Kệ gia vị xoay 360 độ", "Máy xay tỏi ớt kéo tay mini"],
+    products: [{ name: "Kệ gia vị xoay 360 độ", priceText: "~99.000đ" }, { name: "Máy xay tỏi ớt kéo tay mini", priceText: "~29.000đ" }],
   },
   {
     slug: "meo-giu-quan-ao-khong-bi-phai-mau-khi-giat",
@@ -108,7 +108,7 @@ const POSTS: SeedPost[] = [
 <p>Pha 1 chén giấm trắng với chậu nước lạnh, lộn trái quần và ngâm khoảng 30 phút rồi phơi trong bóng râm.</p>
 <h2>Giặt đúng cách những lần sau</h2>
 <p>Luôn lộn trái, giặt nước lạnh và cho vào túi giặt lưới để hạn chế ma sát.</p>`,
-    products: ["Set túi giặt lưới bảo vệ quần áo"],
+    products: [{ name: "Set túi giặt lưới bảo vệ quần áo", priceText: "~39.000đ" }],
   },
   {
     slug: "phu-kien-thoi-trang-hot-trend-gia-sinh-vien",
@@ -122,7 +122,7 @@ const POSTS: SeedPost[] = [
 <p>Một chiếc kẹp nhỏ cài lệch bên là đủ để kiểu tóc đơn giản trông chỉn chu hơn.</p>
 <h2>Khuyên tai bạc S925</h2>
 <p>Bạc S925 ít gây kích ứng hơn hàng mạ thông thường, hợp cho người đeo hằng ngày.</p>`,
-    products: ["Kẹp tóc đính đá phong cách Hàn", "Khuyên tai bạc S925 tối giản"],
+    products: [{ name: "Kẹp tóc đính đá phong cách Hàn", priceText: "~15.000đ" }, { name: "Khuyên tai bạc S925 tối giản", priceText: "~65.000đ" }],
   },
   {
     slug: "meo-cham-soc-cay-thiet-moc-lan-trong-nha-luon-xanh-tot",
@@ -138,7 +138,7 @@ const POSTS: SeedPost[] = [
 <p>Phòng máy lạnh khá khô, phun sương nhẹ lên lá giúp cây không bị cháy mép.</p>
 <h2>Bón phân hữu cơ</h2>
 <p>Phân trùn quế nhẹ, không gây nóng rễ, bón mỗi tháng một lần vào mùa cây phát triển.</p>`,
-    products: ["Bình xịt phun sương áp suất", "Phân trùn quế hữu cơ"],
+    products: [{ name: "Bình xịt phun sương áp suất", priceText: "~55.000đ" }, { name: "Phân trùn quế hữu cơ", priceText: "~30.000đ" }],
   },
   {
     slug: "goc-hoc-tap-cute-tang-nang-suat",
@@ -152,7 +152,7 @@ const POSTS: SeedPost[] = [
 <p>Nâng màn hình hoặc sách lên một tầng, tầng dưới để đồ lặt vặt — mặt bàn thoáng hẳn.</p>
 <h2>Bút gel 0.5mm</h2>
 <p>Viết êm, mực đều, nhiều màu pastel cho ai thích ghi chú đẹp.</p>`,
-    products: ["Kệ nhựa 2 tầng mini để bàn", "Hộp bút gel 0.5mm nhiều màu"],
+    products: [{ name: "Kệ nhựa 2 tầng mini để bàn", priceText: "~69.000đ" }, { name: "Hộp bút gel 0.5mm nhiều màu", priceText: "~42.000đ" }],
   },
   {
     slug: "meo-lam-sach-sau-lo-chan-long-tai-nha",
@@ -166,7 +166,7 @@ const POSTS: SeedPost[] = [
 <p>Rửa mặt sạch, dùng cọ silicon tán một lớp mỏng, tránh vùng mắt và môi. Rửa sạch sau 10 phút, trước khi đất sét khô nứt hoàn toàn.</p>
 <h2>Lưu ý</h2>
 <p>Không đắp quá 2 lần mỗi tuần và luôn dưỡng ẩm sau đó. Nếu da kích ứng, ngưng dùng và hỏi ý kiến bác sĩ da liễu.</p>`,
-    products: ["Mặt nạ đất sét làm sạch lỗ chân lông", "Cọ quét mặt nạ silicon"],
+    products: [{ name: "Mặt nạ đất sét làm sạch lỗ chân lông", priceText: "~79.000đ" }, { name: "Cọ quét mặt nạ silicon", priceText: "~12.000đ" }],
   },
   {
     slug: "nhung-mon-do-du-lich-tien-loi-phai-co-trong-vali",
@@ -180,7 +180,7 @@ const POSTS: SeedPost[] = [
 <p>Chiết sữa rửa mặt, dầu gội ra chai nhỏ để mang lên máy bay đúng quy định.</p>
 <h2>Bàn ủi hơi nước mini</h2>
 <p>Gọn bằng chai nước, là phẳng áo sơ mi trong vài phút trước buổi hẹn.</p>`,
-    products: ["Bộ chai chiết mỹ phẩm du lịch", "Bàn ủi hơi nước cầm tay mini"],
+    products: [{ name: "Bộ chai chiết mỹ phẩm du lịch", priceText: "~49.000đ" }, { name: "Bàn ủi hơi nước cầm tay mini", priceText: "~199.000đ" }],
   },
 ];
 
@@ -195,17 +195,20 @@ async function main() {
     categoryIds.set(c.slug, row.id);
   }
 
-  // Xoá bài (PostProduct theo cascade) rồi Sản phẩm không còn bài nào dùng.
+  // Xoá bài (PostProduct theo cascade) rồi Sản phẩm mẫu không còn bài nào dùng; Sản phẩm khác trong Kho giữ nguyên.
   await db.post.deleteMany();
-  await db.product.deleteMany({ where: { postProducts: { none: {} } } });
+  await db.product.deleteMany({
+    where: { name: { in: POSTS.flatMap((p) => p.products.map((x) => x.name)) }, postProducts: { none: {} } },
+  });
 
   const now = Date.now();
   for (const [i, p] of POSTS.entries()) {
+    const categoryId = categoryIds.get(p.categorySlug);
     await db.post.create({
       data: {
         slug: p.slug,
         postType: p.category,
-        categoryId: categoryIds.get(p.categorySlug),
+        categoryId,
         title: p.title,
         excerpt: p.excerpt,
         content: p.content,
@@ -215,9 +218,17 @@ async function main() {
         status: "PUBLISHED",
         publishedAt: new Date(now - i * 86_400_000),
         postProducts: {
-          create: p.products.map((name, sortOrder) => ({
+          create: p.products.map(({ name, priceText }, sortOrder) => ({
             sortOrder,
-            product: { create: { name, affiliateUrl: placeholderLink(name) } },
+            product: {
+              create: {
+                name,
+                priceText,
+                priceUpdatedAt: new Date(now),
+                affiliateUrl: placeholderLink(name),
+                categoryId,
+              },
+            },
           })),
         },
       },

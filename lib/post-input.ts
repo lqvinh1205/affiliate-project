@@ -1,13 +1,8 @@
 import { z } from "zod";
-import { imageUrl, optionalText, shopeeAffiliateUrl } from "@/platform/validation/fields";
+import { imageUrl, optionalText } from "@/platform/validation/fields";
 
-export const productInputSchema = z.object({
-  name: z.string().trim().min(1, "Thiếu tên sản phẩm"),
-  image: imageUrl,
-  price: optionalText,
-  affiliateUrl: shopeeAffiliateUrl,
-});
-
+// Sản phẩm không còn nhập qua bài: Kho Sản phẩm là nguồn duy nhất (`modules/products/schema.ts`);
+// gắn Sản phẩm vào bài là Epic 3.
 export const postInputSchema = z.object({
   title: z.string().trim().min(1, "Thiếu tiêu đề"),
   slug: z.string().trim(),
@@ -19,16 +14,13 @@ export const postInputSchema = z.object({
   seoTitle: optionalText,
   seoDescription: optionalText,
   seoKeywords: z.array(z.string().trim().min(1)),
-  products: z.array(productInputSchema),
 });
 
-export type ProductInput = z.input<typeof productInputSchema>;
 export type PostInput = z.input<typeof postInputSchema>;
 
 export const newPostSchema = z.object({
   category: z.enum(["MEO_VAT", "GOM_LINK"]),
   topic: z.string().trim(),
-  products: z.array(productInputSchema),
   useAi: z.boolean(),
 });
 export type NewPostInput = z.input<typeof newPostSchema>;

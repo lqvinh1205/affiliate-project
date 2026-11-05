@@ -33,7 +33,7 @@ Dòng ghi **Đã chuyển** là lịch sử của epic nền: file cũ không c�
 | `lib/site.ts` | **Đã chuyển** (epic nền): `platform/site.ts` | Structural Seed |
 | `lib/categories.ts` | `modules/posts/constants.ts` (nhãn, slug, màu Loại bài; giá trị lấy từ enum `PostType`) | Consistency Conventions (Loại bài), AD-5 |
 | `lib/posts.ts` | `modules/posts/queries.ts`; `POSTS_TAG` → `modules/posts/tags.ts`; kiểu → `modules/posts/types.ts` | AD-5, AD-7 |
-| `lib/post-input.ts` | `postInputSchema`, `newPostSchema` → `modules/posts/schema.ts`; `productInputSchema` → `modules/products/schema.ts`; trường dùng chung (`optionalText`, `imageUrl`, `shopeeAffiliateUrl`) đã ở `platform/validation/fields.ts`, `firstError` đã ở `platform/validation/errors.ts` (epic nền) | AD-4, AD-5, AD-14 |
+| `lib/post-input.ts` | `postInputSchema`, `newPostSchema` → `modules/posts/schema.ts`; `productInputSchema` đã thay bằng `modules/products/schema.ts` (Story 2.3, file cũ không còn schema Sản phẩm); trường dùng chung (`optionalText`, `imageUrl`, `shopeeAffiliateUrl`) đã ở `platform/validation/fields.ts`, `firstError` đã ở `platform/validation/errors.ts` (epic nền) | AD-4, AD-5, AD-14 |
 | `lib/ai.ts` | phần gọi nhà cung cấp → `platform/ai` (không giữ OpenAI); prompt → `modules/<miền>/prompts/*.prompt.ts` theo module chủ đích: viết Bài web → `modules/posts/prompts/web-post.prompt.ts`, chấm SEO → `modules/posts/prompts/seo-review.prompt.ts`, chuỗi Threads → `modules/content-sets/prompts/threads-post.prompt.ts` | AD-10, `[QD-09]` |
 | `lib/content.ts` (`readingMinutes`, `withHeadingIds`) | **Đã chuyển** (epic nền): `platform/html/content.ts` (tính sau sanitize) | AD-22, Structural Seed |
 | `lib/utils.ts` (`cn`) | **Đã chuyển** (epic nền): `components/ui/lib/utils.ts`, alias `components.json` đã đổi; hook dùng chung → `components/shared/hooks/` | AD-17 bước 2 |
@@ -57,6 +57,10 @@ Dòng ghi **Đã chuyển** là lịch sử của epic nền: file cũ không c�
 | `components/ui/*` | giữ | AD-11 |
 
 Tên file chính xác trong `platform/` (file hay thư mục, ví dụ `platform/db.ts` hay `platform/db/`) theo cây Structural Seed; chỗ cây không ghi rõ thì theo cách epic nền đã dựng (`ls platform`).
+
+## Ngoại lệ đang hiệu lực
+
+- **Story 2.3 — Kho Sản phẩm độc lập** (Vinh duyệt 2026-11-05; hết hiệu lực khi Epic 3 chuyển trình soạn bài). Sửa **tại chỗ, không chuyển**: `app/cms/actions.ts`, `app/cms/posts/[id]/page.tsx`, `lib/post-input.ts`, `lib/posts.ts`, `lib/ai.ts`, `components/cms/{post-editor,new-post-form,fields}.tsx`, `components/site/product-card.tsx`. Lý do: trình soạn bài cũ phải ngừng tạo/sửa/xoá Sản phẩm ngay khi có Kho, nhưng chuyển cả trình soạn bài là việc của Epic 3. `app/cms/styleguide/_components/styleguide-screen.tsx` (đã miễn ESLint) đổi một prop mẫu `price` → `priceText` theo `ProductCard`. Story sau chạm lại các file này thì chuyển theo bảng như thường.
 
 ## Bước 1: Xác định vị trí đích
 

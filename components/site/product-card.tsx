@@ -6,7 +6,7 @@ import { cn } from "@/components/ui/lib/utils";
 export type ProductCardData = {
   name: string;
   image?: string | null;
-  price?: string | null;
+  priceText?: string | null;
   affiliateUrl: string;
 };
 
@@ -25,9 +25,9 @@ export function ProductCard({ product }: { product: ProductCardData }) {
       <div className="flex min-w-0 flex-1 flex-col justify-between gap-2">
         <div>
           <p className="line-clamp-2 font-medium">{product.name}</p>
-          {product.price && (
+          {product.priceText && (
             <p className="mt-0.5 font-heading text-lg font-bold text-gom-link">
-              {product.price}
+              {product.priceText}
             </p>
           )}
         </div>

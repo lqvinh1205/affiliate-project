@@ -31,7 +31,8 @@ async function ask<T extends z.ZodType>(schema: T, name: string, system: string,
 
 // ---------- Sinh bài viết ----------
 
-export type ProductInput = { name: string; price?: string | null };
+// Sản phẩm (nếu có) để AI lồng ghép; bài mới hiện không gắn Sản phẩm (gắn từ Kho là Epic 3).
+export type ProductInput = { name: string; priceText?: string | null };
 
 export const postDraftSchema = z.object({
   title: z.string(),
@@ -58,10 +59,10 @@ Quy tắc bắt buộc:
 export async function generatePost(input: {
   category: CategoryKey;
   topic?: string | null;
-  products: ProductInput[];
+  products?: ProductInput[];
 }): Promise<PostDraft> {
-  const products = input.products
-    .map((p, i) => `${i + 1}. ${p.name}${p.price ? ` (giá tham khảo: ${p.price})` : ""}`)
+  const products = (input.products ?? [])
+    .map((p, i) => `${i + 1}. ${p.name}${p.priceText ? ` (giá tham khảo: ${p.priceText})` : ""}`)
     .join("\n");
   const kind =
     input.category === "MEO_VAT"
@@ -72,8 +73,7 @@ export async function generatePost(input: {
     "post_draft",
     WRITER_SYSTEM,
     `Chuyên mục: ${CATEGORIES[input.category].label}. Hãy viết ${kind}.
-${input.topic ? `Chủ đề/ý tưởng: ${input.topic}\n` : ""}Sản phẩm cần lồng ghép:
-${products}`,
+${input.topic ? `Chủ đề/ý tưởng: ${input.topic}\n` : ""}${products ? `Sản phẩm cần lồng ghép:\n${products}` : "Bài này chưa gắn sản phẩm: không nhắc tên sản phẩm cụ thể."}`,
   );
 }
 

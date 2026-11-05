@@ -116,7 +116,7 @@ Không tạo file mới ở đây (Policy trong `AGENTS.md`, spine AD-17). Vị 
 |---|---|---|
 | `lib/ai.ts` | Client OpenAI lười khởi tạo (`:13`), hàm `ask()` structured output (`:19-30`), `generatePost`, `toThreads`, `analyzeSeo` và prompt hệ thống (`:47-56`) | `app/cms/actions.ts:6`; kiểu `SeoReport` dùng ở `components/cms/post-editor.tsx:13` |
 | `lib/categories.ts` | Kiểu `CategoryKey` (giá trị enum `PostType`), map `CATEGORIES` (label, slug URL, mô tả), `categoryFromSlug()` — mang nghĩa **Loại bài** (`[NO-20]`) | route `[category]`, sitemap, nav, badge, form CMS, `lib/ai.ts` |
-| `lib/post-input.ts` | Schema zod `productInputSchema`, `postInputSchema`, `newPostSchema` ghép từ `platform/validation/fields.ts`; kiểu `PostInput`/`ProductInput`/`NewPostInput` (dạng `z.input`) | `app/cms/actions.ts:8-14`, `components/cms/*` (kiểu) |
+| `lib/post-input.ts` | Schema zod `postInputSchema`, `newPostSchema` ghép từ `platform/validation/fields.ts`; kiểu `PostInput`/`NewPostInput` (dạng `z.input`). Không còn Sản phẩm (Story 2.3) | `app/cms/actions.ts:8-14`, `components/cms/*` (kiểu) |
 | `lib/posts.ts` | Mọi truy vấn bài **public**: `getLatestPosts`, `getPostsByCategory`, `getRelatedPosts`, `getPostBySlug`, `getPublishedSlugs`; hằng `POSTS_TAG`; ánh xạ thẻ bài `toCard` (đổi `postType` thành khoá `category`) | trang `app/(site)/*`, `app/sitemap.ts`; `POSTS_TAG` ở `app/cms/actions.ts:7` |
 
 ### app/
@@ -135,8 +135,8 @@ Không tạo file mới ở đây (Policy trong `AGENTS.md`, spine AD-17). Vị 
 | `app/cms/layout.tsx` | Khung CMS, `robots: noindex` (`:7`), `maxDuration = 120` cho lời gọi AI (`:11`, AD-18) | trang CMS |
 | `app/cms/page.tsx` | Danh sách mọi bài (kể cả nháp), động qua `connection()` trong `Suspense` | `db` trực tiếp |
 | `app/cms/new/page.tsx` | Trang tạo bài, render `NewPostForm` | — |
-| `app/cms/posts/[id]/page.tsx` | Nạp bài + Sản phẩm (qua `postProducts`), đổi `null` thành `""` cho form, render `PostEditor` với `key=updatedAt` | `db` trực tiếp |
-| `app/cms/actions.ts` | Server Action: `createPost`, `savePost`, `setPostStatus`, `deletePost`, `runSeoCheck`, `runThreads`; helper `uniqueSlug()`, `replacePostProducts()` | `components/cms/new-post-form.tsx`, `components/cms/post-editor.tsx:8` |
+| `app/cms/posts/[id]/page.tsx` | Nạp bài + id/tên Sản phẩm (qua `postProducts`, chỉ đọc, link "Sửa trong Kho"), đổi `null` thành `""` cho form, render `PostEditor` với `key=updatedAt` | `db` trực tiếp |
+| `app/cms/actions.ts` | Server Action: `createPost`, `savePost`, `setPostStatus`, `deletePost`, `runSeoCheck`, `runThreads`; helper `uniqueSlug()`. Không ghi `Product`/`PostProduct` (Story 2.3) | `components/cms/new-post-form.tsx`, `components/cms/post-editor.tsx:8` |
 | `app/cms/styleguide/page.tsx` | Trang duyệt design system `/cms/styleguide`, sau Basic Auth, `noindex` (`:14`) | không ai link tới |
 
 ### Khác
@@ -169,7 +169,7 @@ Trang chủ và trang Loại bài theo cùng mẫu, dùng `getLatestPosts`/`getP
 4. **zod** — `postInputSchema.safeParse(input)`; lỗi đầu tiên ném ra bằng `UserError(firstError(...))` (`app/cms/actions.ts:98-99`, `platform/validation/errors.ts:3-5`). Trường dùng chung ở `platform/validation/fields.ts`: chuỗi rỗng thành `null` (`:4`), kiểm host ảnh (`:6-10`), link affiliate chỉ domain Shopee (`:15-25`).
 5. **sanitize** — `content: sanitizePostHtml(content)` (`app/cms/actions.ts:106`).
 6. **Slug** — `uniqueSlug(slug || title, id)` thêm hậu tố `-2`, `-3`... khi trùng (`app/cms/actions.ts:23-30`).
-7. **Prisma** — trong `db.$transaction`: `tx.post.update`, rồi `replacePostProducts` xoá các dòng `PostProduct` cũ, xoá Sản phẩm không còn bài nào dùng, tạo Sản phẩm mới và `PostProduct` theo thứ tự form (`app/cms/actions.ts:35-46`, `:103-111`; `[NO-09]`).
+7. **Prisma** — `db.post.update` chỉ ghi bài; không chạm `PostProduct`/`Product` nên Sản phẩm của bài giữ nguyên id, thứ tự, dữ liệu (Story 2.3). `deletePost` chỉ xoá bài, `PostProduct` theo cascade, Sản phẩm còn trong Kho.
 8. **Cache** — `updateTag(POSTS_TAG)` (`app/cms/actions.ts:112`), làm mọi truy vấn `lib/posts.ts` hết hạn ngay (read-your-own-writes).
 
 `setPostStatus` chặn xuất bản bài rỗng và giữ `publishedAt` gốc khi đăng lại (`app/cms/actions.ts:117-135`). `createPost` không gọi `updateTag` vì bài mới luôn là nháp (`Status @default(DRAFT)`, `prisma/schema/posts.prisma:15`).
@@ -219,9 +219,9 @@ Trang chủ và trang Loại bài theo cùng mẫu, dùng `getLatestPosts`/`getP
 | `Post.status` `DRAFT` / `PUBLISHED` | Bài web *nháp* / *đã xuất bản* | UI ghi "Nháp" / "Đã đăng" (`components/cms/status-badge.tsx:11`) |
 | enum `PostType` `MEO_VAT` / `GOM_LINK` (`Post.postType`), `CategoryKey` | Loại bài (*Mẹo vặt* / *Gom link*) | Route, menu, breadcrumb hiện theo Loại bài; UI gọi là "Chuyên mục"; code cũ gọi khoá này là `category` (`[NO-20]`) |
 | model `Category` (`prisma/schema/categories.prisma:2`), `Post.categoryId`, `Product.categoryId` | Danh mục | Có bảng, chưa có giao diện; seed tạo một Danh mục mẫu |
-| `Product` (`prisma/schema/products.prisma:1`) | Sản phẩm | Bản ghi dùng chung, nối với Bài web qua bảng `PostProduct` (`prisma/schema/posts.prisma:26-36`, có `sortOrder`); CMS chưa chọn được Sản phẩm có sẵn (`[NO-09]`) |
+| `Product` (`prisma/schema/products.prisma`) | Sản phẩm | Dữ liệu nguồn độc lập trong Kho (`/cms/san-pham`, module `modules/products/`); Bài web chỉ tham chiếu qua `PostProduct` (`prisma/schema/posts.prisma`, có `sortOrder`); trình soạn bài không tạo/sửa/xoá Sản phẩm, xoá bài giữ Sản phẩm. Gắn Sản phẩm có sẵn vào bài: Epic 3 |
 | `Product.affiliateUrl` | Link affiliate | |
-| `Product.price` (chuỗi) | giá tham khảo | |
+| `Product.priceText` (chuỗi) + `priceUpdatedAt` | giá tham khảo + ngày cập nhật | `priceUpdatedAt` đổi khi `priceText` đổi (`modules/products/service.ts`) |
 | `AffiliateDisclosure` | Nhãn công khai affiliate | `components/site/affiliate-disclosure.tsx` (code cũ; đích `modules/products/components`) |
 | `generatePost` / `PostDraft` | Gợi ý AI (cho Bài web) | Lưu thẳng thành bài nháp, chưa có trạng thái *chờ duyệt* |
 | `toThreads` / tab Threads | Bài Threads (dạng chuỗi) | Không lưu DB |
@@ -230,7 +230,7 @@ Trang chủ và trang Loại bài theo cùng mẫu, dùng `getLatestPosts`/`getP
 
 ## Bất biến liên module
 
-- **[KT-01] Ghi phải huỷ cache.** Mọi action thay đổi dữ liệu public phải gọi `updateTag` với tag của **mọi** module có dữ liệu thay đổi, sau khi ghi; mọi query có cache gắn tag của mọi module có bảng nó đọc (spine AD-7). Hiện chỉ có `POSTS_TAG` (`app/cms/actions.ts:112`, `:132`, `:143`); khi module `products` có, query đọc Sản phẩm gắn thêm tag `products` và action sửa Sản phẩm gọi `updateTag` tag đó. Không dùng `revalidatePath`.
+- **[KT-01] Ghi phải huỷ cache.** Mọi action thay đổi dữ liệu public phải gọi `updateTag` với tag của **mọi** module có dữ liệu thay đổi, sau khi ghi; mọi query có cache gắn tag của mọi module có bảng nó đọc (spine AD-7). Tag hiện có: `POSTS_TAG` (`app/cms/actions.ts`), `CATEGORIES_TAG`, `PRODUCTS_TAG` (`modules/products/tags.ts`): query trong `lib/posts.ts` đọc Sản phẩm gắn thêm `products`, `saveProduct` gọi `updateTag(PRODUCTS_TAG)`. Không dùng `revalidatePath`.
 - **[KT-02] Mọi Server Action phải qua `run()`.** `run()` (`platform/auth/run.ts:5-14`) gọi `requireAdmin()`. Không export action nào mà không bọc `run()`, trừ ba ngoại lệ có tên của `[QD-20]`.
 - **[KT-03] Nguồn duy nhất của host ảnh là `IMAGE_HOSTS`.** Thêm host chỉ sửa `platform/images.ts:2`; `next.config.ts:7` và `platform/validation/fields.ts:6-10` tự theo.
 - **[KT-04] HTML bài luôn sanitize.** Khi ghi (`app/cms/actions.ts:79`, `:106`) và khi render (`app/(site)/bai-viet/[slug]/page.tsx:47`). Không render `post.content` mà không qua `sanitizePostHtml`.
@@ -247,7 +247,7 @@ Theo spine (AD-2, AD-17, Structural Seed), PRD (`_bmad-output/planning-artifacts
 
 - **Cấu trúc đích** (chưa có): `modules/<miền>/` (`posts`, `products`, `categories`, `content-sets`, `suggestions`, `research`, `style-profiles`, `inspirations`, `banners`, `bio`, `engagement`) với `schema`, `types`, `tags`, `queries`, `cms-queries`, `service`, `actions`, `prompts/`, `components/`; `components/shared/`; `app/cms/_components/`, `app/(site)/_components/`. Code cũ `lib/*`, `components/site|cms/*`, `app/cms/actions.ts` chuyển dần theo `docs/cong-thuc/chuyen-code-cu.md` khi có thay đổi chạm vào.
 - **Lớp AI** (A1, A3; NFR-1, NFR-2): `lib/ai.ts` chuyển sang `platform/ai` (đích, chưa có) và `modules/<miền>/prompts/`; bỏ `openai` + `responses.parse` + `zodTextFormat`; validate zod sau khi parse JSON và thử lại. Ảnh hưởng `app/cms/actions.ts`, `.env.example`, `package.json`.
-- **Kho sản phẩm dùng chung** (A4; FR-3 → FR-5): bảng đã dùng chung qua `PostProduct`; còn thiếu trạng thái hiện/ẩn (`hidden`), `priceText`, chọn Sản phẩm có sẵn trong CMS (`[NO-09]`). Ảnh hưởng `prisma/schema/products.prisma`, `app/cms/actions.ts` (`replacePostProducts`), `lib/post-input.ts`, `components/cms/fields.tsx`, `lib/posts.ts`.
+- **Kho sản phẩm dùng chung** (A4; FR-3 → FR-5): Story 2.3 dựng Kho độc lập (`modules/products/`, `/cms/san-pham`, `priceText` + `priceUpdatedAt`, Dữ liệu thô); trình soạn bài chỉ đọc Sản phẩm. Còn thiếu trạng thái hiện/ẩn (`hidden`, Story 2.5) và gắn Sản phẩm có sẵn vào bài (Epic 3).
 - **Tách Loại bài / Danh mục** (A4; FR-28, FR-29): model `Category` đã có, chưa có giao diện và route `[danh-muc]`. Ảnh hưởng `lib/categories.ts`, `app/(site)/[category]/page.tsx`, `components/site/nav-links.tsx`, `components/site/category-badge.tsx` (màu gắn Loại bài), breadcrumb và `getRelatedPosts` trong trang bài, `app/sitemap.ts`, `lib/post-input.ts` (`[NO-20]`). Cần chặn slug Danh mục trùng đường dẫn hệ thống.
 - **Upload và host ảnh** (A4; AD-24): `app/cms/upload/route.ts` và `platform/storage` (đích, chưa có); host nơi lưu thêm vào `IMAGE_HOSTS` của `platform/images.ts`.
 - **Tab Threads** (A4; FR-14, FR-16): `components/cms/post-editor.tsx` tab Threads, `toThreads` trong `lib/ai.ts`, `runThreads` trong `app/cms/actions.ts`.

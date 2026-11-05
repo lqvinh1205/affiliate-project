@@ -242,7 +242,7 @@ export function StyleguideScreen() {
         <ProductCard
           product={{
             name: "Đèn ngủ vintage để bàn ánh vàng ấm, nhiều mẫu",
-            price: "89.000₫",
+            priceText: "~89.000đ",
             affiliateUrl: "https://shopee.vn",
           }}
         />
