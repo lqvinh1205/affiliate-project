@@ -1,6 +1,6 @@
 # Công thức: thay đổi Prisma schema
 
-> Nguồn: spine kiến trúc `_bmad-output/planning-artifacts/architecture/architecture-affiliate-project-2026-11-03/ARCHITECTURE-SPINE.md` (AD-4, AD-14, AD-15, AD-17), `docs/nen-tang-ky-thuat/prisma-7.md` · Kiểm lần cuối: 2026-11-04
+> Nguồn: spine kiến trúc `_bmad-output/planning-artifacts/architecture/architecture-affiliate-project-2026-11-03/ARCHITECTURE-SPINE.md` (AD-4, AD-14, AD-15, AD-17), `docs/nen-tang-ky-thuat/prisma-7.md` · Kiểm lần cuối: 2026-11-05 @ 8771851
 
 Dùng khi thêm, sửa hoặc xoá model, trường, enum, quan hệ, index. `bmad-build` nạp công thức này; reviewer chấm diff theo mục **Checklist**.
 
@@ -23,7 +23,7 @@ Dùng khi thêm, sửa hoặc xoá model, trường, enum, quan hệ, index. `bm
 
 1. Liệt kê từng model / trường / enum / quan hệ / index thay đổi và FR nó phục vụ.
 2. Xác định module chủ (AD-4). Cột mới chỉ thêm vào model của chính module đó; module khác chỉ được thêm trường quan hệ ngược.
-3. File đích: `prisma/schema/<module>.prisma` (sau migration nền của AD-17). Trước khi epic nền tách schema, không tự tách — sửa `prisma/schema.prisma` hoặc chờ epic nền.
+3. File đích: `prisma/schema/<module>.prisma` (schema đã tách ở migration nền: `_base.prisma`, `categories.prisma`, `posts.prisma`, `products.prisma`). Module chưa có file thì tạo `prisma/schema/<module>.prisma`; không sửa generator/datasource ngoài `_base.prisma`.
 
 ## Bước 2: Bảng phân tích ảnh hưởng (bắt buộc trong spec, trước khi code)
 

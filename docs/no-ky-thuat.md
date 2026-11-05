@@ -1,6 +1,6 @@
 # Nợ kỹ thuật và điểm lệch đã biết
 
-> Nguồn: rà soát code khi viết bộ tài liệu `docs/` · Kiểm lần cuối: 2026-11-03 @ dfd7e8f
+> Nguồn: rà soát code khi viết bộ tài liệu `docs/` · Kiểm lần cuối: 2026-11-05 @ 8771851
 
 Danh sách những chỗ code đang lệch với quy định, PRD hoặc chính nó. **Chưa sửa.** Workflow chạm vào vùng nào thì kiểm mục tương ứng ở đây; sửa xong thì xoá mục và cập nhật tài liệu liên quan. ID dạng `[NO-xx]`, không đánh số lại.
 
@@ -10,15 +10,17 @@ Không còn mục mở. [NO-01]–[NO-05] đã sửa ở Story 1.2, có unit tes
 
 ## Vừa — hành vi sai hoặc dễ gây lỗi
 
-- **[NO-07]** `savePost` tính lại slug mỗi lần lưu; đổi slug bài đã xuất bản làm hỏng URL cũ, không có chuyển hướng 301 (PRD FR-27).
+- **[NO-07]** `savePost` tính lại slug mỗi lần lưu; đổi slug bài đã xuất bản làm hỏng URL cũ, không có chuyển hướng 301 (`permanentRedirect`, HTTP 308 — AD-20; PRD FR-27).
 - **[NO-08]** `prisma/seed.ts` chạy `deleteMany()` toàn bộ bài trước khi seed — phá huỷ dữ liệu. Xem `[PR-14]`.
 - **[NO-09]** Sản phẩm bị xoá và tạo lại (đổi id) mỗi lần lưu bài, dù mô hình đã cho dùng chung qua `PostProduct` — CMS chưa chọn được Sản phẩm có sẵn nên chưa chia sẻ Sản phẩm giữa các bài được. Xem `[PR-26]`.
 - **[NO-10]** `toThreads` (`lib/ai.ts`) đặt link website ở bài cuối chuỗi, trái PRD FR-14 (link affiliate nằm ở Bình luận kèm link).
 - **[NO-12]** Giới hạn tóm tắt không khớp: editor và prompt AI dùng 200, Zod và DB cho 500 (`components/cms/post-editor.tsx`, `lib/post-input.ts`, `prisma/schema/posts.prisma`).
 - **[NO-13]** `next/image` còn dùng `priority` (đã deprecate ở Next 16) — `app/(site)/page.tsx`, `app/(site)/bai-viet/[slug]/page.tsx`. Xem `[GD-30]`.
-- **[NO-14]** `proxy.ts` matcher chặn `/api/:path*` nhưng không có `app/api`; endpoint công khai tương lai không đặt được ở `/api`. Xem `[NX-57]`.
+- **[NO-14]** (đã bỏ) Không còn là nợ: spine AD-6 quy định không có endpoint công khai dưới `/api`, nên matcher chặn `/api/:path*` là đúng. Xem `[NX-57]`.
 
 ## Thấp — nhất quán và dọn dẹp
+
+- **[NO-25]** Khối `bmad:context` trong `AGENTS.md` lỗi thời sau epic nền: ghi "repo không có test suite" và trỏ tới `lib/sanitize.ts`, `lib/images.ts`, `lib/auth.ts` (đã chuyển sang `platform/`). Chờ làm mới qua skill `bmad-project-context` (không sửa tay — `[QD-03]`). Trong lúc chờ, `docs/` thắng: `npm test` là bước bắt buộc (`[KC-07]`), đường dẫn đúng ở `docs/kien-truc-codebase.md`.
 
 - **[NO-16]** Comment `lib/posts.ts:6` ghi `revalidateTag`, code dùng `updateTag`. Xem `[NX-50]`.
 - **[NO-17]** Kiểu `ProductInput` khai báo hai lần, hai hình dạng khác nhau (`lib/ai.ts`, `lib/post-input.ts`).

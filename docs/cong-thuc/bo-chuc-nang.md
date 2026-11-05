@@ -1,6 +1,6 @@
 # Công thức: bỏ một chức năng
 
-> Nguồn: spine kiến trúc `_bmad-output/planning-artifacts/architecture/architecture-affiliate-project-2026-11-03/ARCHITECTURE-SPINE.md` (AD-2, AD-3, AD-4, AD-7, AD-9, AD-17, AD-19, AD-20), `docs/quy-dinh.md` · Kiểm lần cuối: 2026-11-04
+> Nguồn: spine kiến trúc `_bmad-output/planning-artifacts/architecture/architecture-affiliate-project-2026-11-03/ARCHITECTURE-SPINE.md` (AD-2, AD-3, AD-4, AD-7, AD-9, AD-17, AD-19, AD-20), `docs/quy-dinh.md` · Kiểm lần cuối: 2026-11-05 @ 8771851
 
 Dùng khi gỡ một màn hình, một tính năng, một loại Gợi ý AI hoặc cả một module. `bmad-build` nạp công thức này; reviewer chấm diff theo mục **Checklist**.
 
@@ -8,7 +8,7 @@ Dùng khi gỡ một màn hình, một tính năng, một loại Gợi ý AI ho�
 
 - **Xác nhận trước, gỡ sau.** Chức năng còn trong PRD hoặc spine → đây là đổi yêu cầu: chạy `bmad-correct-course` trước khi đụng code.
 - **Kiểm kê đủ trước khi xoá.** Spec có bảng kiểm kê (Bước 2), Vinh duyệt ở CHECKPOINT 1.
-- **URL công khai đã chia sẻ không tự cho chết.** 301 hay 404 do Vinh quyết.
+- **URL công khai đã chia sẻ không tự cho chết.** 301 (`permanentRedirect`, HTTP 308 — AD-20) hay 404 do Vinh quyết.
 - **Xoá bảng/cột là "phá dữ liệu"** → đi đường BLOCKER của `docs/cong-thuc/doi-schema.md`.
 - **Chỉ xoá phần mồ côi do chính việc gỡ tạo ra** ([QD-24]); mồ côi có sẵn thì ghi vào báo cáo.
 

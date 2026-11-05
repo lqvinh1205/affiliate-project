@@ -1,6 +1,6 @@
 # Công thức: thêm hoặc sửa tính năng AI
 
-> Nguồn: spine kiến trúc `_bmad-output/planning-artifacts/architecture/architecture-affiliate-project-2026-11-03/ARCHITECTURE-SPINE.md` (AD-xx), `docs/quy-dinh.md`, `docs/nen-tang-ky-thuat/lop-ai.md`, `docs/nen-tang-ky-thuat/nextjs-16.md` · Kiểm lần cuối: 2026-11-04
+> Nguồn: spine kiến trúc `_bmad-output/planning-artifacts/architecture/architecture-affiliate-project-2026-11-03/ARCHITECTURE-SPINE.md` (AD-xx), `docs/quy-dinh.md`, `docs/nen-tang-ky-thuat/lop-ai.md`, `docs/nen-tang-ky-thuat/nextjs-16.md` · Kiểm lần cuối: 2026-11-05 @ 8771851
 
 Công thức theo spine; code hiện tại chưa theo, xem `docs/cong-thuc/chuyen-code-cu.md`.
 
@@ -58,7 +58,7 @@ Tính năng AI: <tên ngắn, FR-xx>
    - Không gọi `updateTag` trong `after()`: callback chỉ ghi `Suggestion` (CMS, không cache). Chỉ action Duyệt gọi `updateTag`. Buộc phải làm mới cache trong `after()` → `revalidateTag(tag, "max")` (AD-18).
 4. Không gọi AI trong transaction; transaction chỉ chứa lệnh DB (AD-10, `[PR-28]`).
 5. FR-12 nhiều phần (bài web, Threads, Facebook, bình luận): mỗi phần một `Suggestion`, một lần gọi AI riêng; một phần lỗi không làm hỏng phần khác (AD-18).
-6. Route kích hoạt có `maxDuration` ≥ 90 (AD-18). `app/cms/layout.tsx` hiện đặt 60 — code cũ.
+6. Route kích hoạt có `maxDuration` ≥ 90 (AD-18). `maxDuration = 120` ở `app/cms/layout.tsx:11` áp cho trang và Server Action dưới layout đó; Route Handler (`route.ts`) không nhận segment config từ layout, phải tự `export const maxDuration`.
 
 ## Bước 4: Duyệt và từ chối
 

@@ -1,6 +1,6 @@
 # Công thức: thêm hoặc sửa màn hình
 
-> Nguồn: spine kiến trúc `_bmad-output/planning-artifacts/architecture/architecture-affiliate-project-2026-11-03/ARCHITECTURE-SPINE.md` (AD-xx), `docs/nen-tang-ky-thuat/giao-dien.md` · Kiểm lần cuối: 2026-11-04
+> Nguồn: spine kiến trúc `_bmad-output/planning-artifacts/architecture/architecture-affiliate-project-2026-11-03/ARCHITECTURE-SPINE.md` (AD-xx), `docs/nen-tang-ky-thuat/giao-dien.md` · Kiểm lần cuối: 2026-11-05 @ 8771851
 
 Dùng khi thêm hoặc sửa một màn hình, ở site public (`app/(site)/`) hoặc CMS (`app/cms/`). `bmad-build` nạp công thức này qua `_bmad/custom/bmad-build.toml`, và reviewer "UI & quy ước" chấm diff theo mục **Checklist** cuối file.
 
@@ -28,7 +28,7 @@ Dùng khi thêm hoặc sửa một màn hình, ở site public (`app/(site)/`) h
 
 ## Bước 2: Kiểm tra UI (bắt buộc trong `## Code Map` của spec)
 
-**a. Đối chiếu UI.** Liệt kê các trạng thái của màn (đang tải, rỗng, lỗi, không tìm thấy, đang gửi, thành công) và các token màu/chữ sẽ dùng. Nguồn theo thứ tự: `EXPERIENCE.md`/`DESIGN.md` (khi `final`) → `[GD-14]` + `/styleguide`. Trạng thái nào không nguồn nào quy định → ghi vào Open Questions.
+**a. Đối chiếu UI.** Liệt kê các trạng thái của màn (đang tải, rỗng, lỗi, không tìm thấy, đang gửi, thành công) và các token màu/chữ sẽ dùng. Nguồn theo thứ tự: `EXPERIENCE.md`/`DESIGN.md` (khi `final`) → `[GD-14]` + `/cms/styleguide`. Trạng thái nào không nguồn nào quy định → ghi vào Open Questions.
 
 **b. Kiểm kê tái sử dụng.** Quét những gì đã có trước khi đề xuất component mới:
 

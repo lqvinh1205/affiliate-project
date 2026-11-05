@@ -1,6 +1,6 @@
 # Viết workflow cho dự án
 
-> Nguồn: cấu trúc skill BMad 6.12.4 trong `.claude/skills/`, `_bmad/scripts/`, `.claude/skills/master/SKILL.md`; mẫu tham khảo bộ workflow công ty cũ (`~/Downloads/_bmad (1)/_bmad/bmm/workflows/`, BMad 6.0.0-Beta.7) · Kiểm lần cuối: 2026-11-03
+> Nguồn: cấu trúc skill BMad 6.12.4 trong `.claude/skills/`, `_bmad/scripts/`, `.claude/skills/master/SKILL.md`; mẫu tham khảo bộ workflow công ty cũ (`~/Downloads/_bmad (1)/_bmad/bmm/workflows/`, BMad 6.0.0-Beta.7) · Kiểm lần cuối: 2026-11-05 @ 8771851
 
 Hướng dẫn tạo workflow (skill) mới cho affiliate-project, hoặc gắn tài liệu dự án vào skill BMad có sẵn. Workflow tốt ở đây = **nạp đúng tài liệu → nhận đủ đầu vào → làm theo pha có điểm dừng → tự kiểm → báo cáo theo khuôn**.
 
@@ -105,11 +105,11 @@ Workflow chọn tài liệu nền tảng cần đọc dựa trên phần code s�
 | Chạm vào | Đọc |
 |---|---|
 | `app/**`, `proxy.ts`, `next.config.ts`, caching | `docs/nen-tang-ky-thuat/nextjs-16.md` |
-| `prisma/**`, `lib/db.ts`, truy vấn | `docs/nen-tang-ky-thuat/prisma-7.md` |
-| `components/**`, `app/globals.css`, giao diện | `docs/nen-tang-ky-thuat/giao-dien.md` |
-| Form, Server Action, HTML bài, auth, ảnh | `docs/nen-tang-ky-thuat/kiem-tra-va-bao-mat.md` |
-| `lib/ai.ts`, mọi tính năng AI | `docs/nen-tang-ky-thuat/lop-ai.md` |
-| Mọi thay đổi code | `docs/quy-uoc-code.md`, `docs/kiem-chung.md` |
+| `prisma/**`, `platform/db.ts`, `queries.ts`/`cms-queries.ts`/`service.ts`, truy vấn | `docs/nen-tang-ky-thuat/prisma-7.md` |
+| `components/**`, `modules/*/components/**`, `app/globals.css`, giao diện | `docs/nen-tang-ky-thuat/giao-dien.md` |
+| Form, Server Action, HTML bài, auth, ảnh (`platform/auth`, `platform/html`, `platform/validation`, `platform/images.ts`) | `docs/nen-tang-ky-thuat/kiem-tra-va-bao-mat.md` |
+| `lib/ai.ts` (code cũ), `platform/ai`, `modules/*/prompts/`, mọi tính năng AI | `docs/nen-tang-ky-thuat/lop-ai.md` |
+| Mọi thay đổi code | `docs/quy-uoc-code.md`, `docs/kiem-chung.md`; chạm code cũ (`lib/`, `components/site|cms/`, `app/cms/actions.ts`) thì thêm `docs/cong-thuc/chuyen-code-cu.md` |
 | Vùng code có nợ kỹ thuật | `docs/no-ky-thuat.md` |
 
 Công thức từng bước cho việc hay gặp nằm trong `docs/cong-thuc/` — workflow nên gọi công thức thay vì tự mô tả lại.

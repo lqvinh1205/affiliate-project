@@ -1,6 +1,6 @@
 # Next.js 16.4
 
-> Phiên bản: `next` 16.4.3, `react`/`react-dom` 19.3.0, `eslint-config-next` 16.4.3 (`package.json`) · Nguồn: `node_modules/next/dist/docs/01-app/` (đường dẫn cụ thể ở từng mục và ở **Tham khảo**) · Kiểm lần cuối: 2026-11-03 @ dfd7e8f
+> Phiên bản: `next` 16.4.3, `react`/`react-dom` 19.3.0, `eslint-config-next` 16.4.3 (`package.json`) · Nguồn: `node_modules/next/dist/docs/01-app/` (đường dẫn cụ thể ở từng mục và ở **Tham khảo**) · Kiểm lần cuối: 2026-11-05 @ 8771851
 
 Mọi đường dẫn tài liệu dạng `docs/01-app/...` bên dưới là tương đối so với `node_modules/next/dist/docs/`. Khi tài liệu này và trí nhớ của agent khác nhau, tin tài liệu này; khi tài liệu này và `node_modules/next/dist/docs/` khác nhau, tin `node_modules` và sửa tài liệu này.
 
@@ -8,12 +8,12 @@ Mọi đường dẫn tài liệu dạng `docs/01-app/...` bên dưới là tư�
 
 - **Cache Components đang bật** (`cacheComponents: true`, `partialPrefetching: true` — `next.config.ts:9-10`). Dữ liệu mặc định là **động**; chỉ thứ bọc `"use cache"` mới được đưa vào bản prerender. Không dùng `export const dynamic`, `revalidate`, `fetchCache`, `dynamicParams`, `runtime` — chúng gây lỗi build. Xem [NX-01], [NX-62].
 - **Toàn bộ site public phải tĩnh hoàn toàn**: `app/(site)/layout.tsx:6` đặt `ensureStatic = "navigation"`. Trong `app/(site)/**` **cấm** truy vấn DB không cache, `connection()`, `cookies()`, `headers()`, `searchParams` phía server — **kể cả khi bọc `<Suspense>`**. Xem [NX-03], [NX-52].
-- Đọc dữ liệu public **chỉ** qua hàm trong `lib/posts.ts`; mỗi hàm có `"use cache"` + `cacheLife(...)` + `cacheTag(POSTS_TAG)`. Xem [NX-22], [NX-32].
-- Ghi dữ liệu ảnh hưởng trang public → gọi `updateTag(POSTS_TAG)` **trong Server Action**. `updateTag` chỉ chạy được trong Server Action; ở Route Handler dùng `revalidateTag(tag, "max")` hoặc `revalidateTag(tag, { expire: 0 })`. Xem [NX-06], [NX-54], [NX-55].
-- Comment `lib/posts.ts:6` ghi `revalidateTag("posts")` là **sai** so với code; code đúng dùng `updateTag` (`app/cms/actions.ts:88,107,115`). Xem [NX-50].
-- Mỗi Server Action **tự** kiểm tra quyền bằng `requireAdmin()` (qua `run()` ở `app/cms/actions.ts:21-29`), trả về `Result` `{ ok: true, ... } | { ok: false, error }`. Không dựa vào `proxy.ts`. Xem [NX-24], [NX-34], [NX-58].
-- File chặn request là `proxy.ts` (tên mới của `middleware.ts`), hàm export tên `proxy`. Matcher hiện chặn **cả `/cms/*` và `/api/*`** bằng Basic Auth — endpoint public không được đặt dưới `/api`. Xem [NX-09], [NX-25], [NX-57].
-- Tính năng theo từng request (lượt xem, lượt thích) trên trang public: làm ở **Client Component** gọi Server Action/Route Handler sau khi trang tĩnh đã tải; **không** gọi `updateTag` cho mỗi lượt. Xem [NX-35], [NX-36], [NX-56].
+- Đọc dữ liệu public **chỉ** qua hàm `"use cache"` + `cacheLife(...)` + `cacheTag(...)`: code mới ở `modules/<miền>/queries.ts` (spine AD-7); code cũ hiện có ở `lib/posts.ts`. Xem [NX-22], [NX-32].
+- Ghi dữ liệu ảnh hưởng trang public → gọi `updateTag` với tag của **mọi** module có dữ liệu thay đổi (hiện chỉ có `POSTS_TAG`) **trong Server Action** (AD-7). `updateTag` chỉ chạy được trong Server Action; ở Route Handler dùng `revalidateTag(tag, "max")` hoặc `revalidateTag(tag, { expire: 0 })`. Xem [NX-06], [NX-54], [NX-55].
+- Comment `lib/posts.ts:6` ghi `revalidateTag("posts")` là **sai** so với code; code đúng dùng `updateTag` (`app/cms/actions.ts:112,132,143`). Xem [NX-50].
+- Mỗi Server Action **tự** kiểm tra quyền bằng `requireAdmin()` (qua `run()` ở `platform/auth/run.ts:5-14`), trả về `Result` `{ ok: true, ... } | { ok: false, error }`, trừ ba ngoại lệ có tên của `[QD-20]`. Không dựa vào `proxy.ts`. Xem [NX-24], [NX-34], [NX-58].
+- File chặn request là `proxy.ts` (tên mới của `middleware.ts`), hàm export tên `proxy`. Matcher hiện chặn **cả `/cms/*` (trừ `/cms/upload`) và `/api/*`** bằng Basic Auth — không có endpoint công khai dưới `/api` (spine AD-6). Xem [NX-09], [NX-25], [NX-57].
+- Tính năng theo từng request (lượt xem, lượt thích) trên trang public: làm ở **Client Component** gọi action công khai của `[QD-20]` sau khi trang tĩnh đã tải; **không** gọi `updateTag` cho mỗi lượt. Xem [NX-35], [NX-36], [NX-56].
 - `params`, `searchParams`, `headers()`, `cookies()` đều là **Promise** — luôn `await`. Kiểu trang/layout dùng helper toàn cục `PageProps<"/route">`, `LayoutProps<"/route">`. Xem [NX-07], [NX-28].
 - `generateStaticParams` phải trả **ít nhất một** phần tử, nếu không build lỗi; build vì thế cần DB có ít nhất một Bài web đã đăng. Xem [NX-10], [NX-53].
 
@@ -180,7 +180,7 @@ Nguồn: `docs/01-app/03-api-reference/03-file-conventions/error.md`, `not-found
 
 ### [NX-20] Cấu hình
 
-- `images.remotePatterns` sinh từ `IMAGE_HOSTS` (`protocol: "https"`, chỉ `hostname`) — `next.config.ts:5-8`, `lib/images.ts:3`.
+- `images.remotePatterns` sinh từ `IMAGE_HOSTS` (`protocol: "https"`, chỉ `hostname`) — `next.config.ts:5-8`, `platform/images.ts:2`.
 - `cacheComponents: true` — `next.config.ts:9`; `partialPrefetching: true` — `next.config.ts:10`.
 - Turbopack: rule `*.css` qua loader `@tailwindcss/turbopack` — `next.config.ts:11-18`. `next dev`/`next build` dùng Turbopack (`package.json` scripts).
 - Không có `cacheLife` tuỳ biến, `cacheHandlers`, `serverActions` trong config → dùng mặc định (body action ≤ 1MB, cache in-memory).
@@ -198,58 +198,58 @@ Nguồn: `docs/01-app/03-api-reference/03-file-conventions/error.md`, `not-found
 | `/cms` | `app/cms/page.tsx` | Shell tĩnh + danh sách động | `<Suspense>` + `connection()` + DB không cache — `:15-17`, `:22-27` |
 | `/cms/new` | `app/cms/new/page.tsx` | Tĩnh | Form client `NewPostForm` |
 | `/cms/posts/[id]` | `app/cms/posts/[id]/page.tsx` | Shell tĩnh + editor động | Không có `generateStaticParams`; `await params` **trong** `<Suspense>` — `:7-21` |
-| `/cms/*` | `app/cms/layout.tsx` | | `robots: noindex,nofollow` — `:5-8`; `maxDuration = 60` vì gọi AI — `:10-11` |
+| `/cms/*` | `app/cms/layout.tsx` | | `robots: noindex,nofollow` — `:5-8`; `maxDuration = 120` vì gọi AI (AD-18) — `:10-11` |
 | `/sitemap.xml` | `app/sitemap.ts` | Tĩnh (Route Handler đặc biệt) | |
-| `/robots.txt` | `app/robots.ts` | Tĩnh | Disallow `/cms`, `/api/`, `/styleguide` — `:6` |
-| `/styleguide` | `app/styleguide/page.tsx` | | Trang tạm, ghi "xóa trước khi deploy" — `:13-14` |
+| `/robots.txt` | `app/robots.ts` | Tĩnh | Disallow `/cms`, `/api/` — `:6` |
+| `/cms/styleguide` | `app/cms/styleguide/page.tsx` | | Trang duyệt design system, sau Basic Auth, `noindex` — `:13-14` |
 
 - Không có `app/api/` (Route Handler) nào; không có `loading.tsx`, `error.tsx`, `global-error.tsx`.
 - `[category]` và `/bai-viet/[slug]` cùng cấp trong `(site)`: segment tĩnh `bai-viet` được ưu tiên hơn segment động `[category]` (hành vi định tuyến chuẩn; chưa tìm thấy câu khẳng định trong tài liệu cài sẵn — đừng đặt slug Danh mục trùng `bai-viet`).
 
-### [NX-22] Lớp đọc dữ liệu public — `lib/posts.ts`
+### [NX-22] Lớp đọc dữ liệu public — `lib/posts.ts` (code cũ, đích `modules/posts/queries.ts`)
 
 - Năm hàm, mỗi hàm cùng một khuôn `"use cache"` → `cacheLife("days")` → `cacheTag(POSTS_TAG)` → truy vấn Prisma:
-  - `getLatestPosts(limit)` — `lib/posts.ts:44-55`
-  - `getPostsByCategory(category, limit?)` — `lib/posts.ts:57-68`
-  - `getRelatedPosts(slug, category, limit = 3)` — `lib/posts.ts:70-81`
-  - `getPostBySlug(slug)` — `lib/posts.ts:83-97` (trả `null` nếu không có/chưa đăng)
-  - `getPublishedSlugs()` — `lib/posts.ts:99-108` (dùng cho `generateStaticParams` và sitemap)
-- `POSTS_TAG = "posts"` — `lib/posts.ts:7`. Mọi hàm chỉ lấy `status: "PUBLISHED"` — `lib/posts.ts:41`.
+  - `getLatestPosts(limit)` — `lib/posts.ts:45-56`
+  - `getPostsByCategory(category, limit?)` — `lib/posts.ts:58-69` (`category` ở đây là Loại bài, lọc `Post.postType` — `[NO-20]`)
+  - `getRelatedPosts(slug, category, limit = 3)` — `lib/posts.ts:71-82`
+  - `getPostBySlug(slug)` — `lib/posts.ts:84-102` (trả `null` nếu không có/chưa đăng)
+  - `getPublishedSlugs()` — `lib/posts.ts:104-114` (dùng cho `generateStaticParams` và sitemap)
+- `POSTS_TAG = "posts"` — `lib/posts.ts:7`. Mọi hàm chỉ lấy `status: "PUBLISHED"` — `lib/posts.ts:42`.
 - Đối số là primitive (`string`, `number`, union `CategoryKey`) → khoá cache ổn định. Giá trị trả về là object thường + `Date` → serialize được.
-- Một tag chung cho mọi thứ: mọi lần ghi gọi `updateTag("posts")` làm mới toàn bộ danh sách + chi tiết + sitemap. Chấp nhận được vì lượng bài nhỏ và chỉ Vinh ghi.
+- Một tag chung cho mọi thứ: mọi lần ghi gọi `updateTag("posts")` làm mới toàn bộ danh sách + chi tiết + sitemap. Chấp nhận được vì lượng bài nhỏ và chỉ Vinh ghi. Spine AD-7: khi có module `products`, query đọc Sản phẩm gắn thêm tag của `products`.
 
 ### [NX-23] Lớp đọc dữ liệu CMS
 
-- CMS đọc DB **trực tiếp, không cache**, luôn trong `<Suspense>`:
+- CMS đọc DB **không cache**, luôn trong `<Suspense>`. Code cũ dưới đây gọi `db` thẳng trong page (miễn luật ESLint qua `LEGACY_APP_FILES`); code mới đọc qua `modules/<miền>/cms-queries.ts` (spine AD-5, AD-7):
   - `/cms`: `PostList` gọi `await connection()` rồi `db.post.findMany` — `app/cms/page.tsx:22-27`. `connection()` đảm bảo truy vấn không chạy lúc build/prefetch.
   - `/cms/posts/[id]`: `Editor` nhận Promise `params`, await bên trong `<Suspense>` — `app/cms/posts/[id]/page.tsx:7-21`. `notFound()` ở `:21` chạy sau khi đã stream → trả 200 + `noindex` (chấp nhận được cho CMS, xem [NX-63]).
 - `PostEditor` được gắn `key={post.updatedAt.toISOString()}` — `app/cms/posts/[id]/page.tsx:25` → khi dữ liệu đổi, state form được tạo lại thay vì giữ state cũ (quan trọng vì [NX-59]).
 
-### [NX-24] Server Actions — `app/cms/actions.ts`
+### [NX-24] Server Actions — `app/cms/actions.ts` (code cũ, đích `modules/<miền>/actions.ts`)
 
 - File có `"use server"` ở dòng 1 — mọi export là Server Action.
-- Kiểu kết quả: `type Result<T = object> = ({ ok: true } & T) | { ok: false; error: string }` — `app/cms/actions.ts:19`.
-- Bộ bọc `run(fn)` — `app/cms/actions.ts:21-29`: `await requireAdmin()` → chạy `fn` → trả `{ ok: true, ...kếtQuả }`; bắt **mọi** lỗi, `console.error`, trả `{ ok: false, error: e.message }`. Hệ quả: thông báo lỗi ném ra trong action (tiếng Việt) hiện thẳng cho người dùng qua `toast.error` (`components/cms/new-post-form.tsx:28-31`, `components/cms/post-editor.tsx:55-63`).
-- Validate input bằng Zod `safeParse` rồi ném `firstError(...)` — `app/cms/actions.ts:45-46`, `:74-75`. HTML luôn qua `sanitizePostHtml` — `:56`, `:82`.
+- Kiểu kết quả: `type Result<T = object> = ({ ok: true } & T) | { ok: false; error: string }` — `platform/errors.ts:9`.
+- Bộ bọc `run(fn)` — `platform/auth/run.ts:5-14`: `await requireAdmin()` → chạy `fn` → trả `{ ok: true, ...kếtQuả }`; bắt **mọi** lỗi: `UserError` → `{ ok: false, error: e.message }`; lỗi khác → `console.error` và `{ ok: false, error: "Có lỗi xảy ra, thử lại sau" }`. Hệ quả: chỉ thông báo `UserError` tiếng Việt hiện thẳng cho người dùng qua `toast.error` (`components/cms/new-post-form.tsx:28-31`, `components/cms/post-editor.tsx:55-61`).
+- Validate input bằng Zod `safeParse` rồi ném `UserError(firstError(...))` — `app/cms/actions.ts:50-51`, `:98-99`. HTML luôn qua `sanitizePostHtml` — `:79`, `:106`.
 - Gọi `updateTag(POSTS_TAG)` sau khi ghi:
-  - `savePost` — `app/cms/actions.ts:88`
-  - `setPostStatus` — `app/cms/actions.ts:107`
-  - `deletePost` — `app/cms/actions.ts:115`
-  - `createPost` **không** gọi — `app/cms/actions.ts:43-70` — đúng, vì bài mới luôn là bản nháp (không có trong truy vấn public).
-- Action chỉ đọc (`runSeoCheck`, `runThreads`) vẫn đi qua `run()` để kiểm quyền — `app/cms/actions.ts:120-134`.
+  - `savePost` — `app/cms/actions.ts:112`
+  - `setPostStatus` — `app/cms/actions.ts:132`
+  - `deletePost` — `app/cms/actions.ts:143`
+  - `createPost` **không** gọi — `app/cms/actions.ts:48-94` — đúng, vì bài mới luôn là bản nháp (không có trong truy vấn public).
+- Action chỉ đọc (`runSeoCheck`, `runThreads`) vẫn đi qua `run()` để kiểm quyền — `app/cms/actions.ts:148-162`.
 - Client gọi action trong `startTransition`, kiểm `res.ok`, rồi `router.push(...)` — `components/cms/new-post-form.tsx:24-34`, `components/cms/post-editor.tsx:44-53`, `:84`.
 
 ### [NX-25] Proxy và xác thực
 
 - `proxy.ts:4-10`: Basic Auth — header `authorization` hợp lệ → `NextResponse.next()`; ngược lại trả 401 + `WWW-Authenticate: Basic realm="CMS"`.
-- `proxy.ts`: `matcher: ["/cms", "/cms/((?!upload$).*)", "/api/:path*"]` (AD-24; `/cms/upload` tự `requireAdmin()`).
-- `lib/auth.ts:7-13`: so khớp `ADMIN_USERNAME:ADMIN_PASSWORD` bằng `timingSafeEqual` trên SHA-256; thiếu biến môi trường → luôn từ chối.
-- `lib/require-admin.ts:5-9`: `requireAdmin()` đọc `(await headers()).get("authorization")` và ném `Error("Unauthorized")`. Comment `:4` ghi rõ lý do: action có thể bị POST trực tiếp.
+- `proxy.ts:14`: `matcher: ["/cms", "/cms/((?!upload$).*)", "/api/:path*"]` (AD-24; `/cms/upload` tự `requireAdmin()`).
+- `platform/auth/basic-auth.ts:7-13`: so khớp `ADMIN_USERNAME:ADMIN_PASSWORD` bằng `timingSafeEqual` trên SHA-256; thiếu biến môi trường → luôn từ chối.
+- `platform/auth/require-admin.ts:6-10`: `requireAdmin()` đọc `(await headers()).get("authorization")` và ném `UserError("Bạn cần đăng nhập CMS")`. Comment `:5` ghi rõ lý do: action có thể bị POST trực tiếp.
 - Vì action được POST tới route đang dùng chúng (`/cms/...`), action CMS hiện được kiểm tra **hai lớp**: Proxy (matcher `/cms`) và `requireAdmin()`.
 
 ### [NX-26] SEO
 
-- Root `metadata`: `metadataBase: new URL(SITE_URL)`, `title.template: "%s | Mẹo Vặt Cuộc Sống"`, `openGraph.locale: "vi_VN"` — `app/layout.tsx:14-23`. `SITE_URL` lấy từ `NEXT_PUBLIC_SITE_URL` — `lib/site.ts:2`.
+- Root `metadata`: `metadataBase: new URL(SITE_URL)`, `title.template: "%s | Mẹo Vặt Cuộc Sống"`, `openGraph.locale: "vi_VN"` — `app/layout.tsx:14-23`. `SITE_URL` lấy từ `NEXT_PUBLIC_SITE_URL` — `platform/site.ts:2`.
 - `generateMetadata` của chuyên mục: dữ liệu từ hằng `CATEGORIES`, `alternates.canonical` tương đối — `app/(site)/[category]/page.tsx:11-20`.
 - `generateMetadata` của Bài web: gọi `getPostBySlug` (đã cache) nên hợp lệ dưới `ensureStatic='navigation'`; `openGraph.type: "article"`, `publishedTime`, `modifiedTime` — `app/(site)/bai-viet/[slug]/page.tsx:23-41`.
 - JSON-LD `Article` + `BreadcrumbList` qua `components/json-ld.tsx:2-9` (escape `<`) — `app/(site)/bai-viet/[slug]/page.tsx:54-79`.
@@ -258,7 +258,7 @@ Nguồn: `docs/01-app/03-api-reference/03-file-conventions/error.md`, `not-found
 
 ### [NX-27] Ảnh
 
-- Host cho phép: `down-vn.img.susercontent.com`, `cf.shopee.vn`, `*.supabase.co` — `lib/images.ts:3`; dùng chung cho `remotePatterns` và validate form CMS (`isAllowedImageUrl` — `lib/images.ts:5-16`).
+- Host cho phép: `down-vn.img.susercontent.com`, `cf.shopee.vn` — `platform/images.ts:2`; dùng chung cho `remotePatterns` và validate form CMS (`isAllowedImageUrl` — `platform/images.ts:6-15`).
 - Ảnh hero/bài dùng `fill` + `sizes` + `priority` — `app/(site)/page.tsx:27-34`, `app/(site)/bai-viet/[slug]/page.tsx:96-103`. Ảnh thiếu → `/placeholder.svg` (tự `unoptimized` vì đuôi `.svg`).
 
 ### [NX-28] Kiểu cho page/layout
@@ -271,7 +271,7 @@ Nguồn: `docs/01-app/03-api-reference/03-file-conventions/error.md`, `not-found
 ### [NX-30] Thêm một trang public tĩnh (không tham số)
 
 1. Tạo `app/(site)/<duong-dan>/page.tsx`. Trang tự kế thừa `ensureStatic = "navigation"`; không đặt lại.
-2. Lấy dữ liệu bằng hàm cached trong `lib/posts.ts` (hoặc thêm hàm mới theo [NX-32]). Không gọi `db` trực tiếp trong trang.
+2. `page.tsx` mỏng (spine AD-12): chỉ metadata, `<Suspense fallback={<XSkeleton />}>` và một `<XScreen />`. Screen và skeleton đặt ở `_components/` cạnh route (`<x>-screen.tsx`, `<x>-skeleton.tsx`); Screen đọc dữ liệu bằng hàm cached trong `modules/<miền>/queries.ts` ([NX-32]). Không gọi `db` trực tiếp; không import `@/lib/*` (ESLint chặn trong route mới) — hàm cần dùng còn ở `lib/posts.ts` thì chuyển nó trước theo `docs/cong-thuc/chuyen-code-cu.md`.
 3. Khai báo `metadata` tĩnh, có `alternates.canonical`.
 4. Thêm URL vào `app/sitemap.ts`.
 5. Chạy `npm run build`; lỗi "uncached or runtime data on a route that must be fully static" → xem [NX-40].
@@ -279,7 +279,9 @@ Nguồn: `docs/01-app/03-api-reference/03-file-conventions/error.md`, `not-found
 ```tsx
 // app/(site)/gioi-thieu/page.tsx
 import type { Metadata } from "next";
-import { getLatestPosts } from "@/lib/posts";
+import { Suspense } from "react";
+import { AboutScreen } from "./_components/about-screen";
+import { AboutSkeleton } from "./_components/about-skeleton";
 
 export const metadata: Metadata = {
   title: "Giới thiệu",
@@ -287,7 +289,18 @@ export const metadata: Metadata = {
   alternates: { canonical: "/gioi-thieu" },
 };
 
-export default async function AboutPage() {
+export default function AboutPage() {
+  return (
+    <Suspense fallback={<AboutSkeleton />}>
+      <AboutScreen />
+    </Suspense>
+  );
+}
+
+// app/(site)/gioi-thieu/_components/about-screen.tsx
+import { getLatestPosts } from "@/modules/posts/queries";
+
+export async function AboutScreen() {
   const latest = await getLatestPosts(3); // cached → nằm trong bản prerender
   return <div className="mx-auto max-w-3xl px-4 py-10">{/* ... */}</div>;
 }
@@ -296,15 +309,18 @@ export default async function AboutPage() {
 ### [NX-31] Thêm trang public có tham số động
 
 1. Export `generateStaticParams` trả **ít nhất một** bộ tham số đầy đủ, lấy từ hàm cached ([NX-53]).
-2. Trong page, `await params` **bên ngoài** `<Suspense>`, tra dữ liệu bằng hàm cached; không có → `notFound()` trước khi trả JSX (để có mã 404 thật).
+2. Trong `page.tsx`, `await params`, tra dữ liệu bằng hàm cached, không có → `notFound()` (đổi slug → `permanentRedirect()`, AD-20) **trước** `<Suspense>`, rồi truyền dữ liệu cho Screen (spine AD-12). Gọi trong `<Suspense>` thì response đã stream, `notFound()` trả HTTP 200.
 3. `generateMetadata` chỉ dùng hàm cached; không tồn tại → `return {}`.
 4. Không export `dynamicParams`, `revalidate`, `dynamic`.
 
 ```tsx
 // app/(site)/the/[tag]/page.tsx
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { notFound } from "next/navigation";
-import { getPostsByTag, getAllTags } from "@/lib/posts"; // hàm mới, theo [NX-32]
+import { getPostsByTag, getAllTags } from "@/modules/posts/queries"; // hàm mới, theo [NX-32]
+import { TagScreen } from "./_components/tag-screen";
+import { TagSkeleton } from "./_components/tag-skeleton";
 
 export async function generateStaticParams() {
   const tags = await getAllTags();
@@ -319,86 +335,101 @@ export async function generateMetadata({ params }: PageProps<"/the/[tag]">): Pro
 export default async function TagPage({ params }: PageProps<"/the/[tag]">) {
   const { tag } = await params;
   const posts = await getPostsByTag(tag);
-  if (posts.length === 0) notFound();
-  return <div>{/* ... */}</div>;
+  if (posts.length === 0) notFound(); // trước Suspense → HTTP 404 thật
+  return (
+    <Suspense fallback={<TagSkeleton />}>
+      <TagScreen tag={tag} posts={posts} />
+    </Suspense>
+  );
 }
 ```
 
 ### [NX-32] Thêm một truy vấn public có cache
 
-1. Viết trong `lib/posts.ts` (hoặc file `lib/*.ts` cùng khuôn), hàm `async`.
-2. Ba dòng đầu thân hàm: `"use cache";` → `cacheLife("days");` → `cacheTag(POSTS_TAG);` (thêm tag riêng nếu cần, ví dụ `cacheTag(POSTS_TAG, \`post-${slug}\`)`).
-3. Đối số chỉ là primitive/object thường; trả về object thường (map qua DTO như `toCard`), không trả instance class.
-4. Không đọc `headers()`, `cookies()`, `searchParams`, không gọi `requireAdmin()` bên trong.
-5. Mọi Server Action ghi vào dữ liệu này phải gọi `updateTag` với tag tương ứng.
+1. Viết trong `modules/<miền>/queries.ts` của module chủ (file mở đầu `import "server-only"`, spine AD-5, AD-8), hàm `async`. Không tạo file mới trong `lib/`.
+2. Ba dòng đầu thân hàm: `"use cache";` → `cacheLife(...)` → `cacheTag(...)` với tag của **mọi** module có bảng mà hàm đọc — trả về, lọc, đếm hay sắp xếp (spine AD-7; tag ở `tags.ts` của từng module).
+3. Trả Sản phẩm (kể cả ảnh dự phòng từ Sản phẩm) thì dùng `visibleProductWhere`/`publicProductSelect` của `modules/products/queries.ts` và gắn thêm tag `products` (AD-7). Không cần Sản phẩm thì bỏ hẳn khỏi `select`.
+4. Đối số chỉ là primitive/object thường; trả về object thường (map qua DTO), không trả instance class.
+5. Không đọc `headers()`, `cookies()`, `searchParams`, không gọi `requireAdmin()` bên trong.
+6. Mọi Server Action ghi vào dữ liệu này phải gọi `updateTag` với tag tương ứng.
 
 ```ts
+// modules/posts/queries.ts
+import "server-only";
 import { cacheLife, cacheTag } from "next/cache";
-import { db } from "@/lib/db";
+import { db } from "@/platform/db";
+import { POSTS_TAG } from "@/modules/posts/tags";
+
+// Thẻ bài không kèm ảnh Sản phẩm → chỉ đọc bảng Post → chỉ tag posts.
+const tagCardSelect = { slug: true, title: true, excerpt: true, featuredImage: true, publishedAt: true } as const;
 
 export async function getPostsByTag(tag: string) {
   "use cache";
   cacheLife("days");
   cacheTag(POSTS_TAG);
-  const rows = await db.post.findMany({
-    where: { ...published, tags: { has: tag } },
-    orderBy: newestFirst,
-    select: cardSelect,
+  return db.post.findMany({
+    where: { status: "PUBLISHED", tags: { has: tag } },
+    orderBy: { publishedAt: "desc" },
+    select: tagCardSelect,
   });
-  return rows.map(toCard);
 }
 ```
 
 ### [NX-33] Thêm một màn CMS
 
-1. Tạo `app/cms/<man>/page.tsx` — tự được Proxy bảo vệ (matcher `/cms/((?!upload$).*)`) và kế thừa `noindex` + `maxDuration` từ `app/cms/layout.tsx`.
-2. Phần khung (tiêu đề, nút) để ngoài; phần đọc DB đặt trong một async component con bọc `<Suspense fallback={<Skeleton .../>}>`.
-3. Trong component con đọc DB trực tiếp (không cache) — CMS cần dữ liệu mới nhất. Nếu component không có `params`/API runtime nào khác, gọi `await connection()` trước truy vấn (giống `app/cms/page.tsx:23`) để truy vấn không chạy lúc build.
-4. Có tham số: truyền Promise `params` vào component con và `await` bên trong `<Suspense>` (giống `app/cms/posts/[id]/page.tsx:7-16`); không cần `generateStaticParams`.
-5. Form tương tác là Client Component trong `components/cms/`, gọi action theo [NX-34]. Nếu form khởi tạo state từ dữ liệu server, đặt `key` theo phiên bản dữ liệu (ví dụ `updatedAt`).
+1. Tạo `app/cms/<man>/page.tsx` (đường dẫn tiếng Việt theo Structural Seed) — tự được Proxy bảo vệ (matcher `/cms/((?!upload$).*)`) và kế thừa `noindex` + `maxDuration` từ `app/cms/layout.tsx`.
+2. `page.tsx` chỉ gồm metadata + `<Suspense fallback={<XSkeleton />}>` + `<XScreen />` (spine AD-12); Screen và skeleton ở `_components/` cạnh route.
+3. Screen đọc qua `modules/<miền>/cms-queries.ts` (không cache) — CMS cần dữ liệu mới nhất; `app/` không import `@/platform/db` (ESLint). Nếu Screen không có `params`/API runtime nào khác, gọi `await connection()` trước truy vấn (giống `app/cms/page.tsx:23`) để truy vấn không chạy lúc build.
+4. Có tham số: truyền Promise `params` vào Screen và `await` bên trong `<Suspense>`; Screen CMS gọi `notFound()` trong `<Suspense>` (chấp nhận HTTP 200 vì CMS không index — AD-12); không cần `generateStaticParams`.
+5. Form tương tác là Client Component `modules/<miền>/components/<x>-form.client.tsx` (spine AD-11, AD-14), gọi action theo [NX-34].
 
 ```tsx
-// app/cms/products/page.tsx
+// app/cms/san-pham/page.tsx
 import { Suspense } from "react";
-import { connection } from "next/server";
-import { Skeleton } from "@/components/ui/skeleton";
-import { db } from "@/lib/db";
+import { ProductListScreen } from "./_components/product-list-screen";
+import { ProductListSkeleton } from "./_components/product-list-skeleton";
 
-export default function ProductsScreen() {
+export default function ProductsPage() {
   return (
-    <>
-      <h1 className="mb-4 text-2xl">Sản phẩm</h1>
-      <Suspense fallback={<Skeleton className="h-64 w-full" />}>
-        <ProductList />
-      </Suspense>
-    </>
+    <Suspense fallback={<ProductListSkeleton />}>
+      <ProductListScreen />
+    </Suspense>
   );
 }
 
-async function ProductList() {
+// app/cms/san-pham/_components/product-list-screen.tsx
+import { connection } from "next/server";
+import { listProductsForCms } from "@/modules/products/cms-queries";
+
+export async function ProductListScreen() {
   await connection();
-  const products = await db.product.findMany({ select: { id: true, name: true } });
-  return <ul>{products.map((p) => <li key={p.id}>{p.name}</li>)}</ul>;
+  const products = await listProductsForCms();
+  return (
+    <>
+      <h1 className="mb-4 text-2xl">Sản phẩm</h1>
+      <ul>{products.map((p) => <li key={p.id}>{p.name}</li>)}</ul>
+    </>
+  );
 }
 ```
 
 ### [NX-34] Thêm một Server Action
 
-1. Đặt trong `app/cms/actions.ts` (hoặc file `"use server"` khác cùng khuôn). Export `async function`.
-2. Luôn bọc thân bằng `run(async () => { ... })` → tự có `requireAdmin()` và kiểu `Result`. File mới thì chép mẫu `run` hoặc tách `run` ra module dùng chung — **không** bỏ `requireAdmin()`.
-3. Validate input bằng Zod `safeParse`; lỗi → `throw new Error(<thông báo tiếng Việt>)`.
+1. Đặt trong `modules/<miền>/actions.ts` của module chủ bảng bị ghi (`"use server"` ở dòng 1); ghi DB ở `service.ts` cùng module (spine AD-5, AD-6). Không thêm action vào `app/cms/actions.ts` (code cũ). Khuôn đầy đủ: `docs/cong-thuc/them-server-action.md`.
+2. Luôn bọc thân bằng `run(async () => { ... })` import từ `@/platform/auth/run` → tự có `requireAdmin()` và kiểu `Result`. Không chép `run`, **không** bỏ `requireAdmin()`.
+3. Nhận một tham số `input` (id nằm trong `input`), validate bằng Zod `safeParse` (schema ở `schema.ts` của module); lỗi → `throw new UserError(<thông báo tiếng Việt>)`.
 4. Nhận **ID** + thay đổi, không nhận nguyên bản ghi từ client; đọc lại phần còn lại từ DB.
-5. Ghi DB → nếu dữ liệu xuất hiện trên trang public thì gọi `updateTag(POSTS_TAG)` (sau khi ghi, trước khi `return`/`redirect`). Thay đổi chỉ ảnh hưởng màn CMS hiện tại mà không có tag → `refresh()`.
+5. Ghi DB → gọi `updateTag` với tag của **mọi** module có dữ liệu thay đổi (AD-7), sau khi ghi, trước khi `return`/`redirect`. Thay đổi chỉ ảnh hưởng màn CMS hiện tại mà không có tag → `refresh()`.
 6. Trả object nhỏ chỉ chứa thứ UI cần (`{ id }`, `{ slug }`, `{}`), không trả bản ghi Prisma thô.
-7. Client: gọi trong `startTransition`, kiểm `res.ok`, hiện `toast.error(res.error)`.
+7. Client: form nhiều trường dùng React Hook Form + `zodResolver` với cùng schema (AD-14); form một trường gọi trong `startTransition`, kiểm `res.ok`, hiện `toast.error(res.error)`.
 
 ```ts
-// app/cms/actions.ts
-export async function renamePost(id: string, title: string) {
+// modules/posts/actions.ts
+export async function renamePost(input: RenamePostInput) {
   return run(async () => {
-    const parsed = z.object({ title: z.string().trim().min(1, "Tiêu đề trống") }).safeParse({ title });
-    if (!parsed.success) throw new Error(firstError(parsed.error));
-    const post = await db.post.update({ where: { id }, data: { title: parsed.data.title }, select: { slug: true } });
+    const parsed = renamePostInputSchema.safeParse(input); // modules/posts/schema.ts — { id, title }
+    if (!parsed.success) throw new UserError(firstError(parsed.error));
+    const post = await renamePostRecord(parsed.data); // modules/posts/service.ts
     updateTag(POSTS_TAG);
     return { slug: post.slug };
   });
@@ -406,17 +437,17 @@ export async function renamePost(id: string, title: string) {
 ```
 
 ```tsx
-// components/cms/rename-button.tsx
+// modules/posts/components/rename-button.client.tsx — form một trường
 "use client";
 import { useTransition } from "react";
 import { toast } from "sonner";
-import { renamePost } from "@/app/cms/actions";
+import { renamePost } from "@/modules/posts/actions";
 
 export function RenameButton({ id, title }: { id: string; title: string }) {
   const [pending, startTransition] = useTransition();
   const onClick = () =>
     startTransition(async () => {
-      const res = await renamePost(id, title);
+      const res = await renamePost({ id, title });
       if (!res.ok) return void toast.error(res.error);
       toast.success("Đã đổi tên");
     });
@@ -426,50 +457,47 @@ export function RenameButton({ id, title }: { id: string; title: string }) {
 
 ### [NX-35] Thêm lượt xem (dữ liệu theo request) mà không phá cache trang public
 
-Mục tiêu: trang `/bai-viet/[slug]` vẫn tĩnh hoàn toàn; số lượt xem được ghi và hiển thị sau khi trang tải. Đây là mẫu chính thức trong `docs/01-app/01-getting-started/07-mutating-data.md` mục "useEffect".
+Mục tiêu: trang `/bai-viet/[slug]` vẫn tĩnh hoàn toàn; số lượt xem được ghi và hiển thị sau khi trang tải. Đây là mẫu chính thức trong `docs/01-app/01-getting-started/07-mutating-data.md` mục "useEffect". Quy tắc nghiệp vụ ở spine AD-23 (đích, chưa có code).
 
-1. **Lưu trữ**: đặt bộ đếm ở bảng riêng (ví dụ `PostStat { postId, views }`), **không** thêm cột vào `Post` — `Post.updatedAt` có `@updatedAt` (`prisma/schema.prisma:25`) và đang được dùng cho `lastModified` của sitemap (`app/sitemap.ts:17`) và `dateModified` của JSON-LD/OpenGraph; cập nhật hàng `Post` ở mỗi lượt xem sẽ làm sai các giá trị này. Chi tiết schema thuộc tài liệu Prisma.
-2. **Server Action công khai** (không `requireAdmin`, vì khách gọi): đặt trong file `"use server"` riêng, ví dụ `app/(site)/actions.ts`. Action được POST tới `/bai-viet/<slug>` nên **không** đi qua Proxy (matcher chỉ `/cms`, `/api`). Validate slug, chỉ tăng cho bài `PUBLISHED`, trả `Result`. **Không** gọi `updateTag`/`revalidatePath`/`refresh` ([NX-56]).
-3. **Client Component** gọi action trong `useEffect` + `startTransition`; render placeholder ban đầu (phần này nằm trong HTML tĩnh). Dùng `useRef` chống gửi lại khi route hiện lại từ `<Activity>` ([NX-59]).
-4. Đặt `<ViewCounter slug={post.slug} />` trong `app/(site)/bai-viet/[slug]/page.tsx`. Không cần `<Suspense>` vì component không suspend khi prerender.
-5. Kiểm tra: `npm run build` vẫn ra `○`/tĩnh cho `/bai-viet/[slug]`; lượt xem không làm đổi nội dung cache.
-6. Cân nhắc giới hạn tần suất (rate limit) vì action công khai ghi DB (`docs/01-app/02-guides/data-security.md` mục "Rate limiting").
+1. **Lưu trữ**: bộ đếm ở bảng riêng của module `engagement` (`PostStat { postId, views, likes }`, `PostViewDaily` — spine AD-23, `prisma/schema/engagement.prisma` đích), **không** thêm cột vào `Post` — `Post.updatedAt` có `@updatedAt` (`prisma/schema/posts.prisma:18`) và đang được dùng cho `lastModified` của sitemap (`app/sitemap.ts:17`) và `dateModified` của JSON-LD/OpenGraph; cập nhật hàng `Post` ở mỗi lượt xem sẽ làm sai các giá trị này.
+2. **Server Action công khai** trong `modules/engagement/actions.ts` — ngoại lệ có tên của `[QD-20]` (spine AD-6): không `run()`/`requireAdmin()`; validate bằng `safeParse` của `modules/engagement/schema.ts`; **bắt buộc** giới hạn tần suất (bộ nhớ tiến trình, theo băm IP có thời hạn ngắn, không ghi DB hay log — AD-23); ghi qua `modules/engagement/service.ts`; chỉ tăng cho bài `PUBLISHED`; bỏ qua user-agent bot. **Không** gọi `updateTag`/`revalidatePath`/`refresh` ([NX-56]). Không `console.error` trong action công khai (log chỉ ở `run()` và `platform/ai`): lỗi bất ngờ trả `UNEXPECTED_ERROR`.
+3. **Chống trùng phía client**: `localStorage` của trình duyệt (không cookie); trình duyệt của Vinh tự đánh dấu khi vào `/cms` và không gửi lượt xem (AD-23).
+4. **Client Component** `modules/engagement/components/view-counter.client.tsx` gọi action trong `useEffect` + `startTransition`; render placeholder ban đầu (phần này nằm trong HTML tĩnh). Dùng `useRef` chống gửi lại khi route hiện lại từ `<Activity>` ([NX-59]). Hiển thị số qua `formatCount` của `@/platform/format` (AD-27; `formatCount` là đích, chưa có).
+5. Đặt `<ViewCounter slug={post.slug} />` trong Screen của trang bài (`_components/`), không trong `page.tsx` (AD-12).
+6. Kiểm tra: `npm run build` vẫn ra `○`/tĩnh cho `/bai-viet/[slug]`; lượt xem không làm đổi nội dung cache.
 
 ```ts
-// app/(site)/actions.ts
+// modules/engagement/actions.ts — ngoại lệ có tên của [QD-20], không run()/requireAdmin()
 "use server";
 
-import { db } from "@/lib/db";
+import { UNEXPECTED_ERROR, type Result } from "@/platform/errors";
+import { recordViewInputSchema } from "@/modules/engagement/schema";
+import { recordPostView } from "@/modules/engagement/service";
 
-type Result<T = object> = ({ ok: true } & T) | { ok: false; error: string };
-
-export async function recordView(slug: string): Promise<Result<{ views: number }>> {
-  if (typeof slug !== "string" || !/^[a-z0-9-]{1,200}$/.test(slug)) {
-    return { ok: false, error: "Đường dẫn không hợp lệ" };
-  }
+export async function recordView(input: unknown): Promise<Result<{ views: number }>> {
+  const parsed = recordViewInputSchema.safeParse(input);
+  if (!parsed.success) return { ok: false, error: "Dữ liệu không hợp lệ" };
+  // Bắt buộc: giới hạn tần suất theo băm IP trong bộ nhớ tiến trình (AD-23); vị trí hàm chốt ở story FR-33,
+  // không tự tạo file ngoài hợp đồng AD-5. Vượt giới hạn → { ok: false, error: "Thao tác quá nhanh, thử lại sau" }.
   try {
-    const post = await db.post.findFirst({ where: { slug, status: "PUBLISHED" }, select: { id: true } });
-    if (!post) return { ok: false, error: "Không tìm thấy bài" };
-    const stat = await db.postStat.upsert({
-      where: { postId: post.id },
-      create: { postId: post.id, views: 1 },
-      update: { views: { increment: 1 } },
-      select: { views: true },
-    });
-    return { ok: true, views: stat.views };
-  } catch (e) {
-    console.error(e);
-    return { ok: false, error: "Có lỗi xảy ra" };
+    const views = await recordPostView(parsed.data.slug); // chỉ bài PUBLISHED; null nếu không có
+    if (views === null) return { ok: false, error: "Không tìm thấy bài" };
+    return { ok: true, views };
+  } catch {
+    return { ok: false, error: UNEXPECTED_ERROR };
   }
 }
 ```
 
 ```tsx
-// components/site/view-counter.tsx
+// modules/engagement/components/view-counter.client.tsx
 "use client";
 
 import { useEffect, useRef, useState, useTransition } from "react";
-import { recordView } from "@/app/(site)/actions";
+import { formatCount } from "@/platform/format";
+import { recordView } from "@/modules/engagement/actions";
+
+const SEEN_KEY = "da-xem:"; // chống trùng bằng localStorage (AD-23)
 
 export function ViewCounter({ slug }: { slug: string }) {
   const [views, setViews] = useState<number | null>(null);
@@ -479,36 +507,42 @@ export function ViewCounter({ slug }: { slug: string }) {
   useEffect(() => {
     if (sent.current) return; // <Activity> chạy lại effect khi route hiện lại
     sent.current = true;
+    if (localStorage.getItem("cms-admin") || localStorage.getItem(SEEN_KEY + slug)) return;
     startTransition(async () => {
-      const res = await recordView(slug);
-      if (res.ok) setViews(res.views);
+      const res = await recordView({ slug });
+      if (!res.ok) return;
+      localStorage.setItem(SEEN_KEY + slug, "1");
+      setViews(res.views);
     });
   }, [slug]);
 
-  return <span>{views === null ? "—" : `${views.toLocaleString("vi-VN")} lượt xem`}</span>;
+  return <span>{views === null ? "—" : `${formatCount(views)} lượt xem`}</span>;
 }
 ```
 
-- Phương án thay thế: Route Handler `POST` — **không** đặt dưới `/api` ([NX-57]); hoặc sửa matcher của `proxy.ts` (là thay đổi bảo mật, cần duyệt).
-- Không đọc số lượt xem trong Server Component của `(site)` (dữ liệu không cache → vi phạm `ensureStatic`), và không đưa lượt xem vào `getPostBySlug`.
+- Không dùng Route Handler công khai thay cho action: spine AD-6 chỉ cho ba ngoại lệ có tên và không có endpoint công khai dưới `/api` ([NX-57]).
+- Không đọc số lượt xem trong Server Component của `(site)` (dữ liệu không cache → vi phạm `ensureStatic`), và không đưa lượt xem vào `getPostBySlug`. Số tim của một bài đọc phía client qua action đọc công khai của `modules/engagement/actions.ts` sau khi mount (AD-6).
 
 ### [NX-36] Lượt thích / số liệu tương tác hiển thị trên danh sách
 
-1. Ghi (bấm thích): giống [NX-35] — Server Action công khai, gọi từ Client Component, **không** `updateTag`. Trạng thái "đã thích" của người xem lưu phía trình duyệt (cookie/localStorage) và đọc trong Client Component; đọc giá trị chỉ có ở trình duyệt khi render đầu thì dùng `use(browser())` trong `<Suspense>` (`docs/01-app/02-guides/single-page-applications.md` mục "Rendering components only in the browser").
-2. Hiển thị **tổng** trên thẻ bài (trang chủ, chuyên mục — đều tĩnh): đọc bằng hàm cached có thời gian sống ngắn hơn `days`, với tag riêng, ví dụ `cacheLife("hours")` + `cacheTag("post-stats")`. Không dùng `cacheLife("seconds")` (bị loại khỏi prerender → vi phạm `ensureStatic='navigation'`). Số liệu sẽ trễ tối đa theo `revalidate` của profile — chấp nhận.
-3. Không gọi `updateTag("post-stats")` ở mỗi lượt thích. Nếu cần làm mới sớm hơn, gọi `revalidateTag("post-stats", "max")` có điều tiết (ví dụ từ một tác vụ định kỳ), vẫn không phải mỗi lượt.
+1. Ghi (bấm thích): giống [NX-35] — action công khai của `modules/engagement/actions.ts`, gọi từ Client Component, giới hạn tần suất, **không** `updateTag`. Trạng thái "đã thích" của người xem lưu trong `localStorage` và đọc trong Client Component; đọc giá trị chỉ có ở trình duyệt khi render đầu thì dùng `use(browser())` trong `<Suspense>` (`docs/01-app/02-guides/single-page-applications.md` mục "Rendering components only in the browser").
+2. Hiển thị **tổng** hoặc "Xem nhiều" trên trang tĩnh: đọc bằng hàm cached trong `modules/engagement/queries.ts` với `cacheLife` cố định ngắn hơn `days`, gắn `ENGAGEMENT_TAG` (`"engagement"`, `modules/engagement/tags.ts`) cùng `POSTS_TAG` vì có đọc bảng `Post` (AD-7, AD-23). Không dùng `cacheLife("seconds")` (bị loại khỏi prerender → vi phạm `ensureStatic='navigation'`). Số liệu trễ tối đa theo `revalidate` của profile — chấp nhận.
+3. Không gọi `updateTag(ENGAGEMENT_TAG)` ở mỗi lượt thích (AD-23).
 
 ```ts
-// lib/post-stats.ts
+// modules/engagement/queries.ts
+import "server-only";
 import { cacheLife, cacheTag } from "next/cache";
-import { db } from "@/lib/db";
+import { db } from "@/platform/db";
+import { POSTS_TAG } from "@/modules/posts/tags";
+import { ENGAGEMENT_TAG } from "@/modules/engagement/tags";
 
 export async function getStatsBySlugs(slugs: string[]) {
   "use cache";
   cacheLife("hours");
-  cacheTag("post-stats");
+  cacheTag(ENGAGEMENT_TAG, POSTS_TAG);
   const rows = await db.postStat.findMany({
-    where: { post: { slug: { in: slugs } } },
+    where: { post: { slug: { in: slugs }, status: "PUBLISHED" } },
     select: { views: true, likes: true, post: { select: { slug: true } } },
   });
   return Object.fromEntries(rows.map((r) => [r.post.slug, { views: r.views, likes: r.likes }]));
@@ -517,25 +551,12 @@ export async function getStatsBySlugs(slugs: string[]) {
 
 ### [NX-37] Thêm Route Handler
 
-1. Endpoint cho admin: đặt dưới `app/api/.../route.ts` — được Proxy Basic Auth bảo vệ; vẫn kiểm `isAuthorized(request.headers.get("authorization"))` trong handler (phòng khi matcher đổi).
-2. Endpoint công khai: **không** đặt dưới `/api` ([NX-57]); chọn path khác ngoài matcher.
+Spine AD-6 chỉ có **một** Route Handler: `app/cms/upload/route.ts` (AD-24). Thêm Route Handler khác (kể cả endpoint quản trị dưới `/api`, webhook) là thay đổi kiến trúc: sửa spine trước, không tự thêm.
+
+1. `app/cms/upload/route.ts` nằm ngoài matcher của `proxy.ts`: gọi `requireAdmin()` trước khi đọc body; thiếu quyền trả 401 kèm `WWW-Authenticate` cùng realm với `proxy.ts`; kiểm loại và dung lượng; gọi `platform/storage.put(file) → { url }` (đích).
+2. Route Handler tự `export const maxDuration` nếu cần; không nhận từ layout.
 3. `GET` có dữ liệu: tách truy vấn ra helper `"use cache"`; không đặt `"use cache"` trong thân handler.
-4. Vô hiệu cache từ handler (webhook): `revalidateTag(POSTS_TAG, "max")` (cho phép bản cũ trong lúc tạo lại) hoặc `revalidateTag(POSTS_TAG, { expire: 0 })` (hết hạn ngay). Không gọi `updateTag`/`refresh`.
-
-```ts
-// app/api/revalidate/route.ts — được proxy.ts bảo vệ bằng Basic Auth
-import { revalidateTag } from "next/cache";
-import { isAuthorized } from "@/lib/auth";
-import { POSTS_TAG } from "@/lib/posts";
-
-export async function POST(request: Request) {
-  if (!isAuthorized(request.headers.get("authorization"))) {
-    return new Response("Unauthorized", { status: 401 });
-  }
-  revalidateTag(POSTS_TAG, { expire: 0 });
-  return Response.json({ ok: true });
-}
-```
+4. Vô hiệu cache từ handler: `revalidateTag(tag, "max")` hoặc `revalidateTag(tag, { expire: 0 })`. Không gọi `updateTag`/`refresh` (chỉ chạy trong Server Action).
 
 ### [NX-38] Metadata/SEO cho trang mới
 
@@ -547,8 +568,8 @@ export async function POST(request: Request) {
 
 ### [NX-39] Thêm host ảnh
 
-1. Thêm hostname vào `IMAGE_HOSTS` (`lib/images.ts:3`) — tự cập nhật cả `remotePatterns` và validate CMS.
-2. Wildcard: dùng `"*.example.com"` chỉ khi ảnh nằm đúng **một** cấp subdomain ([NX-60]).
+1. Thêm hostname vào `IMAGE_HOSTS` (`platform/images.ts:2`) — tự cập nhật cả `remotePatterns` và validate CMS.
+2. Không dùng wildcard: `isAllowedImageUrl` so khớp hostname đúng từng chữ ([NX-60]).
 3. Khởi động lại `next dev` (đổi `next.config.ts` cần khởi động lại — chưa kiểm trong tài liệu cài sẵn, xem phần cuối).
 
 ### [NX-40] Gỡ lỗi prerender / tĩnh
@@ -562,13 +583,13 @@ export async function POST(request: Request) {
 ### [NX-50] Comment `lib/posts.ts:6` nói `revalidateTag`, code dùng `updateTag`
 
 - **Triệu chứng:** agent đọc `lib/posts.ts:6` ("khi publish/sửa bài gọi revalidateTag(\"posts\")") rồi viết action mới gọi `revalidateTag("posts")` hoặc `revalidateTag("posts", "max")`. Sau khi Vinh bấm Lưu/Đăng, trang public vẫn hiện nội dung cũ ở lần tải kế tiếp; trang hiện tại không render lại trong response của action.
-- **Nguyên nhân:** comment lỗi thời. `revalidateTag` một đối số đã deprecated; `revalidateTag(tag, "max")` là stale-while-revalidate, không re-render trong response của action. Code thật dùng `updateTag(POSTS_TAG)` — `app/cms/actions.ts:88,107,115`.
-- **Cách đúng:** trong Server Action dùng `updateTag(POSTS_TAG)`. Chỉ dùng `revalidateTag(tag, "max" | { expire: 0 })` ở Route Handler. Sửa comment `lib/posts.ts:6` thành `updateTag` khi có thay đổi chạm file này (tài liệu này không sửa code).
+- **Nguyên nhân:** comment lỗi thời. `revalidateTag` một đối số đã deprecated; `revalidateTag(tag, "max")` là stale-while-revalidate, không re-render trong response của action. Code thật dùng `updateTag(POSTS_TAG)` — `app/cms/actions.ts:112,132,143`.
+- **Cách đúng:** trong Server Action dùng `updateTag(POSTS_TAG)`. Chỉ dùng `revalidateTag(tag, "max" | { expire: 0 })` ở Route Handler. Sửa comment này khi chuyển `lib/posts.ts` sang `modules/posts/queries.ts` (`[NO-16]`).
 
 ### [NX-51] Đọc `headers()`/`cookies()` hoặc gọi `requireAdmin()` trong `"use cache"`
 
 - **Triệu chứng:** lỗi `next-request-in-use-cache`; có thể qua `next build` nhưng lỗi khi `next start`.
-- **Nguyên nhân:** scope cache cấm API request theo cả call stack; `requireAdmin()` gọi `headers()` (`lib/require-admin.ts:6`).
+- **Nguyên nhân:** scope cache cấm API request theo cả call stack; `requireAdmin()` gọi `headers()` (`platform/auth/require-admin.ts:7`).
 - **Cách đúng:** kiểm quyền và đọc request **bên ngoài** hàm cached, truyền giá trị cần thiết làm đối số. Hàm trong `lib/posts.ts` không nhận/đọc thông tin người dùng.
 
 ### [NX-52] Thêm dữ liệu động vào trang `(site)`
@@ -581,13 +602,13 @@ export async function POST(request: Request) {
 
 - **Triệu chứng:** build lỗi `empty-generate-static-params` hoặc `ensureStatic = "navigation" requires an exported generateStaticParams()`; build trên máy/CI không có DB thì lỗi kết nối.
 - **Nguyên nhân:** `app/(site)/bai-viet/[slug]/page.tsx:18-21` lấy slug từ DB lúc build; DB chưa có Bài web `PUBLISHED` → `[]`. Cache Components cấm mảng rỗng.
-- **Cách đúng:** đảm bảo DB lúc build có ít nhất một bài đã đăng (seed `npm run db:seed`) và `DATABASE_URL` có ở môi trường build. Không xoá `generateStaticParams`, không trả param giả. Route mới phải trả ≥ 1 phần tử từ nguồn chắc chắn có dữ liệu.
+- **Cách đúng:** đảm bảo DB lúc build có ít nhất một bài đã đăng (seed `npm run db:seed`) và `DATABASE_URL` có ở môi trường build. Không xoá `generateStaticParams`, không trả param giả. Route mới phải trả ≥ 1 phần tử từ nguồn chắc chắn có dữ liệu. **Ngoại lệ duy nhất** (spine AD-7): route phân trang `…/trang/[n]` không có trang nào từ `n = 2` thì trả một tham số giữ chỗ `n = "2"` (với `[danh-muc]` là của Danh mục đầu tiên) để page gọi `notFound()` lúc prerender; `n = 1` thì `permanentRedirect` về trang gốc.
 
 ### [NX-54] Ghi dữ liệu public mà quên vô hiệu cache
 
 - **Triệu chứng:** sửa/đăng/gỡ bài xong, trang public vẫn cũ tới 1 ngày.
 - **Nguyên nhân:** mọi truy vấn public `cacheLife("days")` (revalidate 1 ngày) — `lib/posts.ts:46,59,72,85,101`; không vô hiệu thì chỉ tự làm mới theo thời gian.
-- **Cách đúng:** mọi action thay đổi bài/sản phẩm đã đăng gọi `updateTag(POSTS_TAG)`. Thêm tag mới thì cũng thêm lời gọi `updateTag` tương ứng ở mọi action ghi.
+- **Cách đúng:** mọi action thay đổi dữ liệu public gọi `updateTag` với tag của **mọi** module có dữ liệu thay đổi (AD-7; hiện chỉ có `POSTS_TAG`). Thêm tag mới thì cũng thêm lời gọi `updateTag` tương ứng ở mọi action ghi.
 
 ### [NX-55] Gọi `updateTag`/`refresh` ngoài Server Action
 
@@ -604,14 +625,14 @@ export async function POST(request: Request) {
 ### [NX-57] Endpoint công khai đặt dưới `/api` bị chặn 401
 
 - **Triệu chứng:** khách truy cập gọi `/api/...` nhận 401 và trình duyệt bật hộp đăng nhập Basic Auth.
-- **Nguyên nhân:** `proxy.ts:13` matcher gồm `/api/:path*`; `app/robots.ts:6` cũng disallow `/api/`.
-- **Cách đúng:** endpoint công khai dùng Server Action gọi từ trang `(site)` hoặc Route Handler ở path ngoài matcher. Chỉ sửa matcher khi đã duyệt thay đổi bảo mật.
+- **Nguyên nhân:** `proxy.ts:14` matcher gồm `/api/:path*`; `app/robots.ts:6` cũng disallow `/api/`.
+- **Cách đúng:** dữ liệu công khai theo request dùng action công khai của `[QD-20]` gọi từ Client Component trên trang `(site)` (spine AD-6). Không thêm endpoint công khai; sửa matcher là thay đổi bảo mật, phải sửa spine trước.
 
 ### [NX-58] Bỏ `requireAdmin()` vì "đã có proxy"
 
 - **Triệu chứng:** action mới không gọi `run()`/`requireAdmin()`; có thể gọi trực tiếp bằng POST mà không cần mật khẩu khi action được dùng ở một route ngoài `/cms`.
 - **Nguyên nhân:** action là POST tới route đang dùng nó; Proxy chỉ chạy theo matcher. Di chuyển component dùng action sang route khác hoặc đổi matcher sẽ âm thầm bỏ lớp bảo vệ (`proxy.md` mục "Execution order").
-- **Cách đúng:** mọi action CMS đi qua `run()` (`app/cms/actions.ts:21-29`). Action công khai (lượt xem) phải được thiết kế là công khai có chủ đích: validate chặt, không chạm dữ liệu quản trị.
+- **Cách đúng:** mọi action CMS đi qua `run()` (`platform/auth/run.ts:5-14`). Action công khai chỉ là ba ngoại lệ có tên của `[QD-20]`: validate chặt, giới hạn tần suất, không chạm dữ liệu quản trị.
 
 ### [NX-59] `<Activity>` giữ route ẩn: effect chạy lại, state cũ còn đó
 
@@ -621,9 +642,9 @@ export async function POST(request: Request) {
 
 ### [NX-60] Wildcard host ảnh lệch giữa CMS và `next/image`
 
-- **Triệu chứng:** CMS chấp nhận URL ảnh nhưng trang public hiện ảnh vỡ, optimizer trả 400.
-- **Nguyên nhân:** `isAllowedImageUrl` coi `"*.supabase.co"` là "mọi subdomain ở mọi cấp" (`hostname.endsWith(".supabase.co")` — `lib/images.ts:11`), còn `remotePatterns` hiểu `*` là **đúng một** cấp subdomain.
-- **Cách đúng:** giữ host ảnh ở dạng một cấp (`<project>.supabase.co`). Cần nhiều cấp thì dùng `"**.supabase.co"` trong `remotePatterns` và sửa `isAllowedImageUrl` cho khớp trong cùng thay đổi.
+- **Triệu chứng:** thêm `"*.example.com"` vào `IMAGE_HOSTS`: `next/image` nhận ảnh nhưng CMS từ chối mọi URL của host đó.
+- **Nguyên nhân:** `isAllowedImageUrl` so hostname bằng `IMAGE_HOSTS.includes(hostname)` (khớp đúng — `platform/images.ts:11`), còn `remotePatterns` hiểu `*` là **đúng một** cấp subdomain, `**` là nhiều cấp.
+- **Cách đúng:** chỉ thêm hostname cụ thể. Cần wildcard thì sửa `isAllowedImageUrl` và mẫu `remotePatterns` cho khớp nhau trong cùng thay đổi, kèm test ở `platform/images.test.ts`.
 
 ### [NX-61] Viết `middleware.ts` hoặc thêm `runtime` vào proxy
 
@@ -653,7 +674,7 @@ export async function POST(request: Request) {
 
 - **Triệu chứng:** lỗi serialize khi trả `URL`, instance class, hàm từ hàm `"use cache"`; client nhận nhiều dữ liệu thừa từ action.
 - **Nguyên nhân:** `"use cache"` và Server Action serialize đối số/kết quả; tài liệu yêu cầu chỉ trả dữ liệu UI cần.
-- **Cách đúng:** map qua DTO (như `toCard` — `lib/posts.ts:31-37`); `Date` dùng được; `URL` đổi thành chuỗi; action trả `{ ok, ...ítTrường }`.
+- **Cách đúng:** map qua DTO (như `toCard` — `lib/posts.ts:31-38`); `Date` dùng được; `URL` đổi thành chuỗi; action trả `{ ok, ...ítTrường }`.
 
 ### [NX-66] Cache in-memory và nhiều instance
 
@@ -678,7 +699,7 @@ export async function POST(request: Request) {
 Trang public (`app/(site)/**`):
 
 - [ ] Không có truy vấn DB/fetch thiếu `"use cache"`; không `connection()`, `cookies()`, `headers()`, `searchParams` phía server — kể cả trong `<Suspense>` ([NX-52]).
-- [ ] Dữ liệu lấy qua hàm cached trong `lib/`, mỗi hàm có `"use cache"` + `cacheLife(...)` tường minh (≥ `minutes`) + `cacheTag(...)` ([NX-32], [NX-64]).
+- [ ] Dữ liệu lấy qua hàm cached trong `modules/<miền>/queries.ts` (code cũ: `lib/posts.ts`), mỗi hàm có `"use cache"` + `cacheLife(...)` tường minh (≥ `minutes`) + `cacheTag(...)` của mọi module có bảng nó đọc ([NX-32], [NX-64]).
 - [ ] Route động có `generateStaticParams` trả ≥ 1 phần tử từ hàm cached; không export `dynamicParams`/`dynamic`/`revalidate`/`runtime` ([NX-53], [NX-62]).
 - [ ] `await params` và `notFound()` ở cấp page, ngoài `<Suspense>` ([NX-63]).
 - [ ] `generateMetadata` chỉ dùng hàm cached; có `alternates.canonical`; URL mới có trong `app/sitemap.ts` ([NX-38]).
@@ -687,16 +708,16 @@ Trang public (`app/(site)/**`):
 
 Màn CMS (`app/cms/**`):
 
-- [ ] Đọc DB trong component con bọc `<Suspense>`; có `connection()` hoặc `await params` trước truy vấn ([NX-33]).
+- [ ] Đọc qua `cms-queries.ts` trong component con bọc `<Suspense>`; có `connection()` hoặc `await params` trước truy vấn ([NX-33]).
 - [ ] Form khởi tạo từ dữ liệu server có `key` theo phiên bản dữ liệu ([NX-59]).
 
 Server Action:
 
-- [ ] Nằm trong file `"use server"`; bọc bằng `run()` → có `requireAdmin()`; trả `Result` ([NX-34], [NX-58]).
+- [ ] Nằm trong `modules/<miền>/actions.ts` (`"use server"`); bọc bằng `run()` → có `requireAdmin()`; trả `Result` ([NX-34], [NX-58]).
 - [ ] Input validate bằng Zod; nhận ID + thay đổi, không nhận nguyên bản ghi; HTML qua `sanitizePostHtml`.
-- [ ] Ghi dữ liệu xuất hiện ở trang public → gọi `updateTag(POSTS_TAG)` trước `return`/`redirect`; không dùng `revalidateTag` một đối số ([NX-50], [NX-54]).
-- [ ] Trả object nhỏ, serialize được; lỗi là `Error` với thông báo tiếng Việt ([NX-65]).
-- [ ] Action công khai (không `requireAdmin`) được ghi rõ là công khai, validate chặt, không vô hiệu cache ([NX-35]).
+- [ ] Ghi dữ liệu xuất hiện ở trang public → gọi `updateTag` với tag của mọi module có dữ liệu thay đổi trước `return`/`redirect`; action công khai của `[QD-20]` không gọi `updateTag`; không dùng `revalidateTag` một đối số ([NX-50], [NX-54]).
+- [ ] Trả object nhỏ, serialize được; lỗi là `UserError` với thông báo tiếng Việt ([NX-65]).
+- [ ] Action công khai (không `requireAdmin`) là một trong ba ngoại lệ có tên của `[QD-20]`, validate chặt, giới hạn tần suất, không vô hiệu cache ([NX-35]).
 
 Route Handler / Proxy:
 

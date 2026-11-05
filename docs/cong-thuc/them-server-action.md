@@ -1,6 +1,6 @@
 # Công thức: thêm hoặc sửa Server Action và query
 
-> Nguồn: spine kiến trúc `_bmad-output/planning-artifacts/architecture/architecture-affiliate-project-2026-11-03/ARCHITECTURE-SPINE.md` (AD-xx), `docs/quy-dinh.md`, `docs/nen-tang-ky-thuat/nextjs-16.md`, `docs/nen-tang-ky-thuat/kiem-tra-va-bao-mat.md` · Kiểm lần cuối: 2026-11-04
+> Nguồn: spine kiến trúc `_bmad-output/planning-artifacts/architecture/architecture-affiliate-project-2026-11-03/ARCHITECTURE-SPINE.md` (AD-xx), `docs/quy-dinh.md`, `docs/nen-tang-ky-thuat/nextjs-16.md`, `docs/nen-tang-ky-thuat/kiem-tra-va-bao-mat.md` · Kiểm lần cuối: 2026-11-05 @ 8771851
 
 Công thức theo spine; code hiện tại chưa theo, xem `docs/cong-thuc/chuyen-code-cu.md`.
 
@@ -8,7 +8,7 @@ Dùng khi thêm hoặc sửa một thao tác ghi (Server Action) hoặc một h�
 
 ## Tóm tắt cho agent
 
-- **Spine thắng docs.** Đường dẫn `lib/`, `app/cms/actions.ts` trong `docs/nen-tang-ky-thuat/*` là code cũ; chỉ dùng các tài liệu đó cho hành vi thư viện.
+- **Spine thắng docs.** `docs/nen-tang-ky-thuat/*` đã theo cấu trúc mới; chỗ nào nhắc `lib/`, `components/site|cms/`, `app/cms/actions.ts` thì đó là code cũ chờ chuyển, ghi rõ tại chỗ.
 - **Một đường ghi:** `actions.ts` của module chủ: `run()` → `<x>InputSchema.safeParse` → `service` → `updateTag` (AD-6). Chỉ ba ngoại lệ có tên của AD-6; không thêm ngoại lệ.
 - **Ghi bảng nào thì module chủ bảng đó ghi** (AD-4). Action chỉ gọi `service.ts` của chính module; riêng `modules/suggestions/actions.ts` được gọi `service.ts` của `posts`, `products`, `content-sets`, `research` (AD-2, AD-9).
 - **Lỗi cho người dùng là `UserError` tiếng Việt**, action trả `Result<T>`; query trả `null`, không ném lỗi nghiệp vụ (AD-13).
@@ -56,7 +56,7 @@ Query: get… (queries.ts, public) | list…ForCms / get…ForCms (cms-queries.t
 
 ## Bước 3: Code theo thứ tự
 
-1. **`schema.ts`:** `<x>InputSchema` ghép từ `platform/validation/fields.ts` (`requiredText`, `optionalText`, `imageUrl`, `shopeeAffiliateUrl`, `slugField`); giới hạn cứng lấy từ `constants.ts`, bằng `@db.VarChar(n)` (AD-14, AD-25). Form CMS dùng **cùng** schema này với React Hook Form + `zodResolver`.
+1. **`schema.ts`:** `<x>InputSchema` ghép từ `platform/validation/fields.ts` (hiện có `optionalText`, `imageUrl`, `shopeeAffiliateUrl`; `requiredText`, `slugField` là đích theo AD-14, chưa có — story cần thì thêm vào đó kèm test); giới hạn cứng lấy từ `constants.ts`, bằng `@db.VarChar(n)` (AD-14, AD-25). Form CMS dùng **cùng** schema này với React Hook Form + `zodResolver`.
 2. **`service.ts`:** `import "server-only"`; nhận input đã validate và `tx` tuỳ chọn; chỉ ghi bảng của module mình (AD-4, AD-5, AD-8). Không `"use server"`, `updateTag`, `requireAdmin`, validate.
    - HTML thân Bài web → `sanitizePostHtml` của `platform/html` trước khi ghi (AD-22, `[QD-12]`).
    - Nhiều lệnh ghi phải cùng thành bại → một transaction; chỉ đặt lệnh DB trong callback, không gọi AI hay việc chậm (AD-10, `[PR-11]`, `[PR-28]`).
