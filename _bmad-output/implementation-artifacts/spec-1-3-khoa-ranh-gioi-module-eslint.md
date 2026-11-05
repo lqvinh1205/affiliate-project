@@ -171,3 +171,5 @@ Status: done
 - `/cms/styleguide` giờ nằm trong khung CMS `max-w-2xl`.
 - Cấm mọi `../`, nên trong cùng một module cũng phải import bằng `@/modules/<m>/...`.
 - **Chưa đóng được story:** Vinh phải tự duyệt `[QU-26]`–`[QU-28]` trong `docs/quy-uoc-code.md`.
+
+**Cập nhật 2026-11-05:** Vinh đã duyệt [QU-26]–[QU-28]; điều kiện đóng story đã đủ.

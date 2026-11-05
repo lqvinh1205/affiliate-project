@@ -20,7 +20,6 @@ Không còn mục mở. [NO-01]–[NO-05] đã sửa ở Story 1.2, có unit tes
 
 ## Thấp — nhất quán và dọn dẹp
 
-- **[NO-25]** Khối `bmad:context` trong `AGENTS.md` lỗi thời sau epic nền: ghi "repo không có test suite" và trỏ tới `lib/sanitize.ts`, `lib/images.ts`, `lib/auth.ts` (đã chuyển sang `platform/`). Chờ làm mới qua skill `bmad-project-context` (không sửa tay — `[QD-03]`). Trong lúc chờ, `docs/` thắng: `npm test` là bước bắt buộc (`[KC-07]`), đường dẫn đúng ở `docs/kien-truc-codebase.md`.
 
 - **[NO-16]** Comment `lib/posts.ts:6` ghi `revalidateTag`, code dùng `updateTag`. Xem `[NX-50]`.
 - **[NO-17]** Kiểu `ProductInput` khai báo hai lần, hai hình dạng khác nhau (`lib/ai.ts`, `lib/post-input.ts`).

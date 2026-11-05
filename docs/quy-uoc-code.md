@@ -190,7 +190,7 @@ Màu Loại bài dùng token `text-meo-vat`, `text-gom-link`, `bg-meo-vat-soft` 
 
 ## Tổ chức bên trong file và hàm
 
-> **Đề xuất 2026-11-04, chờ Vinh duyệt.** Rút từ code hiện có (`lib/posts.ts`, `app/cms/actions.ts`, `components/site/product-card.tsx`) và spine kiến trúc (AD-5, AD-8, Consistency Conventions). Vị trí file theo spine, không theo mục **Vị trí file** ở trên.
+> **Vinh duyệt 2026-11-05.** Rút từ code hiện có (`lib/posts.ts`, `app/cms/actions.ts`, `components/site/product-card.tsx`) và spine kiến trúc (AD-5, AD-8, Consistency Conventions). Vị trí file theo spine, không theo mục **Vị trí file** ở trên.
 
 ### [QU-26] Thứ tự trong một file
 
@@ -224,7 +224,7 @@ Kiểu trả về để TypeScript suy ra, trừ `Result<T>` của action.
 
 ## Checklist review code
 
-- [ ] Thứ tự trong file, chữ ký hàm, cách tách theo [QU-26]–[QU-28] (khi đã duyệt).
+- [ ] Thứ tự trong file, chữ ký hàm, cách tách theo [QU-26]–[QU-28].
 
 - [ ] Import nội bộ dùng `@/`; Prisma từ `@/generated/prisma/client`; dùng `db` từ `@/platform/db`; `cn` từ `@/components/ui/lib/utils` ([QU-06], [QU-07]).
 - [ ] File mới đặt đúng chỗ theo spine: `modules/<miền>/`, `platform/`, `components/ui|shared/`, `_components/`, `app/(site)`, `app/cms`; không có file mới ở `lib/`, `components/site|cms/` ([QU-01], [QU-02], [QU-03]).

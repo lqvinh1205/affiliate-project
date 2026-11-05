@@ -152,3 +152,5 @@ Status: done (phần `docs/`). Phần `AGENTS.md` còn chờ Vinh.
 - `AGENTS.md` (khối `bmad:context`) vẫn mô tả cấu trúc cũ. Cần chạy `/bmad-project-context refresh` và Vinh duyệt ([QD-03]). Story 1.5 chỉ xong hẳn sau bước này.
 - Ví dụ công thức dùng những thứ chưa có (`formatCount`, react-hook-form, shadcn `field`, `modules/*`), tất cả đều ghi là đích.
 - Số dòng trích dẫn được tính tay theo `8771851`.
+
+**Cập nhật 2026-11-05:** khối `bmad:context` của `AGENTS.md` đã được làm mới qua `bmad-project-context` (Vinh duyệt); [NO-25] đã đóng.
