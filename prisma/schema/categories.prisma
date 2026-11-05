@@ -1,0 +1,12 @@
+// Danh mục dùng chung cho Bài web và Sản phẩm; không xoá được khi còn tham chiếu (FR-28).
+model Category {
+  id          String    @id @default(uuid())
+  name        String
+  slug        String    @unique
+  description String?
+  sortOrder   Int       @default(0)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  posts       Post[]
+  products    Product[]
+}

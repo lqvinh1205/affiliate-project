@@ -1,0 +1,46 @@
+model Post {
+  id             String        @id @default(uuid())
+  title          String
+  slug           String        @unique
+  content        String        @db.Text // HTML đã sanitize
+  excerpt        String?       @db.VarChar(500)
+  featuredImage  String? // null → dùng ảnh sản phẩm đầu tiên hoặc placeholder
+  postType       PostType // Loại bài (kiểu viết), không phải Danh mục
+  categoryId     String?
+  category       Category?     @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  tags           String[]
+  seoTitle       String?
+  seoDescription String?
+  seoKeywords    String[]
+  status         Status        @default(DRAFT)
+  publishedAt    DateTime?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  postProducts   PostProduct[]
+
+  @@index([status, postType, publishedAt])
+  @@index([categoryId])
+}
+
+// Bảng nối Bài web – Sản phẩm; thứ tự Sản phẩm thuộc bài.
+model PostProduct {
+  id        String  @id @default(uuid())
+  postId    String
+  post      Post    @relation(fields: [postId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product @relation(fields: [productId], references: [id], onDelete: Restrict) // Sản phẩm dùng chung, không xoá theo bài
+  sortOrder Int
+
+  @@unique([postId, productId])
+  @@index([productId])
+}
+
+enum PostType {
+  MEO_VAT
+  GOM_LINK
+}
+
+enum Status {
+  DRAFT
+  PUBLISHED
+}

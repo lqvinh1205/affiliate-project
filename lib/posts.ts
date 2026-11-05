@@ -11,10 +11,10 @@ const cardSelect = {
   title: true,
   excerpt: true,
   featuredImage: true,
-  category: true,
+  postType: true,
   content: true,
   publishedAt: true,
-  products: { select: { image: true }, orderBy: { sortOrder: "asc" }, take: 1 },
+  postProducts: { select: { product: { select: { image: true } } }, orderBy: { sortOrder: "asc" }, take: 1 },
 } as const;
 
 type CardRow = {
@@ -22,16 +22,17 @@ type CardRow = {
   title: string;
   excerpt: string | null;
   featuredImage: string | null;
-  category: CategoryKey;
+  postType: CategoryKey;
   content: string;
   publishedAt: Date | null;
-  products: { image: string | null }[];
+  postProducts: { product: { image: string | null } }[];
 };
 
-function toCard({ content, products, ...p }: CardRow) {
+function toCard({ content, postType, postProducts, ...p }: CardRow) {
   return {
     ...p,
-    featuredImage: p.featuredImage ?? products[0]?.image ?? null,
+    category: postType,
+    featuredImage: p.featuredImage ?? postProducts[0]?.product.image ?? null,
     readingMinutes: readingMinutes(content),
   };
 }
@@ -59,7 +60,7 @@ export async function getPostsByCategory(category: CategoryKey, limit?: number) 
   cacheLife("days");
   cacheTag(POSTS_TAG);
   const rows = await db.post.findMany({
-    where: { ...published, category },
+    where: { ...published, postType: category },
     orderBy: newestFirst,
     take: limit,
     select: cardSelect,
@@ -72,7 +73,7 @@ export async function getRelatedPosts(slug: string, category: CategoryKey, limit
   cacheLife("days");
   cacheTag(POSTS_TAG);
   const rows = await db.post.findMany({
-    where: { ...published, category, slug: { not: slug } },
+    where: { ...published, postType: category, slug: { not: slug } },
     orderBy: newestFirst,
     take: limit,
     select: cardSelect,
@@ -86,12 +87,16 @@ export async function getPostBySlug(slug: string) {
   cacheTag(POSTS_TAG);
   const post = await db.post.findFirst({
     where: { ...published, slug },
-    include: { products: { orderBy: { sortOrder: "asc" } } },
+    include: { postProducts: { orderBy: { sortOrder: "asc" }, include: { product: true } } },
   });
   if (!post) return null;
+  const { postType, postProducts, ...rest } = post;
+  const products = postProducts.map((pp) => pp.product);
   return {
-    ...post,
-    featuredImage: post.featuredImage ?? post.products[0]?.image ?? null,
+    ...rest,
+    category: postType,
+    products,
+    featuredImage: post.featuredImage ?? products[0]?.image ?? null,
     readingMinutes: readingMinutes(post.content),
   };
 }
@@ -100,9 +105,10 @@ export async function getPublishedSlugs() {
   "use cache";
   cacheLife("days");
   cacheTag(POSTS_TAG);
-  return db.post.findMany({
+  const rows = await db.post.findMany({
     where: published,
     orderBy: newestFirst,
-    select: { slug: true, category: true, updatedAt: true },
+    select: { slug: true, postType: true, updatedAt: true },
   });
+  return rows.map(({ postType, ...r }) => ({ ...r, category: postType }));
 }

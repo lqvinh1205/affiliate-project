@@ -23,7 +23,7 @@ async function PostList() {
   await connection();
   const posts = await db.post.findMany({
     orderBy: { updatedAt: "desc" },
-    select: { id: true, title: true, status: true, category: true, updatedAt: true, _count: { select: { products: true } } },
+    select: { id: true, title: true, status: true, postType: true, updatedAt: true, _count: { select: { postProducts: true } } },
   });
 
   if (posts.length === 0) {
@@ -42,11 +42,11 @@ async function PostList() {
             <div className="min-w-0 flex-1 space-y-1.5">
               <div className="flex items-center gap-2">
                 <StatusBadge status={p.status} />
-                <CategoryBadge category={p.category} className="text-[11px]" />
+                <CategoryBadge category={p.postType} className="text-[11px]" />
               </div>
               <p className="line-clamp-2 font-semibold leading-snug">{p.title}</p>
               <p className="text-xs text-muted-foreground">
-                Sửa {formatDate(p.updatedAt)} · {p._count.products} sản phẩm
+                Sửa {formatDate(p.updatedAt)} · {p._count.postProducts} sản phẩm
               </p>
             </div>
             <ChevronRight className="size-4 shrink-0 text-muted-foreground" />

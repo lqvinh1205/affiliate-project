@@ -1,11 +1,14 @@
 "use server";
 
 import { updateTag } from "next/cache";
+import type { z } from "zod";
+import type { Prisma } from "@/generated/prisma/client";
 import { analyzeSeo, generatePost, toThreads, type SeoReport } from "@/lib/ai";
 import { POSTS_TAG } from "@/lib/posts";
 import {
   newPostSchema,
   postInputSchema,
+  productInputSchema,
   type NewPostInput,
   type PostInput,
 } from "@/lib/post-input";
@@ -26,8 +29,21 @@ async function uniqueSlug(base: string, excludeId?: string) {
   }
 }
 
-const productRows = (products: { name: string; image: string | null; price: string | null; affiliateUrl: string }[]) =>
-  products.map((p, sortOrder) => ({ ...p, sortOrder }));
+type ProductRow = z.output<typeof productInputSchema>;
+
+// Thay danh sách Sản phẩm của bài theo thứ tự form; Sản phẩm vừa gỡ mà không còn bài nào dùng thì xoá.
+async function replacePostProducts(tx: Prisma.TransactionClient, postId: string, products: ProductRow[]) {
+  const old = await tx.postProduct.findMany({ where: { postId }, select: { productId: true } });
+  await tx.postProduct.deleteMany({ where: { postId } });
+  await tx.product.deleteMany({
+    where: { id: { in: old.map((o) => o.productId) }, postProducts: { none: {} } },
+  });
+  const rows = products.map((p) => ({ ...p, id: crypto.randomUUID() }));
+  await tx.product.createMany({ data: rows });
+  await tx.postProduct.createMany({
+    data: rows.map((p, sortOrder) => ({ postId, productId: p.id, sortOrder })),
+  });
+}
 
 export async function createPost(input: NewPostInput) {
   return run(async () => {
@@ -68,9 +84,10 @@ export async function createPost(input: NewPostInput) {
       data = { title, content: "", tags: [], seoKeywords: [], slug: await uniqueSlug(title) };
     }
 
-    const post = await db.post.create({
-      data: { ...data, category, products: { create: productRows(products) } },
-      select: { id: true },
+    const post = await db.$transaction(async (tx) => {
+      const created = await tx.post.create({ data: { ...data, postType: category }, select: { id: true } });
+      await replacePostProducts(tx, created.id, products);
+      return created;
     });
     return { id: post.id };
   });
@@ -80,17 +97,17 @@ export async function savePost(id: string, input: PostInput) {
   return run(async () => {
     const parsed = postInputSchema.safeParse(input);
     if (!parsed.success) throw new UserError(firstError(parsed.error));
-    const { products, slug, content, ...rest } = parsed.data;
+    const { products, slug, content, category, ...rest } = parsed.data;
+    const uniq = await uniqueSlug(slug || rest.title, id);
 
-    const post = await db.post.update({
-      where: { id },
-      data: {
-        ...rest,
-        content: sanitizePostHtml(content),
-        slug: await uniqueSlug(slug || rest.title, id),
-        products: { deleteMany: {}, create: productRows(products) },
-      },
-      select: { slug: true },
+    const post = await db.$transaction(async (tx) => {
+      const updated = await tx.post.update({
+        where: { id },
+        data: { ...rest, postType: category, content: sanitizePostHtml(content), slug: uniq },
+        select: { slug: true },
+      });
+      await replacePostProducts(tx, id, products);
+      return updated;
     });
     updateTag(POSTS_TAG);
     return { slug: post.slug };
@@ -119,7 +136,10 @@ export async function setPostStatus(id: string, status: "DRAFT" | "PUBLISHED") {
 
 export async function deletePost(id: string) {
   return run(async () => {
-    await db.post.delete({ where: { id } });
+    await db.$transaction(async (tx) => {
+      await replacePostProducts(tx, id, []);
+      await tx.post.delete({ where: { id } });
+    });
     updateTag(POSTS_TAG);
     return {};
   });

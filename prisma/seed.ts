@@ -1,6 +1,6 @@
 import "dotenv/config";
 import { PrismaPg } from "@prisma/adapter-pg";
-import { PrismaClient, type Category } from "../generated/prisma/client";
+import { PrismaClient, type PostType } from "../generated/prisma/client";
 
 const db = new PrismaClient({
   adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL }),
@@ -8,7 +8,7 @@ const db = new PrismaClient({
 
 type SeedPost = {
   slug: string;
-  category: Category;
+  category: PostType;
   title: string;
   excerpt: string;
   tags: string[];
@@ -160,13 +160,28 @@ const POSTS: SeedPost[] = [
 ];
 
 async function main() {
+  // Danh mục mẫu: upsert theo slug để chạy lại không lỗi.
+  const category = await db.category.upsert({
+    where: { slug: "nha-cua-doi-song" },
+    update: {},
+    create: {
+      name: "Nhà cửa & Đời sống",
+      slug: "nha-cua-doi-song",
+      description: "Mẹo và đồ dùng cho nhà cửa, sinh hoạt hằng ngày.",
+    },
+  });
+
+  // Xoá bài (PostProduct theo cascade) rồi Sản phẩm không còn bài nào dùng.
   await db.post.deleteMany();
+  await db.product.deleteMany({ where: { postProducts: { none: {} } } });
+
   const now = Date.now();
   for (const [i, p] of POSTS.entries()) {
     await db.post.create({
       data: {
         slug: p.slug,
-        category: p.category,
+        postType: p.category,
+        categoryId: category.id,
         title: p.title,
         excerpt: p.excerpt,
         content: p.content,
@@ -175,17 +190,16 @@ async function main() {
         seoKeywords: p.tags,
         status: "PUBLISHED",
         publishedAt: new Date(now - i * 86_400_000),
-        products: {
+        postProducts: {
           create: p.products.map((name, sortOrder) => ({
-            name,
-            affiliateUrl: placeholderLink(name),
             sortOrder,
+            product: { create: { name, affiliateUrl: placeholderLink(name) } },
           })),
         },
       },
     });
   }
-  console.log(`Seeded ${POSTS.length} posts`);
+  console.log(`Seeded ${POSTS.length} posts, 1 category`);
 }
 
 main()
