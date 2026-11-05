@@ -31,6 +31,7 @@ function Meta({ post }: { post: CardPost }) {
   );
 }
 
+// Ghép chuỗi thường với lớp `text-headline-*`, không qua `cn` ([NO-25]: tailwind-merge bỏ mất cỡ chữ token).
 const TITLE_HOVER = "decoration-primary/40 decoration-2 underline-offset-4 group-hover:text-primary group-hover:underline";
 const IMAGE_HOVER = "object-cover transition duration-700 group-hover:scale-[1.04] motion-reduce:transition-none motion-reduce:group-hover:scale-100";
 

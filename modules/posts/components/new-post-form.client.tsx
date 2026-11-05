@@ -1,87 +1,121 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState, useTransition } from "react";
-import { Loader2, Sparkles } from "lucide-react";
-import { toast } from "sonner";
-import type { PostType } from "@/generated/prisma/enums";
+import { Controller, useForm, useWatch } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import type { Result } from "@/platform/errors";
 import type { CategoryOption } from "@/modules/categories/types";
 import { CategorySelect } from "@/modules/categories/components/category-select";
-import type { NewPostInput } from "@/modules/posts/schema";
+import { POST_TITLE_MAX } from "@/modules/posts/constants";
+import { newPostInputSchema, type NewPostFormValues } from "@/modules/posts/schema";
 import { PostTypePicker } from "@/modules/posts/components/post-type-picker.client";
-import { callAction } from "@/components/shared/call-action";
-import { Button } from "@/components/ui/button";
-import { Field, FieldDescription, FieldLabel } from "@/components/ui/field";
+import { CmsForm } from "@/components/shared/cms-form.client";
+import { Field, FieldDescription, FieldError, FieldLabel } from "@/components/ui/field";
 import { Textarea } from "@/components/ui/textarea";
+import { cn } from "@/components/ui/lib/utils";
 
-// Tạo Bài web mới (`/cms/bai-viet/moi`): AI viết bản nháp theo chủ đề, hoặc bản nháp trống; xong chuyển sang
-// trình soạn. `createPost` (action AI cũ ở `app/cms/actions.ts` tới Epic 4) do Screen truyền vào.
+const MODES = [
+  { useAi: true, label: "AI viết bản nháp", description: "Nhập chủ đề, AI viết để bạn duyệt trước khi đăng." },
+  { useAi: false, label: "Bản nháp trống", description: "Tự viết; chủ đề làm tiêu đề." },
+] as const;
+
+// Tạo Bài web mới (`/cms/bai-viet/moi`, AD-14): React Hook Form + cùng `newPostInputSchema` với server, qua CmsForm
+// (lỗi tại trường, nút dính đáy, UnsavedChangesGuard). AI viết bản nháp theo chủ đề hoặc bản nháp trống; xong chuyển
+// sang trình soạn. `createPost` (action AI cũ ở `app/cms/actions.ts` tới Epic 4) do Screen truyền vào.
 export function NewPostForm({
   categories,
   createPost,
 }: {
   categories: CategoryOption[];
-  createPost: (input: NewPostInput) => Promise<Result<{ id: string }>>;
+  createPost: (input: NewPostFormValues) => Promise<Result<{ id: string }>>;
 }) {
   const router = useRouter();
-  const [postType, setPostType] = useState<PostType>("GOM_LINK");
-  const [categoryId, setCategoryId] = useState("");
-  const [topic, setTopic] = useState("");
-  const [pending, startTransition] = useTransition();
-  const [mode, setMode] = useState<"ai" | "blank">("ai");
-
-  const submit = (useAi: boolean) => {
-    setMode(useAi ? "ai" : "blank");
-    startTransition(async () => {
-      const res = await callAction(() => createPost({ postType, categoryId, topic, useAi }));
-      if (!res.ok) {
-        toast.error(res.error);
-        return;
-      }
-      toast.success(useAi ? "AI đã viết xong bản nháp" : "Đã tạo bản nháp");
-      router.push(`/cms/bai-viet/${res.id}`);
-    });
-  };
+  const form = useForm({
+    resolver: zodResolver(newPostInputSchema),
+    defaultValues: { postType: "GOM_LINK", categoryId: "", topic: "", useAi: true } satisfies NewPostFormValues,
+  });
+  const useAi = useWatch({ control: form.control, name: "useAi" });
 
   return (
-    <div className="space-y-space-lg">
-      <Field>
-        <FieldLabel id="new-post-type-label">Loại bài</FieldLabel>
-        <PostTypePicker value={postType} onChange={setPostType} labelledBy="new-post-type-label" />
-      </Field>
-      <Field>
-        <FieldLabel htmlFor="new-post-category">Danh mục</FieldLabel>
-        <CategorySelect
-          id="new-post-category"
-          options={categories}
-          value={categoryId}
-          onChange={(e) => setCategoryId(e.target.value)}
-        />
-      </Field>
-      <Field>
-        <FieldLabel htmlFor="new-post-topic">Chủ đề / ý tưởng</FieldLabel>
-        <Textarea
-          id="new-post-topic"
-          rows={3}
-          placeholder="VD: Đồ decor phòng trọ dưới 100k cho sinh viên"
-          aria-describedby="new-post-topic-hint"
-          value={topic}
-          onChange={(e) => setTopic(e.target.value)}
-        />
-        <FieldDescription id="new-post-topic-hint">Bắt buộc khi AI viết. Bản nháp trống lấy chủ đề làm tiêu đề.</FieldDescription>
-      </Field>
-
-      <div className="space-y-space-sm">
-        <Button size="lg" className="w-full" disabled={pending} onClick={() => submit(true)}>
-          {pending && mode === "ai" ? <Loader2 className="animate-spin" aria-hidden /> : <Sparkles aria-hidden />}
-          {pending && mode === "ai" ? "AI đang viết… (20–40 giây)" : "AI viết bài"}
-        </Button>
-        <Button variant="ghost" size="lg" className="w-full" disabled={pending} onClick={() => submit(false)}>
-          {pending && mode === "blank" && <Loader2 className="animate-spin" aria-hidden />}
-          Tạo bản nháp trống, tự viết
-        </Button>
-      </div>
-    </div>
+    <CmsForm
+      form={form}
+      action={createPost}
+      submitLabel={useAi ? "AI viết bài" : "Tạo bản nháp"}
+      pendingLabel={useAi ? "AI đang viết… (20–40 giây)" : "Đang tạo…"}
+      successMessage="Đã tạo bản nháp"
+      onSaved={(res) => router.push(`/cms/bai-viet/${res.id}`)}
+    >
+      <Controller
+        name="useAi"
+        control={form.control}
+        render={({ field }) => (
+          <Field>
+            <FieldLabel id="new-post-mode-label">Cách tạo</FieldLabel>
+            <div role="radiogroup" aria-labelledby="new-post-mode-label" className="grid grid-cols-2 gap-space-sm">
+              {MODES.map((m) => (
+                <button
+                  key={m.label}
+                  type="button"
+                  role="radio"
+                  aria-checked={field.value === m.useAi}
+                  onClick={() => field.onChange(m.useAi)}
+                  className={cn(
+                    "min-h-touch-target rounded-xl border px-space-sm py-space-sm text-left outline-offset-2 focus-visible:outline-2 focus-visible:outline-primary",
+                    field.value === m.useAi ? "border-primary bg-surface-container-low ring-2 ring-primary/30" : "hover:border-outline",
+                  )}
+                >
+                  <span className="block text-label-md">{m.label}</span>
+                  <span className="block text-body-sm text-on-surface-variant">{m.description}</span>
+                </button>
+              ))}
+            </div>
+          </Field>
+        )}
+      />
+      <Controller
+        name="postType"
+        control={form.control}
+        render={({ field }) => (
+          <Field>
+            <FieldLabel id="new-post-type-label">Loại bài</FieldLabel>
+            <PostTypePicker value={field.value} onChange={field.onChange} labelledBy="new-post-type-label" />
+          </Field>
+        )}
+      />
+      <Controller
+        name="categoryId"
+        control={form.control}
+        render={({ field, fieldState }) => (
+          <Field data-invalid={fieldState.invalid}>
+            <FieldLabel htmlFor="new-post-category">Danh mục</FieldLabel>
+            <CategorySelect id="new-post-category" options={categories} aria-invalid={fieldState.invalid} {...field} />
+            <FieldError errors={[fieldState.error]} />
+          </Field>
+        )}
+      />
+      <Controller
+        name="topic"
+        control={form.control}
+        render={({ field, fieldState }) => (
+          <Field data-invalid={fieldState.invalid}>
+            <FieldLabel htmlFor="new-post-topic">
+              Chủ đề / ý tưởng ({field.value.length}/{POST_TITLE_MAX})
+            </FieldLabel>
+            <Textarea
+              id="new-post-topic"
+              rows={3}
+              placeholder="VD: Đồ decor phòng trọ dưới 100k cho sinh viên"
+              aria-invalid={fieldState.invalid}
+              aria-describedby="new-post-topic-hint"
+              {...field}
+            />
+            <FieldDescription id="new-post-topic-hint">
+              Bắt buộc khi AI viết. Bản nháp trống lấy chủ đề làm tiêu đề (trống thì “Bài viết mới”).
+            </FieldDescription>
+            <FieldError errors={[fieldState.error]} />
+          </Field>
+        )}
+      />
+    </CmsForm>
   );
 }

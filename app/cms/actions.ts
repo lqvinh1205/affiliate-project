@@ -1,75 +1,61 @@
 "use server";
 
 import { analyzeSeo, generatePost, toThreads, type SeoReport } from "@/lib/ai";
-import { Prisma } from "@/generated/prisma/client";
-import { newPostSchema, postDraftSchema, type NewPostInput } from "@/modules/posts/schema";
-import { freePostSlug } from "@/modules/posts/service";
+import { createPostDraft } from "@/modules/posts/actions";
+import {
+  POST_EXCERPT_MAX,
+  POST_SEO_DESCRIPTION_MAX,
+  POST_SEO_TITLE_MAX,
+  POST_TITLE_MAX,
+} from "@/modules/posts/constants";
+import { newPostInputSchema, toCommaListValue, type NewPostFormValues } from "@/modules/posts/schema";
 import { run } from "@/platform/auth/run";
-import { db } from "@/platform/db";
 import { UserError, type Result } from "@/platform/errors";
-import { sanitizePostHtml } from "@/platform/html/sanitize";
 import { SITE_URL } from "@/platform/site";
 import { firstError } from "@/platform/validation/errors";
 
-// Chỉ còn các action AI cũ, giữ nguyên chỗ tới Epic 4 (`platform/ai`). Ghi Bài web (`savePost`, `setPostStatus`,
-// `deletePost`) đã chuyển sang `modules/posts/actions.ts`.
+// Chỉ còn các action AI cũ, giữ nguyên chỗ tới Epic 4 (`platform/ai`). Ghi Bài web nằm ở `modules/posts/actions.ts`:
+// `createPost` chỉ lo phần AI rồi gọi `createPostDraft` để ghi bản nháp.
 
-const CATEGORY_GONE = "Danh mục đã chọn không còn tồn tại. Tải lại trang rồi chọn lại.";
-
-// Ghi bài; Danh mục bị xoá giữa chừng (FK P2003) → UserError tiếng Việt.
-async function withCategoryCheck<T>(fn: () => Promise<T>) {
-  try {
-    return await fn();
-  } catch (e) {
-    if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2003") throw new UserError(CATEGORY_GONE);
-    throw e;
-  }
-}
-
-export async function createPost(input: NewPostInput) {
+export async function createPost(input: NewPostFormValues): Promise<Result<{ id: string }>> {
   return run(async () => {
-    const parsed = newPostSchema.safeParse(input);
+    const parsed = newPostInputSchema.safeParse(input);
     if (!parsed.success) throw new UserError(firstError(parsed.error));
     const { postType, categoryId, topic, useAi } = parsed.data;
+    const base = { slug: "", featuredImage: "", postType, categoryId: categoryId ?? "" };
 
-    let data;
+    let draft;
     if (useAi) {
-      // Bài mới không nhận Sản phẩm (gắn từ Kho trong trình soạn): AI viết theo chủ đề.
-      if (!topic) throw new UserError("Nhập chủ đề để AI viết bài");
-      const draft = await generatePost({ category: postType, topic });
-      // Bản nháp AI qua cùng schema với bài viết tay.
-      const checked = postDraftSchema.safeParse({
-        ...draft,
-        tags: draft.tags.join(", "),
-        seoKeywords: draft.seoKeywords.join(", "),
-        slug: "",
-        excerpt: draft.excerpt.slice(0, 500),
-        featuredImage: "",
-        postType,
-        categoryId: categoryId ?? "",
-      });
-      if (!checked.success) throw new UserError(`AI trả về bản nháp chưa hợp lệ: ${firstError(checked.error)}`);
-      const { title, excerpt, seoTitle, seoDescription, tags, seoKeywords, content } = checked.data;
-      data = {
-        title,
-        excerpt,
-        seoTitle,
-        seoDescription,
-        tags,
-        seoKeywords,
-        content: sanitizePostHtml(content),
-        slug: await freePostSlug(db, title),
+      // Bài mới không nhận Sản phẩm (gắn từ Kho trong trình soạn): AI viết theo chủ đề. Bản AI được chuẩn hoá về
+      // giới hạn của Bài web thay vì bị từ chối.
+      const ai = await generatePost({ category: postType, topic });
+      draft = {
+        ...base,
+        title: ai.title.trim().slice(0, POST_TITLE_MAX),
+        excerpt: ai.excerpt.trim().slice(0, POST_EXCERPT_MAX),
+        seoTitle: ai.seoTitle.trim().slice(0, POST_SEO_TITLE_MAX),
+        seoDescription: ai.seoDescription.trim().slice(0, POST_SEO_DESCRIPTION_MAX),
+        tags: toCommaListValue(ai.tags),
+        seoKeywords: toCommaListValue(ai.seoKeywords),
+        content: ai.content,
       };
     } else {
-      const title = topic || "Bài viết mới";
-      data = { title, content: "", tags: [], seoKeywords: [], slug: await freePostSlug(db, title) };
+      draft = {
+        ...base,
+        title: topic || "Bài viết mới",
+        excerpt: "",
+        seoTitle: "",
+        seoDescription: "",
+        tags: "",
+        seoKeywords: "",
+        content: "",
+      };
     }
 
     // Bài mới luôn là nháp: không có trên site, không cần updateTag.
-    const post = await withCategoryCheck(() =>
-      db.post.create({ data: { ...data, postType, categoryId }, select: { id: true } }),
-    );
-    return { id: post.id };
+    const res = await createPostDraft(draft);
+    if (!res.ok) throw new UserError(useAi ? `Chưa lưu được bản nháp AI: ${res.error}` : res.error);
+    return { id: res.id };
   });
 }
 

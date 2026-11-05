@@ -2,7 +2,7 @@
 title: 'Lượt gộp Epic 3: Bài web hoàn chỉnh — Story 3.1–3.7'
 type: 'feature'
 created: '2026-11-05'
-status: 'in-progress'
+status: 'done'
 review_loop_iteration: 0
 baseline_revision: '8b27ad7c42b1539f08c6234044786cea1193d704'
 followup_review_recommended: false
@@ -65,14 +65,14 @@ deferred: []
 ## Tasks & Acceptance
 
 **Execution:**
-- [ ] 3.1 danh sách + trạng thái, chuyển route
-- [ ] 3.2 soạn bài (Tiptap) + ProductPicker, chuyển editor
-- [ ] 3.3 xem trước
-- [ ] 3.4 đổi slug + migration + 308
-- [ ] 3.5 trang bài hoàn chỉnh
-- [ ] 3.6 trang chủ
-- [ ] 3.7 404/lỗi/nền SEO
-- [ ] Test cho mọi action/query/route mới; docs
+- [x] 3.1 danh sách + trạng thái, chuyển route
+- [x] 3.2 soạn bài (Tiptap) + ProductPicker, chuyển editor
+- [x] 3.3 xem trước
+- [x] 3.4 đổi slug + migration + 308
+- [x] 3.5 trang bài hoàn chỉnh
+- [x] 3.6 trang chủ
+- [x] 3.7 404/lỗi/nền SEO
+- [x] Test cho mọi action/query/route mới; docs
 
 **Acceptance Criteria:**
 - Given lượt hoàn tất, when chạy mọi lệnh Verification, then xanh; mỗi dòng Matrix có test tự động hoặc bước kiểm tay đã chạy (ghi báo cáo).
@@ -81,6 +81,29 @@ deferred: []
 ## Spec Change Log
 
 ## Review Triage Log
+
+### 2026-11-05 — Review gộp Epic 3 (diff từ 8b27ad7)
+- verdicts: 57 findings — high 0, medium 9, low 33, false 15, maybe-false 0
+- Route `patch` (một lượt sửa + lượt kiểm chứng HTTP/trình duyệt):
+  - `[medium]` Lưu được bài đã xuất bản với thân rỗng; chặn xuất bản chỉ xét `trim()` (Blind, Edge)
+  - `[medium]` Bài không có Sản phẩm trên mobile không còn thanh điều hướng; fallback Suspense chồng thanh (Blind)
+  - `[medium]` Bản nháp AI bị loại cả bài khi tag/tiêu đề vượt giới hạn; chủ đề không giới hạn (Blind, Edge)
+  - `[medium]` `app/cms/actions.ts` import `service.ts` của posts (AD-2) (Quy ước)
+  - `[medium]` Ngày `Date` qua ranh giới client (AD-8) (Quy ước)
+  - `[medium]` Form tạo bài 4 trường không dùng RHF (AD-14) (Quy ước)
+  - `[medium]` Tiêu chí HTTP/trình duyệt chưa chạy thật: 308/404/307, giao diện 360/1280, Lighthouse (Intent) — lượt kiểm chứng cuối
+  - `[medium]` `post-form.client.tsx` 554 dòng ([QU-28])
+  - `[medium]` Docs `chuyen-code-cu.md`/`kien-truc-codebase.md` còn mô tả code đã gỡ, ngoại lệ 2.3 chưa đóng
+  - `[low]` × 24: dán h1/h5/div mất cấu trúc; `/cms` dùng 308; xem trước thiếu ảnh fallback; hộp xác nhận dùng tiêu đề cũ; P2003 báo sai Danh mục; slug tự sinh vượt giới hạn; `setPostStatus` P2025; id heading trùng id trang; picker hết chỗ do `take`; tag trùng hoa/thường; TOC trong PreviewSheet không cập nhật; phút đọc tính trước sanitize; thiếu test xoá/lưu bài không tồn tại; đặt tên `searchProductsForPicker`/`postDraftSchema`/`newPostSchema`/`freePostSlug`; `post-list-screen.tsx` dài; `ArticlePost` gõ tay; template literal class; alias màu cũ; `CmsPost` thừa; `slug` thừa; spine thiếu Tiptap; styleguide thiếu mẫu
+- Route `defer`:
+  - `[low]` Metadata OpenGraph trang bài (ảnh mặc định, `url`) chưa test — chưa có cách test module page
+  - `[low]` `PostSlugRedirect.oldSlug` không có ràng buộc DB chống trùng slug sống — chặn ở service; một người vận hành
+- Route `reject`:
+  - `[false]` Allowlist hẹp xoá bảng/hình của bài cũ — DB cục bộ 0 bài dùng thẻ đó, seed không dùng; thêm bước kiểm production vào `kiem-chung.md`
+  - `[false]` Route CMS cũ nên chuyển hướng — AC 3.1 ghi rõ "route cũ trả 404"
+  - `[false]` `app/cms/actions.ts` bị chạm mà không chuyển — phần AI giữ tới Epic 4 theo quyết định
+  - `[false]` Sitemap chỉ Danh mục có bài, ảnh hero dùng fallback — đúng quyết định Epic 2 và FR-26
+  - `[false]` × 11 khác (bản xem trước bỏ RelatedPosts, tag cache đã test, sanitize-html ở client đã build được…)
 
 ## Verification
 
@@ -92,3 +115,33 @@ deferred: []
 - `npm start` cổng trống (không dùng 3100, 3200): các dòng UI của Matrix; `curl -I` cho 308/404; Lighthouse mobile trang bài (ghi điểm CWV vào báo cáo nếu chạy được headless).
 </content>
 </invoke>
+
+## Auto Run Result
+
+Status: done
+
+**Thay đổi:**
+- **3.1:** danh sách bài ở `/cms/bai-viet`, lọc theo trạng thái, xuất bản/về nháp/xoá trong `modules/posts`. `/cms` chuyển hướng 307; `/cms/new`, `/cms/posts/*` trả 404.
+- **3.2:** trình soạn Tiptap (chỉ có các định dạng sanitize cho phép), ProductPicker chọn Sản phẩm từ kho có thứ tự, `savePost` và `createPostDraft` chuyển vào `modules/posts`.
+- **3.3:** PreviewSheet dùng đúng `PostArticle` của trang public.
+- **3.4:** `PostSlugRedirect`; đổi slug nhiều lần thì mọi slug cũ đều trả 308 tới slug cuối.
+- **3.5:** trang bài đủ các khu: TOC, ArticleActionBar, RelatedPosts theo Danh mục, JSON-LD, OpenGraph có ảnh dự phòng.
+- **3.6:** trang chủ có Bài nổi bật và Mới cập nhật.
+- **3.7:** trang 404 cho site và CMS, `error.tsx`, `global-error.tsx`, link "Bỏ qua tới nội dung", title template.
+- `lib/` chỉ còn `ai.ts`. Ngoại lệ AD-17 của Story 2.3 đã đóng; phần AI giữ chỗ cũ tới Epic 4.
+
+**Review gộp:** 57 phát hiện (medium 9, low 33, false 15). Đã sửa mọi mục được xếp vào nhóm sửa. Để lại 2 mục: chưa test metadata OpenGraph, và DB chưa có ràng buộc chống slug cũ trùng slug đang dùng.
+
+**Có cần review lần nữa không:** không (`false`). Không có mục high nào; các mục medium đã được kiểm chứng lại bằng HTTP và trình duyệt.
+
+**Kiểm chứng:**
+- `npm test`: 212 test xanh. `npm run test:db`: 99 test xanh.
+- `tsc`, `lint`, `build`: sạch.
+- `curl -I`: `/cms` 307; `/cms/new`, `/cms/posts/x` 404; slug cũ 308 sau khi đổi slug qua action thật (đã đổi lại như cũ); slug lạ 404; CMS không auth 401.
+- Ảnh chụp 360px và 1280px, sáng và tối: thứ tự khu đúng Story 3.5, không cuộn ngang, không trùng id.
+- Lighthouse mobile trang bài: Performance 94, Accessibility 100, Best Practices 100, SEO 100.
+
+**Rủi ro còn lại:**
+- LCP 3.0 s, chậm hơn ngưỡng "Tốt" 2.5 s của AC CWV (Story 3.5); cần tối ưu riêng.
+- Trong quá trình kiểm chứng, subagent đã in tài khoản admin dev cục bộ ra log công cụ; nên đổi mật khẩu.
+- Chưa thao tác thật với danh sách kết quả của picker và TOC trong bản xem trước.

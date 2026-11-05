@@ -19,6 +19,7 @@ export function CmsForm<TValues extends FieldValues, TOutput, TResult extends ob
   onSaved,
   successMessage = "Đã lưu",
   submitLabel = "Lưu",
+  pendingLabel = "Đang lưu…",
   busyLabel = null,
   children,
 }: {
@@ -27,6 +28,7 @@ export function CmsForm<TValues extends FieldValues, TOutput, TResult extends ob
   onSaved?: (result: TResult, values: TValues) => void;
   successMessage?: string;
   submitLabel?: string;
+  pendingLabel?: string;
   busyLabel?: string | null;
   children: ReactNode;
 }) {
@@ -53,7 +55,7 @@ export function CmsForm<TValues extends FieldValues, TOutput, TResult extends ob
       <div className="sticky-bar sticky bottom-0 z-20 -mx-margin border-t px-margin pt-space-sm pb-[calc(env(safe-area-inset-bottom)+0.5rem)] shadow-sticky-bottom lg:static lg:mx-0 lg:border-0 lg:bg-transparent lg:p-0 lg:shadow-none lg:backdrop-blur-none">
         <Button type="submit" size="lg" className="w-full lg:w-auto" disabled={isSubmitting || !!busyLabel}>
           {(isSubmitting || busyLabel) && <Loader2 className="animate-spin" aria-hidden />}
-          {isSubmitting ? "Đang lưu…" : (busyLabel ?? submitLabel)}
+          {isSubmitting ? pendingLabel : (busyLabel ?? submitLabel)}
         </Button>
       </div>
     </form>

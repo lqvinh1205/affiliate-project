@@ -48,10 +48,15 @@ export async function getProductForCms(id: string) {
 }
 
 // Kết quả tìm của ProductPicker (gắn Sản phẩm vào bài — UX-DR48): chỉ Sản phẩm đang hiện, tên chứa `q`,
-// mới nhất trước; `q` trống thì trả các Sản phẩm mới nhất. Đọc qua URL `?sp=` ở Screen, không có action đọc (AD-12).
-export async function searchProductsForPicker(q: string) {
+// mới nhất trước; `q` trống thì trả các Sản phẩm mới nhất. Bỏ `excludeIds` (đã gắn vào bài) trước khi giới hạn số
+// kết quả. Đọc qua URL `?sp=` ở Screen, không có action đọc (AD-12).
+export async function listPickerProductsForCms(q: string, excludeIds: string[] = []) {
   return db.product.findMany({
-    where: { ...visibleProductWhere, ...(q && { name: { contains: q, mode: "insensitive" as const } }) },
+    where: {
+      ...visibleProductWhere,
+      ...(q && { name: { contains: q, mode: "insensitive" as const } }),
+      ...(excludeIds.length > 0 && { id: { notIn: excludeIds } }),
+    },
     orderBy: [{ createdAt: "desc" }, { id: "desc" }],
     take: PRODUCT_PICKER_LIMIT,
     select: { ...publicProductSelect, hidden: true },

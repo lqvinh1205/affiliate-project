@@ -6,11 +6,15 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PostCard } from "@/modules/posts/components/post-card";
+import { ArticleBody } from "@/modules/posts/components/article-body";
+import { PostStatusBadge } from "@/modules/posts/components/post-status-badge";
+import { PostTags } from "@/modules/posts/components/post-tags";
 import { PostTypeBadge } from "@/modules/posts/components/post-type-badge";
 import { AffiliateDisclosure } from "@/modules/products/components/affiliate-disclosure";
 import { AffiliateLink } from "@/modules/products/components/affiliate-link";
 import { ProductCard } from "@/modules/products/components/product-card";
 import { ProductStatusBadge } from "@/modules/products/components/product-status-badge";
+import { EmptyState } from "@/components/shared/empty-state";
 import { ImageFallback } from "@/components/shared/image-fallback.client";
 import { SeoScore } from "@/modules/posts/components/seo-score";
 import { Breadcrumb } from "@/components/shared/breadcrumb";
@@ -217,6 +221,8 @@ export function StyleguideScreen() {
           <PostTypeBadge postType="GOM_LINK" />
           <ProductStatusBadge hidden={false} />
           <ProductStatusBadge hidden />
+          <PostStatusBadge status="DRAFT" />
+          <PostStatusBadge status="PUBLISHED" />
         </div>
         <Input placeholder="Dán link affiliate Shopee..." className="h-11 max-w-md" />
       </Section>
@@ -321,6 +327,23 @@ export function StyleguideScreen() {
         <Breadcrumb label="Nhà bếp" />
         <Pagination base="/nha-bep" page={5} pages={10} />
         <Pagination base="/nha-bep" page={1} pages={3} />
+      </Section>
+
+      <Section title="Site · ArticleBody (H2 đánh số, Callout “Mẹo nhỏ”), PostTags">
+        <div className="max-w-2xl space-y-space-md">
+          <ArticleBody
+            html={
+              '<h2 id="mau-1">Chuẩn bị</h2><p>Một <strong>đoạn văn</strong> có chữ <em>nghiêng</em>.</p><ul><li>Baking soda</li><li>Giấm</li></ul><blockquote><p>Lau khi nồi còn ấm để vết bẩn bong nhanh hơn.</p></blockquote><h2 id="mau-2">Làm sạch</h2><h3>Lòng nồi</h3><ol><li>Rắc bột</li><li>Chờ 15 phút</li></ol>'
+            }
+          />
+          <PostTags tags={["nhà bếp", "mẹo vặt"]} />
+        </div>
+      </Section>
+
+      <Section title="Site · EmptyState">
+        <EmptyState title="Trang này không còn ở đây" description="Một câu gợi ý ngắn, xưng mình/bạn.">
+          <Button size="lg">Về Trang chủ</Button>
+        </EmptyState>
       </Section>
 
       <Section title="CMS · Điểm SEO">

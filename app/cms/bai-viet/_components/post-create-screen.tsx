@@ -12,7 +12,7 @@ export async function PostCreateScreen() {
     <>
       <PostScreenHeader title="Tạo Bài web" />
       <p className="mb-space-lg text-body-sm text-on-surface-variant">
-        Nhập chủ đề, AI viết bản nháp để bạn duyệt trước khi đăng. Sản phẩm gắn trong trình soạn, chọn từ Kho Sản phẩm.
+        Bài mới luôn là bản nháp. Sản phẩm gắn trong trình soạn, chọn từ Kho Sản phẩm.
       </p>
       <NewPostForm categories={categories} createPost={createPost} />
     </>

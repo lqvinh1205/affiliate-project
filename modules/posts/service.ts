@@ -3,16 +3,24 @@ import type { z } from "zod";
 import { Prisma } from "@/generated/prisma/client";
 import { db } from "@/platform/db";
 import { UserError } from "@/platform/errors";
+import { visibleText } from "@/platform/html/content";
 import { sanitizePostHtml } from "@/platform/html/sanitize";
 import { slugify } from "@/platform/slug";
 import { visibleProductWhere } from "@/modules/products/queries";
-import type { deletePostInputSchema, PostInput, setPostStatusInputSchema } from "@/modules/posts/schema";
+import { POST_SLUG_MAX } from "@/modules/posts/constants";
+import type {
+  deletePostInputSchema,
+  postDraftInputSchema,
+  PostInput,
+  setPostStatusInputSchema,
+} from "@/modules/posts/schema";
 
 const NOT_FOUND = "Không tìm thấy Bài web. Có thể đã bị xoá.";
 const SLUG_TAKEN = "Đường dẫn đã được bài khác dùng. Chọn đường dẫn khác.";
 const CATEGORY_GONE = "Danh mục đã chọn không còn tồn tại. Tải lại trang rồi chọn lại.";
 const PRODUCT_UNAVAILABLE = "Có Sản phẩm vừa bị ẩn hoặc không còn trong Kho. Gỡ nó khỏi bài rồi lưu lại.";
 const EMPTY_CONTENT = "Bài chưa có nội dung, chưa thể xuất bản";
+const PUBLISHED_EMPTY = "Bài đang xuất bản không được để trống thân bài. Viết nội dung hoặc chuyển bài về nháp trước.";
 
 type Tx = Prisma.TransactionClient;
 
@@ -33,18 +41,24 @@ async function slugOwnedByOther(c: Tx, slug: string, postId?: string) {
   return Boolean(post || redirect);
 }
 
-// Slug tự tạo từ tiêu đề, thêm hậu tố -2, -3… khi bài khác đang giữ (cả `createPost` cũ ở `app/cms/actions.ts` dùng).
-export async function freePostSlug(c: Tx, title: string, postId?: string) {
+// Slug tự tạo từ tiêu đề, thêm hậu tố -2, -3… khi bài khác đang giữ; gốc được cắt để cả hậu tố vẫn ≤ POST_SLUG_MAX.
+async function freePostSlug(c: Tx, title: string, postId?: string) {
   const root = slugify(title) || "bai-viet";
   for (let i = 1; ; i++) {
-    const slug = i === 1 ? root : `${root}-${i}`;
+    const suffix = i === 1 ? "" : `-${i}`;
+    const slug = `${root.slice(0, POST_SLUG_MAX - suffix.length).replace(/-+$/, "")}${suffix}`;
     if (!(await slugOwnedByOther(c, slug, postId))) return slug;
   }
 }
 
+// P2003 (khoá ngoại): Sản phẩm không còn (`PostProduct_productId_fkey`) hay Danh mục không còn (`Post_categoryId_fkey`).
+function isProductFkError(e: unknown) {
+  return e instanceof Prisma.PrismaClientKnownRequestError && JSON.stringify(e.meta ?? {}).includes("PostProduct_productId_fkey");
+}
+
 function mapWriteError(e: unknown): never {
   if (prismaCode(e) === "P2002") throw new UserError(SLUG_TAKEN);
-  if (prismaCode(e) === "P2003") throw new UserError(CATEGORY_GONE);
+  if (prismaCode(e) === "P2003") throw new UserError(isProductFkError(e) ? PRODUCT_UNAVAILABLE : CATEGORY_GONE);
   if (prismaCode(e) === "P2025") throw new UserError(NOT_FOUND);
   throw e;
 }
@@ -60,9 +74,11 @@ export async function savePostRecord(data: PostInput, tx?: Tx) {
     return await inTransaction(tx, async (c) => {
       const current = await c.post.findUnique({
         where: { id },
-        select: { slug: true, publishedAt: true, postProducts: { select: { productId: true } } },
+        select: { slug: true, status: true, publishedAt: true, postProducts: { select: { productId: true } } },
       });
       if (!current) throw new UserError(NOT_FOUND);
+      const html = sanitizePostHtml(content);
+      if (current.status === "PUBLISHED" && !visibleText(html)) throw new UserError(PUBLISHED_EMPTY);
 
       let slug = wantedSlug;
       if (!slug) slug = await freePostSlug(c, fields.title, id);
@@ -82,7 +98,7 @@ export async function savePostRecord(data: PostInput, tx?: Tx) {
 
       const saved = await c.post.update({
         where: { id },
-        data: { ...fields, slug, content: sanitizePostHtml(content) },
+        data: { ...fields, slug, content: html },
         select: { id: true, slug: true },
       });
       await c.postProduct.deleteMany({ where: { postId: id } });
@@ -96,21 +112,44 @@ export async function savePostRecord(data: PostInput, tx?: Tx) {
   }
 }
 
-// Xuất bản / chuyển về nháp. Giữ ngày đăng gốc khi chuyển về nháp rồi xuất bản lại.
+// Xuất bản / chuyển về nháp. Thân bài không có chữ nào (vd chỉ `<p></p>`) thì chưa xuất bản được. Giữ ngày đăng gốc
+// khi chuyển về nháp rồi xuất bản lại.
 export async function setPostStatusRecord(data: z.infer<typeof setPostStatusInputSchema>, tx?: Tx) {
-  return inTransaction(tx, async (c) => {
-    const current = await c.post.findUnique({ where: { id: data.id }, select: { publishedAt: true, content: true } });
-    if (!current) throw new UserError(NOT_FOUND);
-    if (data.status === "PUBLISHED" && !current.content.trim()) throw new UserError(EMPTY_CONTENT);
-    return c.post.update({
-      where: { id: data.id },
-      data: {
-        status: data.status,
-        publishedAt: data.status === "PUBLISHED" ? (current.publishedAt ?? new Date()) : current.publishedAt,
-      },
-      select: { id: true, status: true, slug: true },
+  try {
+    return await inTransaction(tx, async (c) => {
+      const current = await c.post.findUnique({ where: { id: data.id }, select: { publishedAt: true, content: true } });
+      if (!current) throw new UserError(NOT_FOUND);
+      if (data.status === "PUBLISHED" && !visibleText(current.content)) throw new UserError(EMPTY_CONTENT);
+      return c.post.update({
+        where: { id: data.id },
+        data: {
+          status: data.status,
+          publishedAt: data.status === "PUBLISHED" ? (current.publishedAt ?? new Date()) : current.publishedAt,
+        },
+        select: { id: true, status: true },
+      });
     });
-  });
+  } catch (e) {
+    mapWriteError(e);
+  }
+}
+
+// Bài nháp mới (trình tạo bài: AI viết hoặc bản trống): HTML qua `sanitizePostHtml`, slug tự tạo từ tiêu đề.
+export async function createPostDraftRecord(data: z.infer<typeof postDraftInputSchema>, tx?: Tx) {
+  const { slug: wantedSlug, content, ...fields } = data;
+  try {
+    return await inTransaction(tx, async (c) => {
+      let slug = wantedSlug;
+      if (!slug) slug = await freePostSlug(c, fields.title);
+      else if (await slugOwnedByOther(c, slug)) throw new UserError(SLUG_TAKEN);
+      return c.post.create({
+        data: { ...fields, slug, content: sanitizePostHtml(content) },
+        select: { id: true, slug: true },
+      });
+    });
+  } catch (e) {
+    mapWriteError(e);
+  }
 }
 
 // Xoá bài: `PostProduct`, `PostSlugRedirect` của bài xoá theo cascade; Sản phẩm trong Kho giữ nguyên (FR-4).

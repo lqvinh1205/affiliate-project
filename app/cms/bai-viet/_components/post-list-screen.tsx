@@ -1,43 +1,24 @@
-import Form from "next/form";
 import Link from "next/link";
-import { ChevronLeft, ChevronRight, Plus, Search } from "lucide-react";
+import { Plus } from "lucide-react";
 import { formatShortDate } from "@/platform/format";
-import { CMS_POST_PAGE_SIZE, POST_STATUS_FILTERS, type PostStatusFilter } from "@/modules/posts/constants";
+import { CMS_POST_PAGE_SIZE, POST_STATUS_FILTERS } from "@/modules/posts/constants";
 import { listPostsForCms } from "@/modules/posts/cms-queries";
 import type { CmsPostListItem } from "@/modules/posts/types";
 import { PostStatusBadge } from "@/modules/posts/components/post-status-badge";
 import { PostTypeBadge } from "@/modules/posts/components/post-type-badge";
-import { Button, buttonVariants } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/components/ui/lib/utils";
-
-const LIST_PATH = "/cms/bai-viet";
-const STATUS_PARAM = "trang-thai";
-
-type Filters = { status: PostStatusFilter | null; q: string };
-
-function first(v: string | string[] | undefined) {
-  return (Array.isArray(v) ? v[0] : v) ?? "";
-}
-
-function listHref({ status, q }: Filters, page = 1) {
-  const params = new URLSearchParams();
-  if (status) params.set(STATUS_PARAM, status);
-  if (q) params.set("q", q);
-  if (page > 1) params.set("trang", String(page));
-  const s = params.toString();
-  return s ? `${LIST_PATH}?${s}` : LIST_PATH;
-}
-
-// `?trang`: số nguyên an toàn ≥ 1, còn lại về trang 1; vượt trang cuối do query kẹp lại.
-function pageParam(v: string) {
-  const n = Number(v);
-  return Number.isSafeInteger(n) && n >= 1 ? n : 1;
-}
-
-function statusParam(v: string): PostStatusFilter | null {
-  return Object.hasOwn(POST_STATUS_FILTERS, v) ? (v as PostStatusFilter) : null;
-}
+import {
+  first,
+  LIST_PATH,
+  pageParam,
+  STATUS_PARAM,
+  statusParam,
+  type PostListFilters,
+} from "@/app/cms/bai-viet/_components/post-list-params";
+import { PostListPagination } from "@/app/cms/bai-viet/_components/post-list-pagination";
+import { PostSearchForm } from "@/app/cms/bai-viet/_components/post-search-form";
+import { PostStatusTabs } from "@/app/cms/bai-viet/_components/post-status-tabs";
 
 function CreateLink() {
   return (
@@ -47,75 +28,6 @@ function CreateLink() {
     >
       <Plus aria-hidden /> Tạo Bài web
     </Link>
-  );
-}
-
-const FILTER_TABS: { label: string; status: PostStatusFilter | null }[] = [
-  { label: "Tất cả", status: null },
-  { label: "Nháp", status: "nhap" },
-  { label: "Đã xuất bản", status: "da-xuat-ban" },
-];
-
-function StatusFilter({ filters }: { filters: Filters }) {
-  return (
-    <nav aria-label="Lọc theo trạng thái">
-      <ul className="flex gap-space-sm">
-        {FILTER_TABS.map((t) => {
-          const active = t.status === filters.status;
-          return (
-            <li key={t.label}>
-              <Link
-                href={listHref({ ...filters, status: t.status })}
-                aria-current={active ? "page" : undefined}
-                className={`inline-flex min-h-touch-target items-center rounded-full border px-space-md text-label-md ${
-                  active ? "border-primary bg-primary-fixed text-on-primary-fixed" : "text-on-surface-variant hover:bg-surface-container"
-                }`}
-              >
-                {t.label}
-              </Link>
-            </li>
-          );
-        })}
-      </ul>
-    </nav>
-  );
-}
-
-function SearchForm({ filters }: { filters: Filters }) {
-  return (
-    <Form action={LIST_PATH} role="search" className="flex gap-2" key={filters.q}>
-      {filters.status && <input type="hidden" name={STATUS_PARAM} value={filters.status} />}
-      <label htmlFor="post-search" className="sr-only">
-        Tìm Bài web theo tiêu đề
-      </label>
-      <Input id="post-search" type="search" name="q" defaultValue={filters.q} placeholder="Tìm theo tiêu đề" autoComplete="off" />
-      <Button type="submit" variant="outline" size="lg">
-        <Search aria-hidden /> Tìm
-      </Button>
-    </Form>
-  );
-}
-
-function Pagination({ filters, page, pages }: { filters: Filters; page: number; pages: number }) {
-  if (pages <= 1) return null;
-  const link = (target: number, label: string, Icon: typeof ChevronLeft, after = false) => (
-    <Link
-      href={listHref(filters, target)}
-      className={cn(buttonVariants({ variant: "outline", size: "lg" }), "min-h-touch-target lg:min-h-0")}
-    >
-      {!after && <Icon aria-hidden />}
-      {label}
-      {after && <Icon aria-hidden />}
-    </Link>
-  );
-  return (
-    <nav aria-label="Phân trang" className="flex items-center justify-between gap-2">
-      {page > 1 ? link(page - 1, "Trang trước", ChevronLeft) : <span />}
-      <span className="text-body-sm text-on-surface-variant">
-        Trang {page}/{pages}
-      </span>
-      {page < pages ? link(page + 1, "Trang sau", ChevronRight, true) : <span />}
-    </nav>
   );
 }
 
@@ -133,7 +45,7 @@ function meta(p: CmsPostListItem) {
 // xoá ở màn sửa bài.
 export async function PostListScreen({ searchParams }: Pick<PageProps<"/cms/bai-viet">, "searchParams">) {
   const params = await searchParams;
-  const filters: Filters = { status: statusParam(first(params[STATUS_PARAM])), q: first(params.q).trim() };
+  const filters: PostListFilters = { status: statusParam(first(params[STATUS_PARAM])), q: first(params.q).trim() };
   const { items, total, page } = await listPostsForCms({
     status: filters.status ? POST_STATUS_FILTERS[filters.status] : null,
     q: filters.q,
@@ -156,8 +68,8 @@ export async function PostListScreen({ searchParams }: Pick<PageProps<"/cms/bai-
           <div className="sticky-bar sticky bottom-0 z-20 order-last -mx-margin border-t px-margin pt-space-sm pb-[calc(env(safe-area-inset-bottom)+0.5rem)] shadow-sticky-bottom lg:static lg:order-none lg:mx-0 lg:border-0 lg:bg-transparent lg:p-0 lg:shadow-none lg:backdrop-blur-none">
             <CreateLink />
           </div>
-          <StatusFilter filters={filters} />
-          <SearchForm filters={filters} />
+          <PostStatusTabs filters={filters} />
+          <PostSearchForm filters={filters} />
           {items.length === 0 ? (
             <div className="space-y-space-md rounded-xl border p-space-lg text-center">
               <p className="text-on-surface-variant">Không có kết quả với bộ lọc này</p>
@@ -216,7 +128,7 @@ export async function PostListScreen({ searchParams }: Pick<PageProps<"/cms/bai-
                   ))}
                 </tbody>
               </table>
-              <Pagination filters={filters} page={page} pages={pages} />
+              <PostListPagination filters={filters} page={page} pages={pages} />
             </>
           )}
         </>

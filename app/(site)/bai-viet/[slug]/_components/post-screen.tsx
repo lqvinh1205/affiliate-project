@@ -1,6 +1,7 @@
 import { withHeadingIds } from "@/platform/html/content";
 import { sanitizePostHtml } from "@/platform/html/sanitize";
 import { SITE_NAME, SITE_URL } from "@/platform/site";
+import { ARTICLE_RESERVED_IDS } from "@/modules/posts/constants";
 import { getRelatedPosts } from "@/modules/posts/queries";
 import type { PublicPost } from "@/modules/posts/types";
 import { PostArticle } from "@/modules/posts/components/post-article";
@@ -11,7 +12,7 @@ import { ArticleActionBar } from "@/app/(site)/bai-viet/[slug]/_components/artic
 // Thân bài sanitize cả khi render (AD-22); mục lục, phút đọc tính trên HTML đã sanitize. JSON-LD `Article` +
 // `BreadcrumbList` theo Danh mục (AD-26). Mobile: ArticleActionBar thay BottomTabBar (UX-DR27).
 export async function PostScreen({ post }: { post: PublicPost }) {
-  const { html, headings } = withHeadingIds(sanitizePostHtml(post.content));
+  const { html, headings } = withHeadingIds(sanitizePostHtml(post.content), ARTICLE_RESERVED_IDS);
   const related = await getRelatedPosts(post.slug, post.categoryId);
   const url = `${SITE_URL}/bai-viet/${post.slug}`;
   // Breadcrumb theo Danh mục (AD-26); bài chưa có Danh mục chỉ có Trang chủ.

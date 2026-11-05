@@ -4,6 +4,7 @@ import type { Prisma } from "@/generated/prisma/client";
 import type { PostType } from "@/generated/prisma/enums";
 import { db } from "@/platform/db";
 import { readingMinutes } from "@/platform/html/content";
+import { sanitizePostHtml } from "@/platform/html/sanitize";
 import { CATEGORIES_TAG } from "@/modules/categories/tags";
 import { publicProductSelect, visibleProductWhere } from "@/modules/products/queries";
 import { PRODUCTS_TAG } from "@/modules/products/tags";
@@ -41,7 +42,8 @@ function toCard({ content, postProducts, ...p }: CardRow) {
   return {
     ...p,
     featuredImage: p.featuredImage ?? postProducts[0]?.product.image ?? null,
-    readingMinutes: readingMinutes(content),
+    // Phút đọc tính trên HTML đã sanitize (AD-22), như trang bài và bản xem trước.
+    readingMinutes: readingMinutes(sanitizePostHtml(content)),
   };
 }
 
@@ -109,7 +111,7 @@ export async function getPostBySlug(slug: string) {
     ...rest,
     products,
     featuredImage: post.featuredImage ?? products[0]?.image ?? null,
-    readingMinutes: readingMinutes(post.content),
+    readingMinutes: readingMinutes(sanitizePostHtml(post.content)),
   };
 }
 

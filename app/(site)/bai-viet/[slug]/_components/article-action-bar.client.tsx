@@ -5,7 +5,7 @@ import { PRODUCTS_SECTION_ID } from "@/modules/posts/constants";
 
 // ArticleActionBar (UX-DR27, token `article-action-bar`): dính đáy trang bài < 1024px, thay chỗ BottomTabBar. Nút
 // "Sản phẩm" cuộn tới khối Sản phẩm (tắt cuộn mượt khi reduced-motion); bài không có Sản phẩm thì ẩn nút — hiện chưa
-// có nút nào khác (LikeButton, ShareButtons ở Epic 8) nên ẩn cả thanh.
+// có nút nào khác (LikeButton, ShareButtons ở Epic 8) nên ẩn cả thanh và BottomTabBar hiện lại (`data-article-action-bar`).
 export function ArticleActionBar({ hasProducts }: { hasProducts: boolean }) {
   if (!hasProducts) return null;
   const scrollToProducts = () => {
@@ -18,6 +18,7 @@ export function ArticleActionBar({ hasProducts }: { hasProducts: boolean }) {
   return (
     <nav
       aria-label="Thao tác bài viết"
+      data-article-action-bar
       className="sticky-bar fixed inset-x-0 bottom-0 z-40 shadow-sticky-bottom pb-[env(safe-area-inset-bottom)] lg:hidden"
     >
       <div className="mx-auto flex max-w-container-max items-center gap-space-sm px-margin py-space-sm">

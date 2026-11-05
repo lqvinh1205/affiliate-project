@@ -1,7 +1,7 @@
 import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { db } from "@/platform/db";
 import { actionTest, resetTestDb } from "@/vitest.db.helpers";
-import { deletePost, savePost, setPostStatus } from "@/modules/posts/actions";
+import { createPostDraft, deletePost, savePost, setPostStatus } from "@/modules/posts/actions";
 import type { PostFormValues } from "@/modules/posts/schema";
 
 async function product(name: string, data: { hidden?: boolean } = {}) {
@@ -138,6 +138,19 @@ describe("savePost", () => {
     expect(await db.post.findUniqueOrThrow({ where: { id: p.id } })).toMatchObject({ title: "Bài cũ" });
   });
 
+  it("bài không tồn tại báo lỗi tiếng Việt", async () => {
+    expect(await savePost(input("khong-co"))).toEqual({ ok: false, error: "Không tìm thấy Bài web. Có thể đã bị xoá." });
+  });
+
+  it("bài đang xuất bản không lưu được thân bài rỗng (kể cả chỉ thẻ rỗng)", async () => {
+    const p = await post({ status: "PUBLISHED" });
+    expect(await savePost(input(p.id, { content: "<p></p><p> </p>" }))).toEqual({
+      ok: false,
+      error: "Bài đang xuất bản không được để trống thân bài. Viết nội dung hoặc chuyển bài về nháp trước.",
+    });
+    expect((await savePost(input((await post({ slug: "nhap" })).id, { slug: "nhap", content: "<p></p>" }))).ok).toBe(true);
+  });
+
   it("chưa đăng nhập thì từ chối, không ghi gì", async () => {
     const p = await post();
     actionTest.authorization = null;
@@ -191,8 +204,8 @@ describe("setPostStatus", () => {
     expect((await db.post.findUniqueOrThrow({ where: { id: p.id } })).publishedAt).toEqual(first);
   });
 
-  it("bài chưa có nội dung không xuất bản được", async () => {
-    const p = await post({ content: "  " });
+  it("bài chưa có chữ nào (chỉ thẻ rỗng) không xuất bản được", async () => {
+    const p = await post({ content: "<p></p>" });
     expect(await setPostStatus({ id: p.id, status: "PUBLISHED" })).toEqual({
       ok: false,
       error: "Bài chưa có nội dung, chưa thể xuất bản",
@@ -223,10 +236,60 @@ describe("deletePost", () => {
     expect(await db.product.findMany()).toEqual(kho);
   });
 
+  it("bài đã bị xoá thì coi như xong", async () => {
+    expect(await deletePost({ id: "khong-co" })).toEqual({ ok: true });
+  });
+
   it("chưa đăng nhập thì từ chối", async () => {
     const p = await post();
     actionTest.authorization = null;
     expect(await deletePost({ id: p.id })).toEqual({ ok: false, error: "Bạn cần đăng nhập CMS" });
     expect(await db.post.count()).toBe(1);
+  });
+});
+
+describe("createPostDraft", () => {
+  const draft = {
+    title: "Mẹo bếp",
+    slug: "",
+    excerpt: "",
+    featuredImage: "",
+    postType: "MEO_VAT" as const,
+    categoryId: "",
+    content: '<p>x</p><table><tr><td>y</td></tr></table>',
+    tags: "a, b",
+    seoTitle: "",
+    seoDescription: "",
+    seoKeywords: "",
+  };
+
+  it("tạo bài nháp, slug tự tạo không trùng slug cũ của bài khác, thân bài đã sanitize, không làm mới cache", async () => {
+    const other = await post({ slug: "x" });
+    await db.postSlugRedirect.create({ data: { oldSlug: "meo-bep", postId: other.id } });
+    const res = await createPostDraft(draft);
+    expect(res).toMatchObject({ ok: true, slug: "meo-bep-2" });
+    const saved = await db.post.findFirstOrThrow({ where: { title: "Mẹo bếp" } });
+    expect(saved).toMatchObject({ status: "DRAFT", tags: ["a", "b"] });
+    expect(saved.content).not.toContain("<table");
+    expect(actionTest.updatedTags).toEqual([]);
+  });
+
+  it("tiêu đề dài tạo slug không quá giới hạn kể cả có hậu tố", async () => {
+    const title = "a".repeat(200);
+    const first = await createPostDraft({ ...draft, title });
+    const second = await createPostDraft({ ...draft, title });
+    expect(first.ok && second.ok).toBe(true);
+    if (first.ok && second.ok) {
+      expect(first.slug.length).toBeLessThanOrEqual(200);
+      expect(second.slug.length).toBeLessThanOrEqual(200);
+      expect(second.slug.endsWith("-2")).toBe(true);
+    }
+  });
+
+  it("Danh mục không tồn tại báo UserError", async () => {
+    expect(await createPostDraft({ ...draft, categoryId: "7f3c2a8e-1b4d-4c6e-9f0a-2b3c4d5e6f70" })).toEqual({
+      ok: false,
+      error: "Danh mục đã chọn không còn tồn tại. Tải lại trang rồi chọn lại.",
+    });
   });
 });

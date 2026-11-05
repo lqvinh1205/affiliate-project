@@ -1,4 +1,5 @@
 import type { PostType, Status } from "@/generated/prisma/enums";
+import { MAIN_CONTENT_ID } from "@/platform/site";
 
 // Loại bài (enum `PostType`): nhãn, đường dẫn trang Loại bài (`/meo-vat`, `/gom-link`) và mô tả.
 // Khoá lấy từ enum Prisma; thêm Loại bài thì enum và bảng này đổi cùng nhau ([KT-08]).
@@ -52,3 +53,8 @@ export const RELATED_POSTS_LIMIT = 3;
 
 // Id khối Sản phẩm trên trang bài: nút "Sản phẩm" của ArticleActionBar cuộn tới đây.
 export const PRODUCTS_SECTION_ID = "san-pham";
+export const PRODUCTS_TITLE_ID = "san-pham-title";
+export const RELATED_POSTS_TITLE_ID = "bai-lien-quan";
+
+// Id đã dùng trên trang bài: h2 thân bài không được trùng (`withHeadingIds`).
+export const ARTICLE_RESERVED_IDS = [PRODUCTS_SECTION_ID, PRODUCTS_TITLE_ID, RELATED_POSTS_TITLE_ID, MAIN_CONTENT_ID];

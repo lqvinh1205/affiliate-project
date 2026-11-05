@@ -47,6 +47,7 @@ export function BottomTabBarView({ categories, active }: { categories: NavCatego
   return (
     <nav
       aria-label="Điều hướng chính"
+      data-bottom-tab-bar
       className="sticky-bar fixed inset-x-0 bottom-0 z-40 shadow-sticky-bottom pb-[env(safe-area-inset-bottom)] lg:hidden"
     >
       <ul className="mx-auto grid max-w-container-max grid-cols-5">
@@ -84,9 +85,9 @@ export function BottomTabBarView({ categories, active }: { categories: NavCatego
   );
 }
 
-// BottomTabBar (UX-DR12): < 1024px, 5 tab; không hiện trên trang bài (ArticleActionBar thay chỗ — Epic 3).
+// BottomTabBar (UX-DR12): < 1024px, 5 tab. Trang bài có ArticleActionBar thì thanh đó thay chỗ: CSS ẩn BottomTabBar
+// khi trang có `[data-article-action-bar]` (globals.css) — bài không có Sản phẩm vẫn còn BottomTabBar.
 export function BottomTabBar({ categories }: { categories: NavCategory[] }) {
   const pathname = usePathname();
-  if (pathname.startsWith("/bai-viet/")) return null;
   return <BottomTabBarView categories={categories} active={activeTab(pathname, categories)} />;
 }

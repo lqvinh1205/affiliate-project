@@ -3,7 +3,8 @@ import { db } from "@/platform/db";
 import { resetTestDb } from "@/vitest.db.helpers";
 import { createPost } from "@/app/cms/actions";
 
-// Action AI cũ còn ở `app/cms/actions.ts` (tới Epic 4). Test ghi Bài web ở `modules/posts/actions.db.test.ts`.
+// Action AI cũ còn ở `app/cms/actions.ts` (tới Epic 4); phần ghi bản nháp (`createPostDraft`) test ở
+// `modules/posts/actions.db.test.ts`.
 
 beforeEach(async () => {
   await resetTestDb();
@@ -28,10 +29,10 @@ describe("createPost", () => {
     expect(await db.post.findFirstOrThrow()).toMatchObject({ title: "Mẹo bếp", categoryId: c.id, status: "DRAFT" });
   });
 
-  it("slug bản nháp không trùng slug cũ còn chuyển hướng của bài khác", async () => {
-    const other = await db.post.create({ data: { title: "x", slug: "x", content: "", postType: "MEO_VAT" } });
-    await db.postSlugRedirect.create({ data: { oldSlug: "meo-bep", postId: other.id } });
-    expect((await createPost({ postType: "MEO_VAT", categoryId: "", topic: "Mẹo bếp", useAi: false })).ok).toBe(true);
-    expect(await db.post.findFirstOrThrow({ where: { title: "Mẹo bếp" } })).toMatchObject({ slug: "meo-bep-2" });
+  it("chủ đề dài quá giới hạn tiêu đề bị từ chối tại trường", async () => {
+    expect(await createPost({ postType: "MEO_VAT", categoryId: "", topic: "a".repeat(201), useAi: false })).toEqual({
+      ok: false,
+      error: "Tối đa 200 ký tự",
+    });
   });
 });

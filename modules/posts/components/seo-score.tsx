@@ -4,7 +4,7 @@ export function SeoScore({ score, className }: { score: number; className?: stri
   const r = 40;
   const c = 2 * Math.PI * r;
   const tone =
-    score >= 80 ? "text-meo-vat" : score >= 50 ? "text-chart-3" : "text-destructive";
+    score >= 80 ? "text-on-secondary-container" : score >= 50 ? "text-on-surface-variant" : "text-destructive";
   return (
     <div className={cn("relative size-28", className)}>
       <svg viewBox="0 0 100 100" className="-rotate-90">

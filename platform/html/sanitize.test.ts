@@ -32,9 +32,10 @@ describe("sanitizePostHtml — chỉ định dạng của trình soạn bài (UX
     expect(out).toContain("<p>link</p>");
   });
 
-  it("đổi b/i/h4 sang strong/em/h3, bỏ h1, hr, figure", () => {
+  it("đổi b/i/h1/h4–h6/div sang thẻ tương đương, bỏ hr, figure", () => {
     expect(sanitizePostHtml("<h1>A</h1><h4>B</h4><p><b>c</b><i>d</i></p><hr><figure>e</figure>")).toBe(
-      "A<h3>B</h3><p><strong>c</strong><em>d</em></p>e",
+      "<h2>A</h2><h3>B</h3><p><strong>c</strong><em>d</em></p>e",
     );
+    expect(sanitizePostHtml("<h5>x</h5><h6>y</h6><div>z</div>")).toBe("<h3>x</h3><h3>y</h3><p>z</p>");
   });
 });

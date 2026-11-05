@@ -1,4 +1,4 @@
-import type { getPostForCms, listPostsForCms } from "@/modules/posts/cms-queries";
+import type { listPostsForCms } from "@/modules/posts/cms-queries";
 import type { getLatestPosts, getPostBySlug, listNavCategories, listPostsByType } from "@/modules/posts/queries";
 
 // Kiểu suy từ query, không chép tay ([NO-18], [QU-09]).
@@ -11,5 +11,8 @@ export type PostListPage = Awaited<ReturnType<typeof listPostsByType>>;
 export type NavCategory = Awaited<ReturnType<typeof listNavCategories>>[number];
 // Một dòng danh sách Bài web trong CMS.
 export type CmsPostListItem = Awaited<ReturnType<typeof listPostsForCms>>["items"][number];
-// Bài web đang sửa trong CMS.
-export type CmsPost = NonNullable<Awaited<ReturnType<typeof getPostForCms>>>;
+// Dữ liệu thân trang bài (`PostArticle`): trang public truyền `PublicPost`, bản xem trước dựng từ giá trị form.
+export type ArticlePost = Pick<
+  PublicPost,
+  "title" | "postType" | "publishedAt" | "readingMinutes" | "featuredImage" | "tags" | "category" | "products"
+>;

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { readingMinutes, withHeadingIds } from "@/platform/html/content";
+import { readingMinutes, visibleText, withHeadingIds } from "@/platform/html/content";
 
 describe("readingMinutes", () => {
   it("tối thiểu 1 phút", () => {
@@ -20,5 +20,19 @@ describe("withHeadingIds", () => {
 
   it("h2 không có chữ dùng id muc-n", () => {
     expect(withHeadingIds("<h2>!!!</h2>").headings[0].id).toBe("muc-1");
+  });
+});
+
+describe("withHeadingIds — id dành riêng", () => {
+  it("h2 trùng id khối khác trên trang thì thêm hậu tố", () => {
+    const { headings } = withHeadingIds("<h2>Sản phẩm</h2><h2>Nội dung</h2>", ["san-pham", "noi-dung"]);
+    expect(headings.map((h) => h.id)).toEqual(["san-pham-1", "noi-dung-2"]);
+  });
+});
+
+describe("visibleText", () => {
+  it("thân chỉ có thẻ rỗng là rỗng", () => {
+    expect(visibleText("<p></p><p> &nbsp; </p>")).toBe("");
+    expect(visibleText("<h2>A</h2><p>b  c</p>")).toBe("A b c");
   });
 });

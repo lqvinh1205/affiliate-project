@@ -75,12 +75,6 @@
   --border: var(--outline-variant);
   --input: var(--outline-variant);
   --ring: var(--primary);
-
-  /* Alias tạm cho component cũ còn lại (components/cms/status-badge, seo-score): trỏ tới token badge
-     Loại bài; story chuyển các component đó đổi sang tên token và bỏ alias. */
-  --meo-vat: var(--on-secondary-container);
-  --meo-vat-soft: var(--secondary-container);
-  --chart-3: var(--on-surface-variant);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -177,11 +171,6 @@
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
-
-  /* Alias component cũ (xem `:root`). */
-  --color-meo-vat: var(--meo-vat);
-  --color-meo-vat-soft: var(--meo-vat-soft);
-  --color-chart-3: var(--chart-3);
 
   /* Elevation: `shadow-level-0`, `shadow-level-1`, `shadow-sticky-top`, `shadow-sticky-bottom`. */
   --shadow-level-0: var(--elevation-0);
@@ -370,6 +359,11 @@
       min-width: var(--spacing-touch-target);
     }
   }
+}
+
+/* Trang bài có ArticleActionBar: thanh đó thay chỗ BottomTabBar (UX-DR27), kể cả bản fallback trong <Suspense>. */
+body:has([data-article-action-bar]) [data-bottom-tab-bar] {
+  display: none;
 }
 
 /* UX-DR91: tắt cuộn mượt, nhấp nháy Skeleton, icon quay khi người dùng chọn giảm chuyển động. */

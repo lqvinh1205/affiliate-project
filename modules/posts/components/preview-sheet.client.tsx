@@ -4,7 +4,9 @@ import { useMemo } from "react";
 import { X } from "lucide-react";
 import { readingMinutes, withHeadingIds } from "@/platform/html/content";
 import { sanitizePostHtml } from "@/platform/html/sanitize";
-import { PostArticle, type ArticlePost } from "@/modules/posts/components/post-article";
+import { ARTICLE_RESERVED_IDS } from "@/modules/posts/constants";
+import type { ArticlePost } from "@/modules/posts/types";
+import { PostArticle } from "@/modules/posts/components/post-article";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetClose, SheetContent, SheetTitle } from "@/components/ui/sheet";
 
@@ -26,7 +28,7 @@ export function PreviewSheet({
   const body = useMemo(() => {
     if (!open) return null;
     const clean = sanitizePostHtml(content);
-    return { ...withHeadingIds(clean), minutes: readingMinutes(clean) };
+    return { ...withHeadingIds(clean, ARTICLE_RESERVED_IDS), minutes: readingMinutes(clean) };
   }, [open, content]);
 
   return (

@@ -4,6 +4,7 @@ import { EditorContent, useEditor, useEditorState, type Editor } from "@tiptap/r
 import StarterKit from "@tiptap/starter-kit";
 import { Bold, Heading2, Heading3, Italic, List, ListOrdered, Pilcrow, Quote, type LucideIcon } from "lucide-react";
 import { sanitizePostHtml } from "@/platform/html/sanitize";
+import { cn } from "@/components/ui/lib/utils";
 
 // Chỉ bật đúng các định dạng của allowlist `sanitizePostHtml` (UX-DR50, AD-22): H2, H3, đoạn, danh sách, trích dẫn
 // (Callout "Mẹo nhỏ"), đậm, nghiêng. Không link, ảnh, bảng, code, gạch chân, gạch ngang, đường kẻ.
@@ -64,9 +65,10 @@ function Toolbar({ editor }: { editor: Editor }) {
           aria-pressed={active[i]}
           onMouseDown={(e) => e.preventDefault()} // giữ vùng chọn trong ô soạn
           onClick={() => t.run(editor)}
-          className={`inline-flex size-touch-target items-center justify-center rounded-lg outline-offset-2 focus-visible:outline-2 focus-visible:outline-primary lg:size-9 ${
-            active[i] ? "bg-primary-fixed text-on-primary-fixed" : "text-on-surface-variant hover:bg-surface-container"
-          }`}
+          className={cn(
+            "inline-flex size-touch-target items-center justify-center rounded-lg outline-offset-2 focus-visible:outline-2 focus-visible:outline-primary lg:size-9",
+            active[i] ? "bg-primary-fixed text-on-primary-fixed" : "text-on-surface-variant hover:bg-surface-container",
+          )}
         >
           <t.Icon className="size-5" strokeWidth={1.5} aria-hidden />
         </button>

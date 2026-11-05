@@ -315,6 +315,7 @@ Không có `index.ts` gom export; import thẳng từng file.
 | Tailwind CSS | 4.3.3 |
 | shadcn (style base-nova) / @base-ui/react | 4.23.0 / 1.9.0 |
 | sanitize-html | 2.18.1 |
+| @tiptap/react, @tiptap/pm, @tiptap/starter-kit (thêm mới, Vinh duyệt 2026-11-05) | 3.32.3 |
 | react-hook-form (thêm mới) | 7.91.0 |
 | @hookform/resolvers (thêm mới) | 7.0.1 |
 | server-only (thêm mới) | 0.0.1 |

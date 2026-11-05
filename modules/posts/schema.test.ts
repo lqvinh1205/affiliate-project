@@ -1,6 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { POST_EXCERPT_MAX, POST_PRODUCTS_MAX, POST_TAGS_MAX, POST_TITLE_MAX } from "@/modules/posts/constants";
-import { newPostSchema, postInputSchema, setPostStatusInputSchema, type PostFormValues } from "@/modules/posts/schema";
+import { POST_EXCERPT_MAX, POST_PRODUCTS_MAX, POST_TAG_MAX, POST_TAGS_MAX, POST_TITLE_MAX } from "@/modules/posts/constants";
+import {
+  newPostInputSchema,
+  postInputSchema,
+  setPostStatusInputSchema,
+  toCommaListValue,
+  type PostFormValues,
+} from "@/modules/posts/schema";
 
 const valid: PostFormValues = {
   id: "p1",
@@ -38,8 +44,8 @@ describe("postInputSchema", () => {
     });
   });
 
-  it("thẻ cách nhau bằng dấu phẩy: bỏ trống, bỏ trùng", () => {
-    expect(postInputSchema.parse({ ...valid, tags: " bếp ,, mẹo,bếp " }).tags).toEqual(["bếp", "mẹo"]);
+  it("thẻ cách nhau bằng dấu phẩy: bỏ trống, bỏ trùng không phân biệt hoa thường", () => {
+    expect(postInputSchema.parse({ ...valid, tags: " bếp ,, mẹo,Bếp, MẸO " }).tags).toEqual(["bếp", "mẹo"]);
   });
 
   it(`tóm tắt tối đa ${POST_EXCERPT_MAX} ký tự (= @db.VarChar, [NO-12])`, () => {
@@ -78,10 +84,10 @@ describe("postInputSchema", () => {
   });
 });
 
-describe("newPostSchema / setPostStatusInputSchema", () => {
+describe("newPostInputSchema / setPostStatusInputSchema", () => {
   it("Loại bài phải là enum PostType", () => {
-    expect(newPostSchema.safeParse({ postType: "KHAC", categoryId: "", topic: "", useAi: false }).success).toBe(false);
-    expect(newPostSchema.parse({ postType: "GOM_LINK", categoryId: "", topic: " x ", useAi: true })).toEqual({
+    expect(newPostInputSchema.safeParse({ postType: "KHAC", categoryId: "", topic: "", useAi: false }).success).toBe(false);
+    expect(newPostInputSchema.parse({ postType: "GOM_LINK", categoryId: "", topic: " x ", useAi: true })).toEqual({
       postType: "GOM_LINK",
       categoryId: null,
       topic: "x",
@@ -89,7 +95,26 @@ describe("newPostSchema / setPostStatusInputSchema", () => {
     });
   });
 
+  it("AI viết bài cần chủ đề; chủ đề tối đa bằng giới hạn tiêu đề", () => {
+    const r = newPostInputSchema.safeParse({ postType: "MEO_VAT", categoryId: "", topic: " ", useAi: true });
+    expect(r.error?.issues[0]).toMatchObject({ path: ["topic"], message: "Nhập chủ đề để AI viết bài" });
+    expect(
+      newPostInputSchema.safeParse({ postType: "MEO_VAT", categoryId: "", topic: "a".repeat(POST_TITLE_MAX + 1), useAi: false })
+        .success,
+    ).toBe(false);
+  });
+
   it("trạng thái chỉ DRAFT / PUBLISHED", () => {
     expect(setPostStatusInputSchema.safeParse({ id: "p", status: "ARCHIVED" }).success).toBe(false);
+  });
+});
+
+describe("toCommaListValue (chuẩn hoá thẻ AI)", () => {
+  it("bỏ dấu phẩy trong mục, cắt mục quá dài, giữ tối đa POST_TAGS_MAX mục, qua được schema", () => {
+    const value = toCommaListValue(["nồi, chảo", " ", "x".repeat(POST_TAG_MAX + 5), ...Array.from({ length: 30 }, (_, i) => `t${i}`)]);
+    const tags = postInputSchema.parse({ ...valid, tags: value }).tags;
+    expect(tags[0]).toBe("nồi chảo");
+    expect(tags[1]).toHaveLength(POST_TAG_MAX);
+    expect(tags).toHaveLength(POST_TAGS_MAX);
   });
 });

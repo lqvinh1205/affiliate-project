@@ -44,6 +44,7 @@ npm run dev                   # http://localhost:3000
 | Migration thu hẹp cột | Trước khi áp lên DB có dữ liệu: `SELECT id, length("<cột>") FROM "<Bảng>" WHERE length("<cột>") > <n>;` cho **từng** cột bị thu hẹp phải rỗng (`docs/cong-thuc/doi-schema.md` Bước 4) |
 | Upload (`/cms/upload`) | Xem §5 |
 | Tính năng AI | Chạy thật một lần; thử khi thiếu khoá; output sai schema bị chặn |
+| Allowlist `sanitizePostHtml` hẹp lại | Xem §6 |
 
 ## 4. Dự kiến
 
@@ -63,6 +64,17 @@ npm run dev                   # http://localhost:3000
   - File đã upload **không bao giờ bị xoá**: đổi/xoá ảnh trong form hay xoá Sản phẩm chỉ bỏ URL, file mồ côi tích dần trong `UPLOAD_DIR`. Dọn file mồ côi để sau (cần quét mọi bảng lưu URL).
   - Route phục vụ chưa hỗ trợ `Range`/206: video upload chưa phát được (Safari bắt buộc Range). Chưa màn nào hiển thị video.
 - **Test tự động:** `app/cms/upload/route.db.test.ts` (401 + `WWW-Authenticate`, 415 SVG, 413 theo Content-Length và khi luồng vượt giới hạn, 400 file rỗng, 200 với `/uploads/<sha256>.<đuôi>`), `platform/storage/local-disk.test.ts`, `platform/upload-rules.test.ts`.
+
+## 6. Trước khi deploy Epic 3: thẻ HTML không còn được phép
+
+Epic 3 thu hẹp allowlist của `sanitizePostHtml` (`platform/html/sanitize.ts`) về đúng định dạng trình soạn: h2, h3, p, br, strong, em, ul, ol, li, blockquote (`b`/`i`/`h1`/`h4`–`h6`/`div` đổi sang thẻ tương đương). Trang bài sanitize **cả khi render**, nên bài đã lưu có thẻ khác (bảng, `figure`, `hr`, `u`…) sẽ mất định dạng đó trên site ngay khi deploy — chữ bên trong vẫn còn. DB cục bộ không có bài nào như vậy (kiểm 2026-11-05). Trước khi deploy, Vinh chạy trên **production** (chỉ đọc):
+
+```sql
+SELECT id, slug, status FROM "Post"
+WHERE content ~* '<(table|thead|tbody|tr|th|td|figure|figcaption|hr|u|h4|h5|h6|h1|img|a)[\s>/]';
+```
+
+Có dòng → mở từng bài trong `/cms/bai-viet/<id>`, xem trước, sửa lại bằng định dạng cho phép rồi lưu (hoặc chấp nhận mất định dạng). Lưu bài qua trình soạn cũng sanitize lại nội dung.
 
 ## Checklist báo cáo
 

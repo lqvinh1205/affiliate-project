@@ -37,7 +37,12 @@ const slug = z
 // Danh sách cách nhau bằng dấu phẩy (thẻ, từ khoá SEO) → mảng không trùng, bỏ mục trống. Lỗi gắn vào chính trường.
 const commaList = (label: string) =>
   z.string().transform((s, ctx) => {
-    const items = [...new Set(s.split(",").map((x) => x.trim()).filter(Boolean))];
+    // Bỏ trùng không phân biệt hoa thường, giữ cách viết lần đầu.
+    const seen = new Set<string>();
+    const items = s
+      .split(",")
+      .map((x) => x.trim())
+      .filter((x) => x && !seen.has(x.toLowerCase()) && seen.add(x.toLowerCase()));
     if (items.length > POST_TAGS_MAX) {
       ctx.addIssue({ code: "custom", message: `Tối đa ${POST_TAGS_MAX} ${label}` });
       return z.NEVER;
@@ -73,16 +78,30 @@ const postFields = {
 // Sửa Bài web (form `/cms/bai-viet/[id]`, action `savePost`). HTML thân bài sanitize ở service (AD-22).
 export const postInputSchema = z.object({ id: postId, ...postFields, productIds });
 
-// Bản nháp AI tạo bài mới (`createPost`): cùng luật trường, chưa có id và Sản phẩm.
-export const postDraftSchema = z.object(postFields);
+// Bản nháp mới (AI viết hoặc bản trống — action `createPostDraft`): cùng luật trường, chưa có id và Sản phẩm.
+export const postDraftInputSchema = z.object(postFields);
 
-// Tạo bài mới: AI viết theo chủ đề hoặc bản nháp trống.
-export const newPostSchema = z.object({
-  postType: z.enum(PostType, "Chọn Loại bài"),
-  categoryId,
-  topic: z.string().trim(),
-  useAi: z.boolean(),
-});
+// Mảng chữ (thẻ, từ khoá do AI trả) → giá trị ô "cách nhau bằng dấu phẩy" đã chuẩn hoá: bỏ dấu phẩy trong mục,
+// cắt mục quá dài, giữ tối đa `POST_TAGS_MAX` mục — bản nháp AI không bị từ chối vì lệch giới hạn.
+export function toCommaListValue(items: string[]) {
+  return items
+    .map((x) => x.replace(/,/g, " ").replace(/\s+/g, " ").trim().slice(0, POST_TAG_MAX).trim())
+    .filter(Boolean)
+    .slice(0, POST_TAGS_MAX)
+    .join(", ");
+}
+
+// Tạo bài mới (`/cms/bai-viet/moi`): AI viết theo chủ đề hoặc bản nháp trống (chủ đề làm tiêu đề).
+export const newPostInputSchema = z
+  .object({
+    postType: z.enum(PostType, "Chọn Loại bài"),
+    categoryId,
+    topic: z.string().trim().max(POST_TITLE_MAX, `Tối đa ${POST_TITLE_MAX} ký tự`),
+    useAi: z.boolean(),
+  })
+  .superRefine((v, ctx) => {
+    if (v.useAi && !v.topic) ctx.addIssue({ code: "custom", path: ["topic"], message: "Nhập chủ đề để AI viết bài" });
+  });
 
 export const setPostStatusInputSchema = z.object({ id: postId, status: z.enum(Status) });
 
@@ -91,4 +110,5 @@ export const deletePostInputSchema = z.object({ id: postId });
 // Giá trị form (trường tuỳ chọn là "", thẻ và từ khoá là chuỗi cách nhau bằng dấu phẩy) và dữ liệu đã parse.
 export type PostFormValues = z.input<typeof postInputSchema>;
 export type PostInput = z.infer<typeof postInputSchema>;
-export type NewPostInput = z.input<typeof newPostSchema>;
+export type NewPostFormValues = z.input<typeof newPostInputSchema>;
+export type PostDraftFormValues = z.input<typeof postDraftInputSchema>;

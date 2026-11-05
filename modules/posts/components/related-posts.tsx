@@ -1,3 +1,4 @@
+import { RELATED_POSTS_TITLE_ID } from "@/modules/posts/constants";
 import type { PostCardData } from "@/modules/posts/types";
 import { PostCard } from "@/modules/posts/components/post-card";
 
@@ -6,8 +7,8 @@ import { PostCard } from "@/modules/posts/components/post-card";
 export function RelatedPosts({ posts }: { posts: PostCardData[] }) {
   if (posts.length === 0) return null;
   return (
-    <section aria-labelledby="bai-lien-quan" className="space-y-space-md">
-      <h2 id="bai-lien-quan" className="text-headline-md">
+    <section aria-labelledby={RELATED_POSTS_TITLE_ID} className="space-y-space-md">
+      <h2 id={RELATED_POSTS_TITLE_ID} className="text-headline-md">
         Bài liên quan
       </h2>
       <ul className="divide-y lg:hidden">

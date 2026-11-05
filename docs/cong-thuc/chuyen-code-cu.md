@@ -1,6 +1,6 @@
 # Công thức: chuyển code cũ sang cấu trúc spine
 
-> Nguồn: spine kiến trúc `_bmad-output/planning-artifacts/architecture/architecture-affiliate-project-2026-11-03/ARCHITECTURE-SPINE.md` (AD-1, AD-2, AD-5, AD-8, AD-11, AD-17), danh sách file từ `ls lib components components/site components/cms app/cms` · Kiểm lần cuối: 2026-11-05 @ 8771851
+> Nguồn: spine kiến trúc `_bmad-output/planning-artifacts/architecture/architecture-affiliate-project-2026-11-03/ARCHITECTURE-SPINE.md` (AD-1, AD-2, AD-5, AD-8, AD-11, AD-17), danh sách file từ `ls lib components components/site components/cms app/cms` · Kiểm lần cuối: 2026-11-05 (lượt gộp Epic 3)
 
 Dùng khi một story chạm file ở vị trí cũ: `lib/*`, `components/site/*`, `components/cms/*`, `components/*.tsx` ở gốc, `app/cms/actions.ts`, route CMS tên tiếng Anh. Áp dụng sau epic nền; trong epic nền, thứ tự chuyển theo AD-17. Các công thức khác (`them-man-hinh.md`, `sua-loi.md`, `bo-chuc-nang.md`, `doi-schema.md`) trỏ về đây.
 
@@ -33,13 +33,13 @@ Dòng ghi **Đã chuyển** là lịch sử của epic nền: file cũ không c�
 | `lib/site.ts` | **Đã chuyển** (epic nền): `platform/site.ts` | Structural Seed |
 | `lib/categories.ts` | **Đã chuyển** (lượt gộp 2.4–2.8): `modules/posts/constants.ts` — `POST_TYPES` (nhãn, slug, mô tả; khoá là enum `PostType`), `POST_TYPE_KEYS`; `CategoryKey` thay bằng `PostType` của `@/generated/prisma/enums`; `categoryFromSlug` bỏ (`/meo-vat`, `/gom-link` là thư mục riêng) | Consistency Conventions (Loại bài), AD-5 |
 | `lib/posts.ts` | **Đã chuyển** (lượt gộp 2.4–2.8): `modules/posts/queries.ts` (`getPostsByCategory` → `getPostsByType`; khoá `category` của thẻ đổi thành `postType` — `[NO-20]`); `POSTS_TAG` → `modules/posts/tags.ts`; kiểu suy từ query → `modules/posts/types.ts` | AD-5, AD-7 |
-| `lib/post-input.ts` | `postInputSchema`, `newPostSchema` → `modules/posts/schema.ts`; `productInputSchema` đã thay bằng `modules/products/schema.ts` (Story 2.3, file cũ không còn schema Sản phẩm); trường dùng chung (`optionalText`, `imageUrl`, `shopeeAffiliateUrl`) đã ở `platform/validation/fields.ts`, `firstError` đã ở `platform/validation/errors.ts` (epic nền) | AD-4, AD-5, AD-14 |
+| `lib/post-input.ts` | **Đã chuyển** (Epic 3, file đã xoá): `postInputSchema`, `postDraftInputSchema`, `newPostInputSchema` → `modules/posts/schema.ts`; khoá `category` → `postType`; `productInputSchema` đã thay bằng `modules/products/schema.ts` (Story 2.3, file cũ không còn schema Sản phẩm); trường dùng chung (`optionalText`, `imageUrl`, `shopeeAffiliateUrl`) đã ở `platform/validation/fields.ts`, `firstError` đã ở `platform/validation/errors.ts` (epic nền) | AD-4, AD-5, AD-14 |
 | `lib/ai.ts` | phần gọi nhà cung cấp → `platform/ai` (không giữ OpenAI); prompt → `modules/<miền>/prompts/*.prompt.ts` theo module chủ đích: viết Bài web → `modules/posts/prompts/web-post.prompt.ts`, chấm SEO → `modules/posts/prompts/seo-review.prompt.ts`, chuỗi Threads → `modules/content-sets/prompts/threads-post.prompt.ts` | AD-10, `[QD-09]` |
 | `lib/content.ts` (`readingMinutes`, `withHeadingIds`) | **Đã chuyển** (epic nền): `platform/html/content.ts` (tính sau sanitize) | AD-22, Structural Seed |
 | `lib/utils.ts` (`cn`) | **Đã chuyển** (epic nền): `components/ui/lib/utils.ts`, alias `components.json` đã đổi; hook dùng chung → `components/shared/hooks/` | AD-17 bước 2 |
-| `app/cms/actions.ts` | `setPostStatus`, `deletePost` → `modules/posts/actions.ts` + `service.ts`; `savePost` → `modules/posts/actions.ts`; `createPost` có AI → `modules/suggestions/actions.ts` (kind `WEB_POST`); `runThreads` → `modules/suggestions/actions.ts` (kind `THREADS_POST`); `runSeoCheck` → `posts.checkPostSeo`. Chỉ chuyển action bị chạm; file xoá khi rỗng | AD-6, AD-9 |
-| `app/cms/new/page.tsx` | `app/cms/bai-viet/moi/page.tsx` | Structural Seed |
-| `app/cms/posts/[id]/page.tsx` | `app/cms/bai-viet/[id]/page.tsx` | Structural Seed |
+| `app/cms/actions.ts` | **Đã chuyển một phần** (Epic 3): `setPostStatus`, `deletePost`, `savePost` → `modules/posts/actions.ts` + `service.ts`; ghi bản nháp → `createPostDraft` (`modules/posts/actions.ts`). **Còn tới Epic 4:** `createPost` có AI → `modules/suggestions/actions.ts` (kind `WEB_POST`); `runThreads` → `modules/suggestions/actions.ts` (kind `THREADS_POST`); `runSeoCheck` → `posts.checkPostSeo`. Chỉ chuyển action bị chạm; file xoá khi rỗng | AD-6, AD-9 |
+| `app/cms/new/page.tsx` | **Đã chuyển** (Epic 3): `app/cms/bai-viet/moi/page.tsx` (route cũ 404) | Structural Seed |
+| `app/cms/posts/[id]/page.tsx` | **Đã chuyển** (Epic 3): `app/cms/bai-viet/[id]/page.tsx` (route cũ 404) | Structural Seed |
 | `components/site/affiliate-disclosure.tsx` | **Đã chuyển** (lượt gộp): `modules/products/components/affiliate-disclosure.tsx` (biến thể `box`, `text`) | AD-11 |
 | `components/site/product-card.tsx` | **Đã chuyển** (lượt gộp): `modules/products/components/product-card.tsx` (*row*, *tile*, link qua `affiliate-link.tsx`) | AD-11 |
 | `components/site/post-card.tsx` | **Đã chuyển** (lượt gộp): `modules/posts/components/post-card.tsx` (`PostCard`, `PostListItem`) | AD-11 (hiển thị một thực thể) |
@@ -49,20 +49,20 @@ Dòng ghi **Đã chuyển** là lịch sử của epic nền: file cũ không c�
 | `components/theme-toggle.tsx` | **Đã xoá** (story 2.1): sáng/tối theo hệ điều hành, không có nút đổi tay (UX-DR2) | UX-DR2 |
 | `components/cms/bottom-nav.tsx` | **Đã xoá** (story 2.1): thay bằng `app/cms/_components/cms-shell.client.tsx` | AD-11, UX-DR38 |
 | `components/site/category-badge.tsx` | **Đã chuyển** (lượt gộp): `modules/posts/components/post-type-badge.tsx` (`PostTypeBadge postType=`, token `post-type-badge-*`) | AD-11, `[NO-20]` |
-| `components/cms/status-badge.tsx` | `modules/posts/components/post-status-badge.tsx` | AD-11 |
-| `components/cms/post-editor.tsx`, `new-post-form.tsx` | `modules/posts/components/post-form.client.tsx`, `new-post-form.client.tsx` | AD-11 (form của thực thể) |
-| `components/cms/fields.tsx` | `Field` → thay bằng shadcn `field` (`components/ui/`); `CategoryPicker` → `modules/posts/components/post-type-picker.client.tsx`; `ProductFields` → `modules/products/components/` | AD-11, AD-14 |
-| `components/cms/seo-score.tsx` | `modules/posts/components/seo-score.tsx` | AD-9 (ngoại lệ chấm SEO), AD-11 |
+| `components/cms/status-badge.tsx` | **Đã chuyển** (Epic 3): `modules/posts/components/post-status-badge.tsx` (`PostStatusBadge`, nhãn "Nháp"/"Đã xuất bản") | AD-11 |
+| `components/cms/post-editor.tsx`, `new-post-form.tsx` | **Đã chuyển** (Epic 3): `modules/posts/components/post-form.client.tsx` (+ `post-action-bar`, `post-seo-check`, `post-threads`, `post-body-editor` Tiptap), `new-post-form.client.tsx` (RHF + CmsForm) | AD-11 (form của thực thể) |
+| `components/cms/fields.tsx` | **Đã chuyển** (Epic 3, file đã xoá): `Field` → shadcn `field` (`components/ui/`); `CategoryPicker` → `modules/posts/components/post-type-picker.client.tsx` (`PostTypePicker`); `CategorySelect` → `modules/categories/components/category-select.tsx` | AD-11, AD-14 |
+| `components/cms/seo-score.tsx` | **Đã chuyển** (Epic 3): `modules/posts/components/seo-score.tsx` | AD-9 (ngoại lệ chấm SEO), AD-11 |
 | `app/styleguide/page.tsx` | **Đã chuyển** (epic nền): `app/cms/styleguide/page.tsx` (noindex, sau Basic Auth) | AD-17 bước 2 |
-| `app/cms/page.tsx`, `app/cms/layout.tsx` | giữ vị trí; `page.tsx` làm mỏng theo AD-12 | AD-12 |
+| `app/cms/page.tsx`, `app/cms/layout.tsx` | giữ vị trí; **Đã làm mỏng** (Epic 3): `page.tsx` chỉ `redirect("/cms/bai-viet")` (307) | AD-12 |
 | `components/ui/*` | giữ | AD-11 |
 
 Tên file chính xác trong `platform/` (file hay thư mục, ví dụ `platform/db.ts` hay `platform/db/`) theo cây Structural Seed; chỗ cây không ghi rõ thì theo cách epic nền đã dựng (`ls platform`).
 
-## Ngoại lệ đang hiệu lực
+## Ngoại lệ
 
-- **Story 2.3 — Kho Sản phẩm độc lập** (Vinh duyệt 2026-11-05; hết hiệu lực khi Epic 3 chuyển trình soạn bài). Sửa **tại chỗ, không chuyển**: `app/cms/actions.ts`, `app/cms/posts/[id]/page.tsx`, `lib/post-input.ts`, `lib/posts.ts`, `lib/ai.ts`, `components/cms/{post-editor,new-post-form,fields}.tsx`, `components/site/product-card.tsx`. Lý do: trình soạn bài cũ phải ngừng tạo/sửa/xoá Sản phẩm ngay khi có Kho, nhưng chuyển cả trình soạn bài là việc của Epic 3. `app/cms/styleguide/_components/styleguide-screen.tsx` (đã miễn ESLint) đổi một prop mẫu `price` → `priceText` theo `ProductCard`. Story sau chạm lại các file này thì chuyển theo bảng như thường.
-- **Lượt gộp 2.4–2.8** (2026-11-05): thêm `app/cms/new/page.tsx` vào ngoại lệ trên (chỉ sửa câu mô tả). Các file trong ngoại lệ chỉ đổi import khi `lib/categories.ts`, `lib/posts.ts`, `components/site/category-badge.tsx` chuyển (`lib/ai.ts`, `components/cms/{fields,new-post-form}.tsx`, `app/cms/actions.ts`); `app/cms/page.tsx` (giữ vị trí, chưa làm mỏng — vẫn import `@/platform/db`) đổi `CategoryBadge` → `PostTypeBadge`. `app/cms/actions.db.test.ts` (test của action cũ) nằm trong `LEGACY_APP_FILES`, chuyển cùng `app/cms/actions.ts`.
+- **Story 2.3 — Kho Sản phẩm độc lập** (Vinh duyệt 2026-11-05): **hết hiệu lực** ở lượt gộp Epic 3 (2026-11-05) — trình soạn bài đã chuyển hẳn sang `modules/posts/` + `app/cms/bai-viet/`; `components/cms/`, `lib/post-input.ts`, `app/cms/new/`, `app/cms/posts/` đã xoá.
+- **Còn lại tới Epic 4 (`platform/ai`):** `lib/ai.ts` và `app/cms/actions.ts` với đúng ba action AI `createPost` (AI viết hoặc bản trống, ghi qua `createPostDraft` của `modules/posts`), `runSeoCheck`, `runThreads`. `app/cms/actions.ts` là file duy nhất trong `LEGACY_APP_FILES` (vì import `@/lib/ai`); không thêm action mới vào đây. `app/cms/actions.db.test.ts` (test `createPost`) đi cùng file này nhưng không còn cần miễn luật.
 
 ## Bước 1: Xác định vị trí đích
 
