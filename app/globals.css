@@ -76,12 +76,10 @@
   --input: var(--outline-variant);
   --ring: var(--primary);
 
-  /* Alias tạm cho component cũ (category-badge, status-badge, product-card, seo-score):
-     trỏ tới token badge Loại bài; story chuyển các component đó đổi sang tên token và bỏ alias. */
+  /* Alias tạm cho component cũ còn lại (components/cms/status-badge, seo-score): trỏ tới token badge
+     Loại bài; story chuyển các component đó đổi sang tên token và bỏ alias. */
   --meo-vat: var(--on-secondary-container);
   --meo-vat-soft: var(--secondary-container);
-  --gom-link: var(--on-tertiary-fixed);
-  --gom-link-soft: var(--tertiary-fixed);
   --chart-3: var(--on-surface-variant);
 }
 
@@ -183,8 +181,6 @@
   /* Alias component cũ (xem `:root`). */
   --color-meo-vat: var(--meo-vat);
   --color-meo-vat-soft: var(--meo-vat-soft);
-  --color-gom-link: var(--gom-link);
-  --color-gom-link-soft: var(--gom-link-soft);
   --color-chart-3: var(--chart-3);
 
   /* Elevation: `shadow-level-0`, `shadow-level-1`, `shadow-sticky-top`, `shadow-sticky-bottom`. */

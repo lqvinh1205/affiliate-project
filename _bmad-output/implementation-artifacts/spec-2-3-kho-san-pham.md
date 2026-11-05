@@ -2,7 +2,7 @@
 title: 'Story 2.3: Kho Sản phẩm — danh sách, tạo và sửa'
 type: 'feature'
 created: '2026-11-05'
-status: 'in-review'
+status: 'done'
 review_loop_iteration: 0
 baseline_revision: '86862b7add21faa1c9dd07fd1036d42937dc0cb2'
 followup_review_recommended: false
@@ -119,3 +119,7 @@ deferred: []
 - `npm start` cổng trống: các dòng UI của Matrix; lưu một bài cũ rồi kiểm id Sản phẩm không đổi.
 </content>
 </invoke>
+
+## Auto Run Result
+
+Status: done. Các bản sửa sau review đã làm trong lượt gộp, xem `spec-2-4-2-8-luot-gop-epic-2.md`.

@@ -5,13 +5,19 @@ import { parseColorTokens } from "@/platform/design-tokens";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
-import { CategoryBadge } from "@/components/site/category-badge";
-import { PostCard } from "@/components/site/post-card";
-import { ProductCard } from "@/components/site/product-card";
-import { AffiliateDisclosure } from "@/components/site/affiliate-disclosure";
+import { PostCard } from "@/modules/posts/components/post-card";
+import { PostTypeBadge } from "@/modules/posts/components/post-type-badge";
+import { AffiliateDisclosure } from "@/modules/products/components/affiliate-disclosure";
+import { AffiliateLink } from "@/modules/products/components/affiliate-link";
+import { ProductCard } from "@/modules/products/components/product-card";
+import { ProductStatusBadge } from "@/modules/products/components/product-status-badge";
+import { ImageFallback } from "@/components/shared/image-fallback.client";
 import { SeoScore } from "@/components/cms/seo-score";
+import { Breadcrumb } from "@/app/(site)/_components/breadcrumb";
+import { Pagination } from "@/app/(site)/_components/pagination";
 import { ConfirmDialogDemo, FormDemo } from "@/app/cms/styleguide/_components/form-demo.client";
 import { ToastDemo } from "@/app/cms/styleguide/_components/toast-demo.client";
+import { UploadDemo } from "@/app/cms/styleguide/_components/upload-demo.client";
 
 // Màu đọc thẳng từ `app/globals.css` (một nguồn): hiện giá trị light và dark cạnh nhau
 // dù trình duyệt đang ở chế độ nào. Component bên dưới render theo chế độ hệ thống.
@@ -77,6 +83,15 @@ const ELEVATION = [
   ["Thanh dính trên · sticky-bar shadow-sticky-top", "sticky-bar shadow-sticky-top"],
   ["Thanh dính đáy · sticky-bar shadow-sticky-bottom", "sticky-bar shadow-sticky-bottom"],
 ] as const;
+
+const SAMPLE_PRODUCT = {
+  id: "p1",
+  name: "Đèn ngủ vintage để bàn ánh vàng ấm, nhiều mẫu",
+  image: null,
+  priceText: "~89.000đ",
+  priceUpdatedAt: new Date("2026-11-04T03:00:00Z"),
+  affiliateUrl: "https://shopee.vn",
+};
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
@@ -198,8 +213,10 @@ export function StyleguideScreen() {
           <ToastDemo />
         </div>
         <div className="flex flex-wrap items-center gap-space-sm">
-          <CategoryBadge category="MEO_VAT" />
-          <CategoryBadge category="GOM_LINK" />
+          <PostTypeBadge postType="MEO_VAT" />
+          <PostTypeBadge postType="GOM_LINK" />
+          <ProductStatusBadge hidden={false} />
+          <ProductStatusBadge hidden />
         </div>
         <Input placeholder="Dán link affiliate Shopee..." className="h-11 max-w-md" />
       </Section>
@@ -209,6 +226,10 @@ export function StyleguideScreen() {
         <ConfirmDialogDemo />
       </Section>
 
+      <Section title="UploadField (single, append)">
+        <UploadDemo />
+      </Section>
+
       <Section title="Thẻ bài viết">
         <div className="grid gap-x-space-lg gap-y-space-xl sm:grid-cols-2">
           <PostCard
@@ -216,7 +237,8 @@ export function StyleguideScreen() {
               slug: "meo-tay-vet-o-vang-noi-chien-khong-dau",
               title: "Mẹo tẩy vết ố vàng nồi chiên không dầu chỉ với baking soda",
               excerpt: "Hai nguyên liệu có sẵn trong bếp giúp nồi chiên sạch bong sau 15 phút.",
-              category: "MEO_VAT",
+              featuredImage: null,
+              postType: "MEO_VAT",
               readingMinutes: 4,
             }}
           />
@@ -225,7 +247,8 @@ export function StyleguideScreen() {
               slug: "tong-hop-do-decor-phong-ngu-han-quoc-gia-re",
               title: "Tổng hợp đồ decor phòng ngủ phong cách Hàn Quốc dưới 100k",
               excerpt: "Đèn ngủ vintage, thảm nỉ be và tranh canvas biến căn phòng thành góc chill.",
-              category: "GOM_LINK",
+              featuredImage: "https://down-vn.img.susercontent.com/file/anh-loi-de-thu-fallback",
+              postType: "GOM_LINK",
               readingMinutes: 6,
             }}
           />
@@ -239,14 +262,37 @@ export function StyleguideScreen() {
       </Section>
 
       <Section title="Sản phẩm và công bố affiliate">
-        <ProductCard
-          product={{
-            name: "Đèn ngủ vintage để bàn ánh vàng ấm, nhiều mẫu",
-            priceText: "~89.000đ",
-            affiliateUrl: "https://shopee.vn",
-          }}
-        />
+        <p className="text-body-sm text-on-surface-variant">
+          ProductCard *row* (bài viết) — cả thẻ là một AffiliateLink; ảnh lỗi tải dùng ImageFallback.
+        </p>
+        <div className="max-w-xl space-y-space-sm">
+          <ProductCard product={SAMPLE_PRODUCT} />
+          <ProductCard
+            product={{ ...SAMPLE_PRODUCT, id: "p2", name: "Thảm nỉ trải sàn màu be (không có giá, ảnh lỗi)", priceText: null, image: "https://down-vn.img.susercontent.com/file/anh-loi" }}
+          />
+        </div>
+        <p className="text-body-sm text-on-surface-variant">ProductCard *tile* (dải Trang chủ).</p>
+        <div className="flex gap-space-md overflow-x-auto">
+          <ProductCard variant="tile" product={SAMPLE_PRODUCT} />
+          <ProductCard variant="tile" product={{ ...SAMPLE_PRODUCT, id: "p3", image: null }} />
+        </div>
+        <p className="text-body-sm">
+          AffiliateLink chữ thường:{" "}
+          <AffiliateLink href="https://shopee.vn" className="text-primary underline">
+            Xem trên Shopee
+          </AffiliateLink>
+        </p>
         <AffiliateDisclosure />
+        <AffiliateDisclosure variant="text" />
+        <div className="relative size-20 overflow-hidden rounded-lg">
+          <ImageFallback src={null} alt="Ảnh không tải được" fill sizes="80px" />
+        </div>
+      </Section>
+
+      <Section title="Site · Breadcrumb, Pagination">
+        <Breadcrumb label="Nhà bếp" />
+        <Pagination base="/nha-bep" page={5} pages={10} />
+        <Pagination base="/nha-bep" page={1} pages={3} />
       </Section>
 
       <Section title="CMS · Điểm SEO">

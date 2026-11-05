@@ -13,6 +13,9 @@ model Product {
   rawText        String?       @db.Text
   rawReviews     String?       @db.Text
   rawImageUrls   String[]      @default([])
+  /// Ẩn khỏi website (FR-5): mọi query public lọc qua `visibleProductWhere` (modules/products/queries.ts).
+  /// Sản phẩm đang dùng chỉ ẩn, không xoá cứng (AD-15).
+  hidden         Boolean       @default(false)
   categoryId     String?
   category       Category?     @relation(fields: [categoryId], references: [id], onDelete: Restrict)
   postProducts   PostProduct[]

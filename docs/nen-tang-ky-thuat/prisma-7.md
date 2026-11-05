@@ -13,7 +13,7 @@
 - Chỉ chạy `prisma migrate dev` với Postgres cục bộ (docker, cổng 54329). Không bao giờ chạy `migrate dev`, `migrate reset`, `db push`, `db seed` vào database production (nơi chạy chưa chốt; `.env.example` đang giả định Supabase — spine Deferred) từ phiên agent. Production chỉ nhận `prisma migrate deploy`, do Vinh chạy.
 - Luôn tạo migration bằng `npx prisma migrate dev --create-only --name <verb_object>` rồi đọc SQL trước khi áp (spine AD-15). Trong môi trường không tương tác, thiếu `--name` sẽ ra migration không tên.
 - `npm run db:seed` **xoá toàn bộ** `Post` (và `PostProduct` theo cascade), rồi xoá Sản phẩm không còn bài nào dùng, trước khi tạo dữ liệu mẫu (`[NO-08]`).
-- Mọi truy vấn bài public đi qua `lib/posts.ts` (code cũ, đích `modules/posts/queries.ts`; có `"use cache"` + `cacheTag("posts")`). Ghi dữ liệu ảnh hưởng tới trang public thì gọi `updateTag(POSTS_TAG)` trong Server Action.
+- Mọi truy vấn bài public đi qua `modules/posts/queries.ts` có `"use cache"` + `cacheTag("posts")`). Ghi dữ liệu ảnh hưởng tới trang public thì gọi `updateTag(POSTS_TAG)` trong Server Action.
 - `Product` là bản ghi dùng chung, nối với `Post` qua bảng `PostProduct` (có `sortOrder`). Xoá `Post` xoá dòng `PostProduct` (`Cascade`), không xoá `Product` (`Restrict` phía `Product`) — xem [PR-10], [PR-30].
 
 ## Khái niệm cốt lõi
@@ -126,11 +126,11 @@ Theo `prisma/schema/*.prisma` và spine AD-15:
 - `createdAt @default(now())`, `updatedAt @updatedAt` (`posts.prisma:17-18`). `updatedAt` được dùng làm `key` remount editor (`app/cms/posts/[id]/page.tsx:25`) và `lastModified` sitemap (`app/sitemap.ts:17`).
 - Mỗi quan hệ ghi rõ `onDelete`: `Cascade` cho con thuộc hẳn cha (`PostProduct.post`), `Restrict` cho tham chiếu tới thực thể dùng chung, kể cả khi khoá ngoại tuỳ chọn (`PostProduct.product`; `Post.categoryId`, `Product.categoryId` nullable nhưng `Restrict` vì không xoá Danh mục còn dùng — FR-28), `SetNull` cho liên kết tuỳ chọn không trỏ tới thực thể dùng chung.
 - Bảng nối luôn là model tường minh (`PostProduct`, `posts.prisma:26-36`), không dùng many-to-many ngầm.
-- Mỗi khoá ngoại có `@@index` riêng (`Post @@index([categoryId])`, `posts.prisma:22`; `PostProduct @@index([productId])`, `:35`; `@@unique([postId, productId])` phủ `postId`). Index ghép phục vụ truy vấn public: `@@index([status, postType, publishedAt])` (`posts.prisma:21`) khớp `where { status, postType } orderBy publishedAt` trong `lib/posts.ts`.
+- Mỗi khoá ngoại có `@@index` riêng (`Post @@index([categoryId])`, `posts.prisma:22`; `PostProduct @@index([productId])`, `:35`; `@@unique([postId, productId])` phủ `postId`). Index ghép phục vụ truy vấn public: `@@index([status, postType, publishedAt])` (`posts.prisma:21`) khớp `where { status, postType } orderBy publishedAt` trong `modules/posts/queries.ts`.
 - Comment tiếng Việt ngắn để ghi ý nghĩa nghiệp vụ (`posts.prisma:5`, `:7`, `:8`, `:25`).
 - Enum Postgres native (`CREATE TYPE "Category" AS ENUM` ở migration init, đổi tên thành `"PostType"` ở `20261105081913_add_categories_and_post_products`). Giá trị enum viết HOA, không dấu.
 
-Giá trị enum `PostType` đang bị lặp ở ba nơi, phải sửa cùng lúc: `prisma/schema/posts.prisma:38-41`, `lib/categories.ts:1` (`CategoryKey` + nhãn/slug), `lib/post-input.ts:16,29` (`z.enum([...])`).
+Giá trị enum `PostType` đang bị lặp ở ba nơi, phải sửa cùng lúc: `prisma/schema/posts.prisma:38-41`, `modules/posts/constants.ts` (`POST_TYPES` — khoá lấy từ enum Prisma + nhãn/slug), `lib/post-input.ts:16,29` (`z.enum([...])`).
 
 ### [PR-08] Import kiểu, enum và `Prisma` namespace
 
@@ -144,19 +144,19 @@ import { PostType, type Post } from "@/generated/prisma/browser";
 - `Prisma` namespace (`generated/prisma/internal/prismaNamespace.ts`) chứa kiểu đầu vào của mọi model qua `export type * from '../models'` (`:22`): `Prisma.PostSelect`, `Prisma.PostInclude`, `Prisma.PostWhereInput`, `Prisma.PostCreateInput`, `Prisma.PostUncheckedCreateInput`, `Prisma.PostUpdateInput`, `Prisma.PostGetPayload<...>`, `Prisma.TransactionClient` (`:969`).
 - Lớp lỗi runtime cũng nằm trong `Prisma`: `Prisma.PrismaClientKnownRequestError` (`:32`), `PrismaClientValidationError` (`:44`)...
 - Không có `Prisma.validator` trong client đã sinh (đã grep `internal/prismaNamespace.ts`). Dùng `satisfies Prisma.PostSelect` thay thế — xem [PR-17].
-- Code hiện tại **không** import kiểu từ Prisma vào UI: `lib/categories.ts:1` tự khai báo `CategoryKey`, editor tự khai báo `Status` (`components/cms/post-editor.tsx:19`). Giữ nguyên khi sửa nhỏ; khi thêm code mới cần kiểu model, import từ `browser.ts` thay vì khai báo lại.
+- Code hiện tại **không** import kiểu từ Prisma vào UI: `modules/posts/constants.ts` dùng `PostType` của `@/generated/prisma/enums`, editor tự khai báo `Status` (`components/cms/post-editor.tsx:19`). Giữ nguyên khi sửa nhỏ; khi thêm code mới cần kiểu model, import từ `browser.ts` thay vì khai báo lại.
 
 ### [PR-09] Mẫu truy vấn đang dùng
 
 **`select` cho danh sách, `include` cho trang chi tiết.**
 
-- Thẻ bài (`lib/posts.ts:9-18`) dùng `cardSelect` `as const`: chỉ lấy trường cần hiển thị, kèm `postProducts: { select: { product: { select: { image: true } } }, orderBy: { sortOrder: "asc" }, take: 1 }` để lấy ảnh dự phòng. `content` được select chỉ để tính `readingMinutes` rồi bị bỏ trong `toCard` (`:31-38`) — không trả `content` ra ngoài thẻ.
-- Trang bài (`lib/posts.ts:88-91`) và editor CMS (`app/cms/posts/[id]/page.tsx:17-20`) dùng `include: { postProducts: { orderBy: { sortOrder: "asc" }, include: { product: true } } }` vì cần toàn bộ trường, rồi trải `postProducts` thành mảng Sản phẩm.
+- Thẻ bài (`modules/posts/queries.ts`) dùng `cardSelect` `as const`: chỉ lấy trường cần hiển thị, kèm `postProducts: { select: { product: { select: { image: true } } }, orderBy: { sortOrder: "asc" }, take: 1 }` để lấy ảnh dự phòng. `content` được select chỉ để tính `readingMinutes` rồi bị bỏ trong `toCard` (`:31-38`) — không trả `content` ra ngoài thẻ.
+- Trang bài (`modules/posts/queries.ts`) và editor CMS (`app/cms/posts/[id]/page.tsx:17-20`) dùng `include: { postProducts: { orderBy: { sortOrder: "asc" }, include: { product: true } } }` vì cần toàn bộ trường, rồi trải `postProducts` thành mảng Sản phẩm.
 - Danh sách CMS dùng `_count: { select: { postProducts: true } }` (`app/cms/page.tsx:26`) thay vì tải cả mảng.
 
-**Thứ tự.** Bài public luôn `orderBy: { publishedAt: "desc" }` (`lib/posts.ts:43`); CMS `updatedAt: "desc"` (`app/cms/page.tsx:25`); Sản phẩm trong bài luôn theo `PostProduct.sortOrder: "asc"`. `sortOrder` là chỉ số mảng lúc lưu (`app/cms/actions.ts:43-45`) — không tự đặt tay.
+**Thứ tự.** Bài public luôn `orderBy: { publishedAt: "desc" }` (`modules/posts/queries.ts`); CMS `updatedAt: "desc"` (`app/cms/page.tsx:25`); Sản phẩm trong bài luôn theo `PostProduct.sortOrder: "asc"`. `sortOrder` là chỉ số mảng lúc lưu (`app/cms/actions.ts:43-45`) — không tự đặt tay.
 
-**Lọc bài public.** Luôn trải `published` (`{ status: "PUBLISHED" }`, `lib/posts.ts:42`) vào `where`. Đọc một bài public dùng `findFirst({ where: { ...published, slug } })`, không `findUnique({ where: { slug } })`, vì phải lọc thêm `status`.
+**Lọc bài public.** Luôn trải `published` (`{ status: "PUBLISHED" }`, `modules/posts/queries.ts`) vào `where`. Đọc một bài public dùng `findFirst({ where: { ...published, slug } })`, không `findUnique({ where: { slug } })`, vì phải lọc thêm `status`.
 
 **Tìm-hoặc-báo.** Action dùng `findUnique` rồi ném `UserError("Không tìm thấy bài viết")` khi `null` (`app/cms/actions.ts:119-120`); page dùng `findUnique` + `notFound()` (`app/cms/posts/[id]/page.tsx:17-21`).
 
@@ -188,14 +188,14 @@ await db.$transaction(async (tx) => {
 - Trong callback chỉ dùng `tx`, không dùng `db` (lệnh qua `db` nằm ngoài transaction). Kiểu tham số là `Prisma.TransactionClient` (`app/cms/actions.ts:35`).
 - Không gọi AI hay việc chậm khác bên trong interactive transaction: nó giữ một kết nối và dễ vượt `timeout`. `createPost` gọi AI **trước** khi mở transaction (`app/cms/actions.ts:57`, `:87`) — giữ thứ tự đó.
 
-### [PR-12] Truy vấn có cache trong `lib/posts.ts` (code cũ, đích `modules/posts/queries.ts`)
+### [PR-12] Truy vấn có cache trong `modules/posts/queries.ts`
 
-Mỗi hàm đọc public (`getLatestPosts`, `getPostsByCategory`, `getRelatedPosts`, `getPostBySlug`, `getPublishedSlugs`) có `"use cache"`, `cacheLife("days")`, `cacheTag(POSTS_TAG)` (`lib/posts.ts:45-114`, `POSTS_TAG = "posts"` ở `:7`; code cũ, đích `modules/posts/queries.ts` + `modules/posts/tags.ts`).
+Mỗi hàm đọc public (`getLatestPosts`, `getPostsByType`, `getRelatedPosts`, `getPostBySlug`, `getPublishedSlugs`) có `"use cache"`, `cacheLife("days")`, `cacheTag(POSTS_TAG)` (`modules/posts/queries.ts`, `POSTS_TAG = "posts"` ở `:7`; code cũ, đích `modules/posts/queries.ts` + `modules/posts/tags.ts`).
 
 ```mermaid
 sequenceDiagram
     participant Page as Trang public
-    participant Fn as lib/posts.ts ("use cache")
+    participant Fn as modules/posts/queries.ts ("use cache")
     participant Cache as Cache Next.js
     participant DB as Postgres (db)
     participant Act as Server Action CMS
@@ -217,7 +217,7 @@ sequenceDiagram
 - Khoá cache gồm build ID và tham số hàm (`node_modules/next/dist/docs/01-app/03-api-reference/01-directives/use-cache.md:81-88`). Mỗi `slug`/`category`/`limit` khác nhau là một entry.
 - Giá trị trả về phải serialize được (Date được phép, class instance thì không — `use-cache.md:148-169`). Trả về object thuần từ Prisma là ổn; **không** trả `Prisma.Decimal` hay instance tự định nghĩa từ hàm cache.
 - Hồ sơ `days`: stale 5 phút, revalidate 1 ngày, expire 1 tuần (`cacheLife.md:145`). Không có `updateTag`, sửa trên DB có thể không hiện trên site tới 1 ngày.
-- Ghi từ CMS gọi `updateTag(POSTS_TAG)` (`app/cms/actions.ts:112,132,143`). `updateTag` chỉ gọi được trong Server Action (`updateTag.md`); ở Route Handler dùng `revalidateTag`. Comment ở `lib/posts.ts:6` nói `revalidateTag` nhưng code dùng `updateTag` — code là đúng (`[NO-16]`).
+- Ghi từ CMS gọi `updateTag(POSTS_TAG)` (`app/cms/actions.ts:112,132,143`). `updateTag` chỉ gọi được trong Server Action (`updateTag.md`); ở Route Handler dùng `revalidateTag`. Comment ở `modules/posts/queries.ts` nói `revalidateTag` nhưng code dùng `updateTag` — code là đúng (`[NO-16]`).
 - Truy vấn đọc `Product` (qua `postProducts`) hiện chỉ gắn tag `posts`. Theo spine AD-7, khi có module `products`, query trả hoặc lọc Sản phẩm phải gắn thêm tag của `products`.
 - `createPost` **không** gọi `updateTag` vì bài mới luôn là `DRAFT` (không xuất hiện ở truy vấn public).
 - Không gọi `headers()`/`cookies()` (kể cả `requireAdmin()`) trong hàm `"use cache"` — sẽ lỗi `next-request-in-use-cache` (`use-cache.md:241`).
@@ -281,7 +281,7 @@ Ví dụ minh hoạ: thêm `Product.hidden` (FR-5). Trường mới chỉ thêm 
 
 ### [PR-17] Kiểu cho `select` dùng lại
 
-`lib/posts.ts:20-29` (code cũ) hiện khai báo `CardRow` tay. Khi viết mới, suy kiểu từ Prisma để không lệch schema:
+`modules/posts/queries.ts` (code cũ) hiện khai báo `CardRow` tay. Khi viết mới, suy kiểu từ Prisma để không lệch schema:
 
 ```ts
 import type { Prisma } from "@/generated/prisma/client";
@@ -371,8 +371,8 @@ npm run db:seed                         # xoá và tạo lại dữ liệu mẫu
 
 ### [PR-27] Thêm giá trị enum mà quên chỗ lặp
 
-- Triệu chứng: Zod từ chối giá trị mới, hoặc `CATEGORIES[post.category]` trả `undefined` làm vỡ trang.
-- Nguyên nhân: `PostType` lặp ở schema, `lib/categories.ts`, `lib/post-input.ts` ([PR-07], `[NO-19]`).
+- Triệu chứng: Zod từ chối giá trị mới, hoặc `POST_TYPES[post.postType]` trả `undefined` làm vỡ trang.
+- Nguyên nhân: `PostType` lặp ở schema, `modules/posts/constants.ts`, `lib/post-input.ts` ([PR-07], `[NO-19]`).
 - Cách đúng: sửa cả ba trong cùng thay đổi; trong code mới dùng `z.enum(PostType)` với `PostType` import từ `@/generated/prisma/enums` (spine AD-5: `constants.ts` lấy giá trị enum từ Prisma) (Zod 4 nhận object enum, `node_modules/zod/v4/classic/schemas.d.ts:611`).
 
 ### [PR-28] Gọi việc chậm trong transaction
@@ -412,7 +412,7 @@ Nguồn: `_bmad-output/planning-artifacts/prds/prd-affiliate-project-2026-11-03/
 **Dự kiến:**
 
 - Giao diện CMS và route `[danh-muc]` cho Danh mục; đường dẫn Danh mục không trùng `RESERVED_ROOT_SLUGS` của spine AD-20 (`cms`, `api`, `bai-viet`, `bio`, `tim-kiem`, `meo-vat`, `gom-link`, `trang`, mọi thư mục gốc trong `app/(site)`) — kiểm bằng Zod; đổi đường dẫn lưu đường dẫn cũ (`CategorySlugRedirect`) để chuyển hướng vĩnh viễn (AD-20).
-- Code cũ còn gọi Loại bài là `category` (`[NO-20]`): route `app/(site)/[category]/page.tsx`, `lib/categories.ts` (nhãn, slug, mô tả), badge màu (giữ theo Loại bài), breadcrumb và JSON-LD (`app/(site)/bai-viet/[slug]/page.tsx`), `getRelatedPosts`.
+- Code cũ còn gọi Loại bài là `category` (`[NO-20]`): route `app/(site)/[danh-muc]/page.tsx` (Danh mục) và `app/(site)/{meo-vat,gom-link}/` (Loại bài), `modules/posts/constants.ts` (nhãn, slug, mô tả), badge màu (giữ theo Loại bài), breadcrumb và JSON-LD (`app/(site)/bai-viet/[slug]/page.tsx`), `getRelatedPosts`.
 - `/meo-vat`, `/gom-link` vẫn là trang theo Loại bài, thư mục route riêng (spine AD-7).
 - `categoryId` hiện nullable; đặt `NOT NULL` (nếu cần) là quyết định của story Danh mục, kèm backfill viết tay.
 
@@ -431,7 +431,7 @@ Nguồn: `_bmad-output/planning-artifacts/prds/prd-affiliate-project-2026-11-03/
 - [ ] Không có lệnh `migrate dev`/`reset`/`db push`/`db seed` nào chạy vào URL khác `localhost:54329`.
 - [ ] Trường mới: tuỳ chọn → `?` và lưu `null`; bắt buộc → có `@default` hoặc backfill.
 - [ ] Mỗi khoá ngoại có `@@index`; `onDelete` ghi rõ (`Cascade`/`Restrict`/`SetNull` theo [PR-07]) và khớp PRD; bảng nối là model tường minh.
-- [ ] Giá trị enum `PostType` mới đã cập nhật ở schema, `lib/categories.ts`, `lib/post-input.ts` (hoặc code mới suy từ enum Prisma).
+- [ ] Giá trị enum `PostType` mới đã cập nhật ở schema, `modules/posts/constants.ts`, `lib/post-input.ts` (hoặc code mới suy từ enum Prisma).
 - [ ] Danh sách dùng `select` tối thiểu; không trả `content` ra thẻ bài; dùng `_count` thay vì tải mảng để đếm.
 - [ ] Truy vấn public lọc `status: "PUBLISHED"` và nằm trong hàm `"use cache"` có `cacheTag` của mọi module có bảng nó đọc.
 - [ ] Mọi action ghi dữ liệu mà trang public đọc đều gọi `updateTag` với đúng tag.

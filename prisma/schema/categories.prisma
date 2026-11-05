@@ -1,12 +1,26 @@
 // Danh mục dùng chung cho Bài web và Sản phẩm; không xoá được khi còn tham chiếu (FR-28).
 model Category {
-  id          String    @id @default(uuid())
-  name        String    @db.VarChar(60) // CATEGORY_NAME_MAX (modules/categories/constants.ts)
-  slug        String    @unique @db.VarChar(80) // CATEGORY_SLUG_MAX
-  description String?   @db.VarChar(300) // CATEGORY_DESCRIPTION_MAX
-  sortOrder   Int       @default(0)
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  posts       Post[]
-  products    Product[]
+  id            String                 @id @default(uuid())
+  name          String                 @db.VarChar(60) // CATEGORY_NAME_MAX (modules/categories/constants.ts)
+  slug          String                 @unique @db.VarChar(80) // CATEGORY_SLUG_MAX
+  description   String?                @db.VarChar(300) // CATEGORY_DESCRIPTION_MAX
+  sortOrder     Int                    @default(0)
+  createdAt     DateTime               @default(now())
+  updatedAt     DateTime               @updatedAt
+  posts         Post[]
+  products      Product[]
+  slugRedirects CategorySlugRedirect[]
+}
+
+// Lịch sử đổi đường dẫn Danh mục (FR-28, spine AD-20): `/{oldSlug}` trả 308 sang đường dẫn hiện tại
+// của Danh mục. Ghi khi `saveCategoryRecord` đổi slug; slug đang dùng lại thì bản ghi trùng bị xoá.
+model CategorySlugRedirect {
+  id         String   @id @default(uuid())
+  oldSlug    String   @unique @db.VarChar(80) // CATEGORY_SLUG_MAX
+  categoryId String
+  /// Xoá Danh mục thì xoá lịch sử của nó: đường dẫn cũ trả 404 như đường dẫn hiện tại.
+  category   Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now())
+
+  @@index([categoryId])
 }

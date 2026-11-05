@@ -20,19 +20,14 @@ const AD9_TARGETS = ["posts", "products", "content-sets", "research"];
 // File cũ được miễn luật `app/**` (import `@/lib/*`, `@/components/site|cms/*`, `@/platform/db`).
 // Chuyển file nào sang cấu trúc mới thì bỏ nó khỏi danh sách (AD-17). Không dùng glob.
 const LEGACY_APP_FILES = [
-  // Chuyển ở story 2.1; còn import `@/components/site/{mobile-nav,nav-links}` chưa chuyển.
-  "app/(site)/_components/site-header.tsx",
-  "app/(site)/[category]/page.tsx",
-  "app/(site)/bai-viet/[slug]/page.tsx",
-  "app/(site)/layout.tsx",
-  "app/(site)/page.tsx",
   "app/cms/actions.ts",
+  // Test DB của action cũ trên (cần `@/platform/db`, `@/lib/post-input`); chuyển cùng `app/cms/actions.ts`.
+  "app/cms/actions.db.test.ts",
   "app/cms/new/page.tsx",
   "app/cms/page.tsx",
   "app/cms/posts/[id]/page.tsx",
-  // Mẫu component cũ (`@/components/site|cms/*`) cho styleguide; bỏ khi các component đó chuyển.
+  // Mẫu component cũ `@/components/cms/seo-score` cho styleguide; bỏ khi component đó chuyển.
   "app/cms/styleguide/_components/styleguide-screen.tsx",
-  "app/sitemap.ts",
 ];
 
 // Đường dẫn tường minh: thoát ký tự glob như `[`, `(` trong tên route.
@@ -113,7 +108,8 @@ const boundaryBlocks = [
   },
   {
     files: ["app/**/*.{ts,tsx}"],
-    ignores: LEGACY_APP_FILES.map(literalPath),
+    // Test DB của route (`*.db.test.ts`) dựng dữ liệu bằng `db`/`service`: luật riêng ở khối dưới.
+    ignores: [...LEGACY_APP_FILES.map(literalPath), "app/**/*.db.test.ts"],
     rules: {
       "no-restricted-imports": [
         "error",
@@ -127,6 +123,11 @@ const boundaryBlocks = [
         },
       ],
     },
+  },
+  {
+    files: ["app/**/*.db.test.ts"],
+    ignores: LEGACY_APP_FILES.map(literalPath),
+    rules: { "no-restricted-imports": ["error", { patterns: [NO_RELATIVE_UP, ...LEGACY_CODE] }] },
   },
   {
     files: ["**/*.{ts,tsx}"],

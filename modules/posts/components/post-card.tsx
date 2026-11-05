@@ -1,22 +1,18 @@
-import Image from "next/image";
 import Link from "next/link";
-import { CategoryBadge } from "./category-badge";
-import type { CategoryKey } from "@/lib/categories";
+import type { PostCardData } from "@/modules/posts/types";
+import { PostTypeBadge } from "@/modules/posts/components/post-type-badge";
+import { ImageFallback } from "@/components/shared/image-fallback.client";
 
-export type PostCardData = {
-  slug: string;
-  title: string;
-  excerpt?: string | null;
-  featuredImage?: string | null;
-  category: CategoryKey;
-  readingMinutes: number;
+type PostCardProps = {
+  post: Pick<PostCardData, "slug" | "title" | "excerpt" | "featuredImage" | "postType" | "readingMinutes">;
 };
 
-export function PostCard({ post }: { post: PostCardData }) {
+// PostCard *grid*: cả thẻ là một link tới bài. Không có ảnh thì dùng ảnh mặc định; ảnh lỗi → ImageFallback.
+export function PostCard({ post }: PostCardProps) {
   return (
     <Link href={`/bai-viet/${post.slug}`} className="group block">
       <div className="relative aspect-[4/3] overflow-hidden rounded-sm bg-muted">
-        <Image
+        <ImageFallback
           src={post.featuredImage || "/placeholder.svg"}
           alt={post.title}
           fill
@@ -26,38 +22,28 @@ export function PostCard({ post }: { post: PostCardData }) {
       </div>
       <div className="space-y-2 pt-4">
         <div className="flex items-center gap-2 text-xs text-muted-foreground">
-          <CategoryBadge category={post.category} />
+          <PostTypeBadge postType={post.postType} />
           <span aria-hidden>·</span>
           <span>{post.readingMinutes} phút đọc</span>
         </div>
         <h3 className="line-clamp-3 text-xl decoration-primary/40 decoration-2 underline-offset-4 group-hover:underline">
           {post.title}
         </h3>
-        {post.excerpt && (
-          <p className="line-clamp-2 text-[15px] text-muted-foreground">
-            {post.excerpt}
-          </p>
-        )}
+        {post.excerpt && <p className="line-clamp-2 text-[15px] text-muted-foreground">{post.excerpt}</p>}
       </div>
     </Link>
   );
 }
 
-// Dạng danh sách ngang: ảnh nhỏ bên trái, dùng cho cột/khối phụ.
-export function PostListItem({ post }: { post: PostCardData }) {
+// PostCard *row*: ảnh nhỏ bên trái, dùng cho cột/khối phụ.
+export function PostListItem({ post }: PostCardProps) {
   return (
     <Link href={`/bai-viet/${post.slug}`} className="group flex gap-4 py-4">
       <div className="relative aspect-square w-24 shrink-0 overflow-hidden rounded-sm bg-muted sm:w-28">
-        <Image
-          src={post.featuredImage || "/placeholder.svg"}
-          alt={post.title}
-          fill
-          sizes="112px"
-          className="object-cover"
-        />
+        <ImageFallback src={post.featuredImage || "/placeholder.svg"} alt={post.title} fill sizes="112px" className="object-cover" />
       </div>
       <div className="min-w-0 space-y-1.5">
-        <CategoryBadge category={post.category} />
+        <PostTypeBadge postType={post.postType} />
         <h3 className="line-clamp-3 text-base decoration-primary/40 decoration-2 underline-offset-4 group-hover:underline sm:text-lg">
           {post.title}
         </h3>

@@ -2,7 +2,9 @@
 
 import { updateTag } from "next/cache";
 import { analyzeSeo, generatePost, toThreads, type SeoReport } from "@/lib/ai";
-import { POSTS_TAG } from "@/lib/posts";
+import { Prisma } from "@/generated/prisma/client";
+import { CATEGORIES_TAG } from "@/modules/categories/tags";
+import { POSTS_TAG } from "@/modules/posts/tags";
 import { newPostSchema, postInputSchema, type NewPostInput, type PostInput } from "@/lib/post-input";
 import { run } from "@/platform/auth/run";
 import { db } from "@/platform/db";
@@ -11,6 +13,18 @@ import { sanitizePostHtml } from "@/platform/html/sanitize";
 import { SITE_URL } from "@/platform/site";
 import { slugify } from "@/platform/slug";
 import { firstError } from "@/platform/validation/errors";
+
+const CATEGORY_GONE = "Danh mục đã chọn không còn tồn tại. Tải lại trang rồi chọn lại.";
+
+// Ghi bài; Danh mục bị xoá giữa chừng (FK P2003) → UserError tiếng Việt.
+async function withCategoryCheck<T>(fn: () => Promise<T>) {
+  try {
+    return await fn();
+  } catch (e) {
+    if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2003") throw new UserError(CATEGORY_GONE);
+    throw e;
+  }
+}
 
 async function uniqueSlug(base: string, excludeId?: string) {
   const root = slugify(base) || "bai-viet";
@@ -25,7 +39,7 @@ export async function createPost(input: NewPostInput) {
   return run(async () => {
     const parsed = newPostSchema.safeParse(input);
     if (!parsed.success) throw new UserError(firstError(parsed.error));
-    const { category, topic, useAi } = parsed.data;
+    const { category, categoryId, topic, useAi } = parsed.data;
 
     let data;
     if (useAi) {
@@ -42,6 +56,7 @@ export async function createPost(input: NewPostInput) {
         excerpt: draft.excerpt.slice(0, 500),
         featuredImage: "",
         category,
+        categoryId: categoryId ?? "",
       });
       if (!checked.success) throw new UserError(`AI trả về bản nháp chưa hợp lệ: ${firstError(checked.error)}`);
       const { title, excerpt, seoTitle, seoDescription, tags, seoKeywords, content } = checked.data;
@@ -60,7 +75,10 @@ export async function createPost(input: NewPostInput) {
       data = { title, content: "", tags: [], seoKeywords: [], slug: await uniqueSlug(title) };
     }
 
-    const post = await db.post.create({ data: { ...data, postType: category }, select: { id: true } });
+    // Bài mới luôn là nháp: không có trên site, không cần updateTag.
+    const post = await withCategoryCheck(() =>
+      db.post.create({ data: { ...data, postType: category, categoryId }, select: { id: true } }),
+    );
     return { id: post.id };
   });
 }
@@ -73,12 +91,16 @@ export async function savePost(id: string, input: PostInput) {
     const uniq = await uniqueSlug(slug || rest.title, id);
 
     // Không chạm `PostProduct`/`Product`: Sản phẩm của bài giữ nguyên id, thứ tự, dữ liệu.
-    const post = await db.post.update({
-      where: { id },
-      data: { ...rest, postType: category, content: sanitizePostHtml(content), slug: uniq },
-      select: { slug: true },
-    });
+    const post = await withCategoryCheck(() =>
+      db.post.update({
+        where: { id },
+        data: { ...rest, postType: category, content: sanitizePostHtml(content), slug: uniq },
+        select: { slug: true },
+      }),
+    );
+    // Đổi Danh mục của bài làm đổi trang Danh mục, điều hướng (Danh mục có bài) — AD-7.
     updateTag(POSTS_TAG);
+    updateTag(CATEGORIES_TAG);
     return { slug: post.slug };
   });
 }
@@ -98,7 +120,9 @@ export async function setPostStatus(id: string, status: "DRAFT" | "PUBLISHED") {
         publishedAt: status === "PUBLISHED" ? (current.publishedAt ?? new Date()) : current.publishedAt,
       },
     });
+    // Xuất bản/gỡ làm Danh mục có hoặc hết bài đã xuất bản (điều hướng site).
     updateTag(POSTS_TAG);
+    updateTag(CATEGORIES_TAG);
     return {};
   });
 }
@@ -108,6 +132,7 @@ export async function deletePost(id: string) {
     // `PostProduct` của bài xoá theo cascade; Sản phẩm trong Kho giữ nguyên (FR-4).
     await db.post.delete({ where: { id } });
     updateTag(POSTS_TAG);
+    updateTag(CATEGORIES_TAG);
     return {};
   });
 }

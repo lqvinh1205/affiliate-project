@@ -1,8 +1,9 @@
 import "server-only";
+import type { z } from "zod";
+import { Prisma } from "@/generated/prisma/client";
 import { db } from "@/platform/db";
 import { UserError } from "@/platform/errors";
-import { Prisma } from "@/generated/prisma/client";
-import type { ProductInput } from "@/modules/products/schema";
+import type { ProductInput, setProductHiddenInputSchema } from "@/modules/products/schema";
 
 const NOT_FOUND = "Không tìm thấy Sản phẩm. Có thể đã bị xoá.";
 const CATEGORY_GONE = "Danh mục đã chọn không còn tồn tại. Tải lại trang rồi chọn lại.";
@@ -42,6 +43,23 @@ export async function saveProductRecord(data: ProductInput, tx?: Prisma.Transact
     });
   } catch (e) {
     if (prismaCode(e) === "P2003") throw new UserError(CATEGORY_GONE);
+    if (prismaCode(e) === "P2025") throw new UserError(NOT_FOUND);
+    throw e;
+  }
+}
+
+// Ẩn/hiện Sản phẩm; không xoá cứng (AD-15). Bài web đang dùng giữ `PostProduct`, website tự lọc.
+export async function setProductHiddenRecord(
+  data: z.infer<typeof setProductHiddenInputSchema>,
+  tx?: Prisma.TransactionClient,
+) {
+  try {
+    return await (tx ?? db).product.update({
+      where: { id: data.id },
+      data: { hidden: data.hidden },
+      select: { id: true, hidden: true },
+    });
+  } catch (e) {
     if (prismaCode(e) === "P2025") throw new UserError(NOT_FOUND);
     throw e;
   }

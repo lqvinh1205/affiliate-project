@@ -1,7 +1,8 @@
 import OpenAI from "openai";
 import { zodTextFormat } from "openai/helpers/zod";
 import { z } from "zod";
-import { CATEGORIES, type CategoryKey } from "@/lib/categories";
+import type { PostType } from "@/generated/prisma/enums";
+import { POST_TYPES } from "@/modules/posts/constants";
 import { UserError } from "@/platform/errors";
 
 let client: OpenAI | null = null;
@@ -57,7 +58,7 @@ Quy tắc bắt buộc:
 - "tags": 3–5 tag ngắn viết thường; "seoKeywords": 3–6 cụm từ khóa người Việt hay tìm.`;
 
 export async function generatePost(input: {
-  category: CategoryKey;
+  category: PostType;
   topic?: string | null;
   products?: ProductInput[];
 }): Promise<PostDraft> {
@@ -72,7 +73,7 @@ export async function generatePost(input: {
     postDraftSchema,
     "post_draft",
     WRITER_SYSTEM,
-    `Chuyên mục: ${CATEGORIES[input.category].label}. Hãy viết ${kind}.
+    `Chuyên mục: ${POST_TYPES[input.category].label}. Hãy viết ${kind}.
 ${input.topic ? `Chủ đề/ý tưởng: ${input.topic}\n` : ""}${products ? `Sản phẩm cần lồng ghép:\n${products}` : "Bài này chưa gắn sản phẩm: không nhắc tên sản phẩm cụ thể."}`,
   );
 }

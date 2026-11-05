@@ -5,7 +5,7 @@ import { UserError } from "@/platform/errors";
 import { PRODUCT_PAGE_SIZE } from "@/modules/products/constants";
 import { listProductsForCms } from "@/modules/products/cms-queries";
 import { productInputSchema, type ProductFormValues } from "@/modules/products/schema";
-import { saveProductRecord } from "@/modules/products/service";
+import { saveProductRecord, setProductHiddenRecord } from "@/modules/products/service";
 
 const base: ProductFormValues = {
   name: "Nồi chiên",
@@ -92,6 +92,20 @@ describe("saveProductRecord", () => {
   });
 });
 
+describe("setProductHiddenRecord", () => {
+  it("ẩn rồi hiện lại, không xoá Sản phẩm", async () => {
+    const { id } = await save({});
+    await setProductHiddenRecord({ id, hidden: true });
+    expect(await row(id)).toMatchObject({ hidden: true });
+    await setProductHiddenRecord({ id, hidden: false });
+    expect(await row(id)).toMatchObject({ hidden: false });
+  });
+
+  it("Sản phẩm không tồn tại báo UserError", async () => {
+    await expect(setProductHiddenRecord({ id: "khong-co", hidden: true })).rejects.toBeInstanceOf(UserError);
+  });
+});
+
 describe("listProductsForCms", () => {
   async function seed(names: string[]) {
     // createdAt tăng dần theo thứ tự mảng → phần tử cuối là mới nhất.
@@ -121,6 +135,17 @@ describe("listProductsForCms", () => {
 
   it("lọc không ra thì trả rỗng", async () => {
     await seed(["Chảo"]);
-    expect(await listProductsForCms({ q: "nồi", page: 1 })).toEqual({ items: [], total: 0 });
+    expect(await listProductsForCms({ q: "nồi", page: 1 })).toEqual({ items: [], total: 0, page: 1 });
+  });
+
+  it("trang vượt trang cuối thì kẹp về trang cuối", async () => {
+    await seed(Array.from({ length: PRODUCT_PAGE_SIZE + 1 }, (_, i) => `SP ${i}`));
+    const r = await listProductsForCms({ q: "", page: Number.MAX_SAFE_INTEGER });
+    expect(r.page).toBe(2);
+    expect(r.items.map((p) => p.name)).toEqual(["SP 0"]);
+  });
+
+  it("kho trống ở trang lớn trả trang 1 rỗng", async () => {
+    expect(await listProductsForCms({ q: "", page: 5 })).toEqual({ items: [], total: 0, page: 1 });
   });
 });

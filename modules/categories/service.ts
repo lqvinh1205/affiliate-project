@@ -22,12 +22,22 @@ function inTransaction<T>(tx: Prisma.TransactionClient | undefined, fn: (tx: Pri
   return tx ? fn(tx) : db.$transaction(fn);
 }
 
-// Tạo mới thì đứng cuối danh sách; sửa thì giữ thứ tự.
+// Tạo mới thì đứng cuối danh sách; sửa thì giữ thứ tự. Đổi đường dẫn thì ghi đường dẫn cũ vào
+// `CategorySlugRedirect` để `/<cũ>` trả 308 sang đường dẫn mới (AD-20). Đường dẫn vừa được dùng lại
+// thì bỏ bản ghi lịch sử trùng nó, để không có đường dẫn vừa là Danh mục vừa là chuyển hướng.
 export async function saveCategoryRecord(data: CategoryInput, tx?: Prisma.TransactionClient) {
   const { id, ...fields } = data;
   try {
     return await inTransaction(tx, async (c) => {
-      if (id) return c.category.update({ where: { id }, data: fields, select: { id: true, slug: true } });
+      await c.categorySlugRedirect.deleteMany({ where: { oldSlug: fields.slug } });
+      if (id) {
+        const current = await c.category.findUnique({ where: { id }, select: { slug: true } });
+        if (!current) throw new UserError(NOT_FOUND);
+        if (current.slug !== fields.slug) {
+          await c.categorySlugRedirect.create({ data: { oldSlug: current.slug, categoryId: id } });
+        }
+        return c.category.update({ where: { id }, data: fields, select: { id: true, slug: true } });
+      }
       const last = await c.category.aggregate({ _max: { sortOrder: true } });
       return c.category.create({
         data: { ...fields, sortOrder: (last._max.sortOrder ?? -1) + 1 },

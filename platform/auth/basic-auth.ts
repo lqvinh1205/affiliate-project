@@ -1,5 +1,9 @@
 import { createHash, timingSafeEqual } from "node:crypto";
 
+// Header `WWW-Authenticate` khi thiếu quyền: một realm cho `proxy.ts` và route upload (AD-24), để trình duyệt
+// dùng lại cùng thông tin đăng nhập.
+export const BASIC_AUTH_CHALLENGE = 'Basic realm="CMS", charset="UTF-8"';
+
 const digest = (s: string) => createHash("sha256").update(s).digest();
 
 // Kiểm tra header "Authorization: Basic ..." với ADMIN_USERNAME/ADMIN_PASSWORD.

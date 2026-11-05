@@ -6,13 +6,15 @@ import { useState, useTransition } from "react";
 import { Copy, ExternalLink, Gauge, Loader2, MessageSquareText, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { deletePost, runSeoCheck, runThreads, savePost, setPostStatus } from "@/app/cms/actions";
+import type { CategoryOption } from "@/modules/categories/types";
+import { ProductStatusBadge } from "@/modules/products/components/product-status-badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import type { SeoReport } from "@/lib/ai";
 import type { PostInput } from "@/lib/post-input";
-import { CategoryPicker, Field } from "./fields";
+import { CategoryPicker, CategorySelect, Field } from "./fields";
 import { SeoScore } from "./seo-score";
 import { StatusBadge } from "./status-badge";
 
@@ -26,18 +28,20 @@ function Counter({ value, max, min }: { value: string; max: number; min?: number
   return <span className={bad ? "text-destructive" : undefined}>{n}/{max}</span>;
 }
 
-type LinkedProduct = { id: string; name: string };
+type LinkedProduct = { id: string; name: string; hidden: boolean };
 
 export function PostEditor({
   id,
   initial,
   initialStatus,
   products,
+  categories,
 }: {
   id: string;
   initial: PostInput;
   initialStatus: Status;
   products: LinkedProduct[];
+  categories: CategoryOption[];
 }) {
   const router = useRouter();
   const [post, setPost] = useState(initial);
@@ -161,6 +165,9 @@ export function PostEditor({
           <Field label="Chuyên mục">
             <CategoryPicker value={post.category} onChange={(category) => set({ category })} />
           </Field>
+          <Field label="Danh mục" hint="bài hiện ở trang Danh mục khi đã xuất bản">
+            <CategorySelect value={post.categoryId} onChange={(categoryId) => set({ categoryId })} options={categories} />
+          </Field>
           <Field label="Đường dẫn (slug)" hint="để trống = tạo từ tiêu đề">
             <Input value={post.slug} onChange={(e) => set({ slug: e.target.value })} className="h-10 bg-background font-mono text-sm" />
           </Field>
@@ -230,7 +237,10 @@ export function PostEditor({
             <ul className="divide-y rounded-md border bg-background">
               {products.map((p) => (
                 <li key={p.id} className="flex items-center justify-between gap-3 px-3 py-2">
-                  <span className="min-w-0 truncate text-sm font-medium">{p.name}</span>
+                  <span className="flex min-w-0 items-center gap-2">
+                    <span className="min-w-0 truncate text-sm font-medium">{p.name}</span>
+                    <ProductStatusBadge hidden={p.hidden} />
+                  </span>
                   <Link
                     href={`/cms/san-pham/${p.id}`}
                     className="inline-flex min-h-11 shrink-0 items-center text-sm text-primary hover:underline"

@@ -1,9 +1,10 @@
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
 import { db } from "@/platform/db";
-import { resetTestDb } from "@/vitest.db.helpers";
+import { cacheTagsOf, resetTestDb } from "@/vitest.db.helpers";
 import { UserError } from "@/platform/errors";
 import { categoryInputSchema } from "@/modules/categories/schema";
 import { deleteCategoryRecord, moveCategoryRecord, saveCategoryRecord } from "@/modules/categories/service";
+import { getCategorySlugRedirect, getPublicCategory } from "@/modules/categories/queries";
 
 async function create(name: string, slug = "") {
   return saveCategoryRecord(categoryInputSchema.parse({ name, slug, description: "" }));
@@ -126,5 +127,60 @@ describe("moveCategoryRecord", () => {
 
   it("Danh mục không tồn tại báo UserError", async () => {
     await expect(moveCategoryRecord({ id: "khong-co", direction: "up" })).rejects.toBeInstanceOf(UserError);
+  });
+});
+
+describe("lịch sử đổi đường dẫn (CategorySlugRedirect)", () => {
+  async function rename(id: string, slug: string) {
+    return saveCategoryRecord(categoryInputSchema.parse({ id, name: "Bếp", slug, description: "" }));
+  }
+
+  it("đổi đường dẫn ghi đường dẫn cũ trỏ về Danh mục; đổi tiếp vẫn trỏ về đường dẫn mới nhất", async () => {
+    const c = await create("Nhà bếp");
+    await rename(c.id, "bep");
+    expect(await getCategorySlugRedirect("nha-bep")).toBe("bep");
+    await rename(c.id, "bep-xinh");
+    expect(await getCategorySlugRedirect("nha-bep")).toBe("bep-xinh");
+    expect(await getCategorySlugRedirect("bep")).toBe("bep-xinh");
+    expect(await getCategorySlugRedirect("khong-co")).toBeNull();
+  });
+
+  it("sửa mà giữ đường dẫn thì không ghi lịch sử", async () => {
+    const c = await create("Nhà bếp");
+    await saveCategoryRecord(categoryInputSchema.parse({ id: c.id, name: "Nhà bếp mới", slug: "nha-bep", description: "" }));
+    expect(await db.categorySlugRedirect.count()).toBe(0);
+  });
+
+  it("đổi về đường dẫn cũ hoặc Danh mục khác dùng lại đường dẫn cũ thì bỏ bản ghi trùng", async () => {
+    const c = await create("Nhà bếp");
+    await rename(c.id, "bep");
+    await rename(c.id, "nha-bep");
+    expect(await getCategorySlugRedirect("nha-bep")).toBeNull();
+    expect(await getCategorySlugRedirect("bep")).toBe("nha-bep");
+
+    await create("Bếp khác", "bep");
+    expect(await getCategorySlugRedirect("bep")).toBeNull();
+    expect(await getPublicCategory("bep")).toMatchObject({ name: "Bếp khác" });
+  });
+
+  it("đổi sang đường dẫn đang dùng báo UserError và không ghi lịch sử", async () => {
+    const c = await create("Nhà bếp");
+    await create("Bếp", "bep");
+    await expect(rename(c.id, "bep")).rejects.toThrow(new UserError("Đường dẫn đã được dùng"));
+    expect(await db.categorySlugRedirect.count()).toBe(0);
+  });
+
+  it("xoá Danh mục xoá lịch sử của nó", async () => {
+    const c = await create("Nhà bếp");
+    await rename(c.id, "bep");
+    await deleteCategoryRecord({ id: c.id });
+    expect(await getCategorySlugRedirect("nha-bep")).toBeNull();
+  });
+});
+
+describe("tag cache của query public Danh mục (AD-7)", () => {
+  it("getPublicCategory và getCategorySlugRedirect gắn `categories`", async () => {
+    expect(await cacheTagsOf(() => getPublicCategory("a"))).toEqual(["categories"]);
+    expect(await cacheTagsOf(() => getCategorySlugRedirect("a"))).toEqual(["categories"]);
   });
 });

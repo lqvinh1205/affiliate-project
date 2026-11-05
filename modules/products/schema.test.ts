@@ -94,6 +94,12 @@ describe("productInputSchema", () => {
     );
   });
 
+  it("số dòng báo lỗi tính cả dòng trống", () => {
+    expect(errorAt({ ...valid, rawImageUrls: `${IMG}\n\n\nhttps://evil.com/a.png` }, "rawImageUrls")).toMatch(
+      /^Dòng 4: Ảnh phải là link https/,
+    );
+  });
+
   it("quá nhiều ảnh thô bị từ chối", () => {
     const lines = Array.from({ length: PRODUCT_RAW_IMAGE_URLS_MAX + 1 }, () => IMG).join("\n");
     expect(errorAt({ ...valid, rawImageUrls: lines }, "rawImageUrls")).toBe(`Tối đa ${PRODUCT_RAW_IMAGE_URLS_MAX} ảnh`);

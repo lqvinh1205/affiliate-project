@@ -195,10 +195,14 @@ async function main() {
     categoryIds.set(c.slug, row.id);
   }
 
-  // Xoá bài (PostProduct theo cascade) rồi Sản phẩm mẫu không còn bài nào dùng; Sản phẩm khác trong Kho giữ nguyên.
+  // Xoá bài (PostProduct theo cascade) rồi Sản phẩm mẫu không còn bài nào dùng. Sản phẩm mẫu nhận diện bằng
+  // Link affiliate placeholder (không theo tên): Sản phẩm Vinh tạo trùng tên vẫn giữ nguyên.
   await db.post.deleteMany();
   await db.product.deleteMany({
-    where: { name: { in: POSTS.flatMap((p) => p.products.map((x) => x.name)) }, postProducts: { none: {} } },
+    where: {
+      affiliateUrl: { in: POSTS.flatMap((p) => p.products.map((x) => placeholderLink(x.name))) },
+      postProducts: { none: {} },
+    },
   });
 
   const now = Date.now();

@@ -1,11 +1,11 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { isAuthorized } from "@/platform/auth/basic-auth";
+import { BASIC_AUTH_CHALLENGE, isAuthorized } from "@/platform/auth/basic-auth";
 
 export function proxy(request: NextRequest) {
   if (isAuthorized(request.headers.get("authorization"))) return NextResponse.next();
   return new NextResponse("Cần đăng nhập", {
     status: 401,
-    headers: { "WWW-Authenticate": 'Basic realm="CMS", charset="UTF-8"' },
+    headers: { "WWW-Authenticate": BASIC_AUTH_CHALLENGE },
   });
 }
 

@@ -21,9 +21,9 @@ Vị trí component mới theo spine AD-11: thực thể → `modules/<miền>/c
 
 Code cũ chờ chuyển (bảng ở `docs/cong-thuc/chuyen-code-cu.md`), không thêm file vào đây:
 
-- `components/site/` — component của site public, đa số là Server Component (`components/site/post-card.tsx`, `components/site/product-card.tsx`).
+- Component site public (Server Component mặc định) nằm ở `modules/<miền>/components/` (`modules/posts/components/post-card.tsx`, `modules/products/components/product-card.tsx`) và `app/(site)/_components/`; `components/site/` đã xoá (lượt gộp 2.4–2.8).
 - `components/cms/` — form và widget CMS, đa số `"use client"` (`components/cms/post-editor.tsx:1`, `components/cms/fields.tsx:1`).
-- `components/` gốc — `components/json-ld.tsx`.
+- `components/` gốc — `app/(site)/_components/json-ld.tsx`.
 - Component CMS cũ dùng component site cũ (`app/cms/page.tsx:5` dùng `CategoryBadge`).
 
 ### [QU-02] Route group và nơi đặt route
@@ -31,7 +31,7 @@ Code cũ chờ chuyển (bảng ở `docs/cong-thuc/chuyen-code-cu.md`), không 
 - Trang public đặt trong `app/(site)/` để nhận header/footer và `ensureStatic` (`app/(site)/layout.tsx:6-15`).
 - Trang quản trị đặt dưới `app/cms/` (không phải route group) để khớp `proxy.ts:14`.
 - Server Action đặt trong `actions.ts` có `"use server"` ở dòng 1: action mới ở `modules/<miền>/actions.ts` (spine AD-5, AD-6); action cũ ở `app/cms/actions.ts`, không thêm action mới vào đó. Không rải `"use server"` inline trong component.
-- Truy vấn dữ liệu có cache đặt trong `modules/<miền>/queries.ts` (code cũ: `lib/posts.ts`), không viết trong file `page.tsx` của site (`app/(site)/page.tsx:8`).
+- Truy vấn dữ liệu có cache đặt trong `modules/<miền>/queries.ts` , không viết trong file `page.tsx` của site (`app/(site)/page.tsx:8`).
 
 ### [QU-03] `platform/` mỗi file một trách nhiệm, không nghiệp vụ
 
@@ -41,13 +41,13 @@ Hạ tầng chung ở `platform/` theo cây Structural Seed của spine: mỗi f
 
 ### [QU-04] Slug URL tiếng Việt không dấu, gạch ngang
 
-Đường dẫn dùng tiếng Việt: `/bai-viet/[slug]` (`app/(site)/bai-viet/[slug]/page.tsx`), `/meo-vat`, `/gom-link` (`lib/categories.ts:9`, `:14`). Tạo slug bằng `slugify()` (`platform/slug.ts:2-11`), không viết regex riêng. Slug bài tạo qua `uniqueSlug()` (`app/cms/actions.ts:23-30`). Id neo mục lục fallback cũng tiếng Việt: `muc-1` (`platform/html/content.ts:15`).
+Đường dẫn dùng tiếng Việt: `/bai-viet/[slug]` (`app/(site)/bai-viet/[slug]/page.tsx`), `/meo-vat`, `/gom-link` (`modules/posts/constants.ts`, `:14`). Tạo slug bằng `slugify()` (`platform/slug.ts:2-11`), không viết regex riêng. Slug bài tạo qua `uniqueSlug()` (`app/cms/actions.ts:23-30`). Id neo mục lục fallback cũng tiếng Việt: `muc-1` (`platform/html/content.ts:15`).
 
 ### [QU-05] Tên file, export, hằng
 
-- File kebab-case: `components/site/category-badge.tsx`, `platform/auth/require-admin.ts`.
-- Component dùng named export PascalCase (`export function CategoryBadge`, `components/site/category-badge.tsx:10`); chỉ `page.tsx`/`layout.tsx`/`sitemap.ts`/`robots.ts` dùng `export default`.
-- Hằng cấu hình UPPER_SNAKE_CASE: `CATEGORIES`, `IMAGE_HOSTS`, `POSTS_TAG`, `SITE_NAME`, `NAV_LINKS`, `WRITER_SYSTEM` (`lib/ai.ts:47`).
+- File kebab-case: `modules/posts/components/post-type-badge.tsx`, `platform/auth/require-admin.ts`.
+- Component dùng named export PascalCase (`export function CategoryBadge`, `modules/posts/components/post-type-badge.tsx`); chỉ `page.tsx`/`layout.tsx`/`sitemap.ts`/`robots.ts` dùng `export default`.
+- Hằng cấu hình UPPER_SNAKE_CASE: `POST_TYPES`, `IMAGE_HOSTS`, `POSTS_TAG`, `SITE_NAME`, `PAGE_SIZE`, `WRITER_SYSTEM` (`lib/ai.ts:47`).
 - Key nghiệp vụ dạng enum Prisma UPPER_SNAKE: `MEO_VAT`, `GOM_LINK`, `DRAFT`, `PUBLISHED` (`prisma/schema/posts.prisma:38-46`).
 
 ## Import
@@ -56,9 +56,9 @@ Hạ tầng chung ở `platform/` theo cây Structural Seed của spine: mỗi f
 
 Import chéo thư mục bằng `@/` (`tsconfig.json:21-23`), ví dụ `app/cms/actions.ts:5-21`. Không import `../`: ESLint chặn trong `modules/**`, `platform/**`, `components/shared|ui/**` và `app/**` trừ file trong `LEGACY_APP_FILES`, để luật tầng kiểm được (`eslint.config.mjs:49`). `lib/**`, `components/site|cms/**`, `components/*.tsx` gốc không có luật ranh giới; "không file mới ở `lib/`" chỉ được giữ bằng review. Ngoại lệ đang có:
 
-- Import file cùng thư mục bằng `./`: `components/cms/post-editor.tsx:15-17`, `components/site/mobile-nav.tsx:8` (code cũ).
+- Import file cùng thư mục bằng `./`: `components/cms/post-editor.tsx:15-17`, `app/(site)/_components/category-sheet.client.tsx` (code cũ).
 - File chạy ngoài Next dùng đường dẫn tương đối: `next.config.ts:2`, `prisma/seed.ts:3`.
-- `components/ui/*` import `cn` thẳng từ package `cn` (`components/ui/button.tsx:3`); code tự viết import `cn` từ `@/components/ui/lib/utils` (`components/site/category-badge.tsx:1`) — `[NO-22]`.
+- `components/ui/*` import `cn` thẳng từ package `cn` (`components/ui/button.tsx:3`); code tự viết import `cn` từ `@/components/ui/lib/utils` (`modules/posts/components/post-type-badge.tsx`) — `[NO-22]`.
 
 ### [QU-07] Prisma import từ client sinh ra
 
@@ -68,11 +68,11 @@ Không import `@prisma/client`. Kiểu và client lấy từ `@/generated/prisma
 
 ### [QU-08] Object truy vấn Prisma khai báo `as const`
 
-Đối tượng `select`, `where`, `orderBy` dùng lại thì khai báo hằng `as const` để Prisma suy đúng kiểu kết quả: `cardSelect` (`lib/posts.ts:9-18`), `published`, `newestFirst` (`lib/posts.ts:42-43`). Mảng dữ liệu tĩnh cũng vậy (`app/cms/styleguide/page.tsx:27`).
+Đối tượng `select`, `where`, `orderBy` dùng lại thì khai báo hằng `as const` để Prisma suy đúng kiểu kết quả: `cardSelect` (`modules/posts/queries.ts`), `published`, `newestFirst` (`modules/posts/queries.ts`). Mảng dữ liệu tĩnh cũng vậy (`app/cms/styleguide/page.tsx:27`).
 
 ### [QU-09] Suy kiểu từ nguồn, không khai báo lại
 
-- Kiểu trả của hàm map: `export type PostCard = ReturnType<typeof toCard>` (`lib/posts.ts:40`).
+- Kiểu trả của hàm map: `export type PostCard = ReturnType<typeof toCard>` (`modules/posts/queries.ts`).
 - Kiểu output AI: `z.infer<typeof postDraftSchema>` (`lib/ai.ts:45`, `:107`).
 - Kiểu dữ liệu form: `z.input<typeof postInputSchema>` (`lib/post-input.ts:25-26`, `:34`) — dùng `z.input` vì state form giữ chuỗi `""` trước khi schema `transform` thành `null`.
 - Kiểu `PostType` từ Prisma khi cần ngoài app: `prisma/seed.ts:3`.
@@ -83,7 +83,7 @@ Action trả `Result<T>` = `({ ok: true } & T) | { ok: false; error: string }` (
 
 ### [QU-11] Props typed inline, dùng kiểu route toàn cục của Next 16
 
-- Props component khai báo inline trong tham số (`components/cms/seo-score.tsx:3`), tách `type XxxData` chỉ khi cần export (`components/site/post-card.tsx:6-13`).
+- Props component khai báo inline trong tham số (`components/cms/seo-score.tsx:3`), tách `type XxxData` chỉ khi cần export (`modules/posts/components/post-card.tsx`).
 - Page/layout dùng kiểu toàn cục `PageProps<"/route">` và `LayoutProps<"/route">`, `params` là Promise phải `await` (`app/(site)/[category]/page.tsx:11-12`, `app/layout.tsx:24`, `app/cms/posts/[id]/page.tsx:15-16`).
 
 ### [QU-12] Optional: DB là `null`, form là `""`
@@ -142,7 +142,7 @@ Mọi chữ hiển thị, `aria-label`, `toast`, `confirm`, metadata viết ti�
 
 - Không có Prettier (không có trong `package.json`, không có file cấu hình). Không chạy format toàn file; giữ style file đang sửa.
 - Lint: `npm run lint` → `eslint` với `eslint-config-next/core-web-vitals` + `eslint-config-next/typescript` và luật ranh giới module (`no-restricted-imports`, `import/no-cycle`) của `eslint.config.mjs` (spine AD-2, AD-17).
-- Style code tự viết: nháy kép, có dấu chấm phẩy, dấu phẩy cuối, thụt 2 dấu cách (`lib/posts.ts`). `components/ui/*` theo style shadcn, không chấm phẩy (`components/ui/button.tsx:1-3`) — giữ nguyên.
+- Style code tự viết: nháy kép, có dấu chấm phẩy, dấu phẩy cuối, thụt 2 dấu cách (`modules/posts/queries.ts`). `components/ui/*` theo style shadcn, không chấm phẩy (`components/ui/button.tsx:1-3`) — giữ nguyên.
 - Dòng dài được chấp nhận khi là className hoặc `select` một dòng (`app/cms/page.tsx:26`).
 
 ## Môi trường
@@ -169,39 +169,39 @@ Hiển thị ngày bằng `formatDate()` (`@/platform/format`, `platform/format.
 
 ### [QU-21] Thời gian đọc và mục lục qua `platform/html/content.ts`
 
-- Thời gian đọc: `readingMinutes(html)` (`@/platform/html/content`; 200 từ/phút, tối thiểu 1, `platform/html/content.ts:5-8`), tính sẵn trong `lib/posts.ts:36`, `:100`.
+- Thời gian đọc: `readingMinutes(html)` (`@/platform/html/content`; 200 từ/phút, tối thiểu 1, `platform/html/content.ts:5-8`), tính sẵn trong `modules/posts/queries.ts`, `:100`.
 - Mục lục: `withHeadingIds(html)` chỉ bắt `<h2>` **không thuộc tính**, nên phải gọi **sau** `sanitizePostHtml` (`@/platform/html/sanitize`) (`platform/html/content.ts:10`, `app/(site)/bai-viet/[slug]/page.tsx:47`).
 
 ### [QU-22] Ảnh dùng `next/image` + fallback placeholder
 
-`<Image fill sizes=... src={x || "/placeholder.svg"}>` trong khung `relative` có tỉ lệ (`components/site/post-card.tsx:18-25`, `components/site/product-card.tsx:16-23`). Ảnh hero thêm `priority` (`app/(site)/page.tsx:31`). Host ảnh ngoài phải nằm trong `IMAGE_HOSTS` ([KT-03]).
+`<Image fill sizes=... src={x || "/placeholder.svg"}>` trong khung `relative` có tỉ lệ (`modules/posts/components/post-card.tsx`, `modules/products/components/product-card.tsx`). Ảnh hero thêm `priority` (`app/(site)/page.tsx:31`). Host ảnh ngoài phải nằm trong `IMAGE_HOSTS` ([KT-03]).
 
 ### [QU-23] Màu theo Loại bài qua token Tailwind
 
-Màu Loại bài dùng token DESIGN.md: badge Mẹo vặt `bg-secondary-container text-on-secondary-container`, badge Gom link `bg-tertiary-fixed text-on-tertiary-fixed` (khai báo `app/globals.css`, `[GD-07]`), map bằng `Record<CategoryKey, string>` (`components/site/category-badge.tsx:4-7`). `meo-vat*`/`gom-link*` chỉ là alias cũ cho component chưa chuyển; không dùng mới. Ghép class bằng `cn()` (`components/cms/status-badge.tsx:6-9`). Không dùng mã màu cứng trong JSX (ngoại lệ: CSS nội tuyến của iframe xem trước, `components/cms/post-editor.tsx:176`).
+Màu Loại bài dùng token DESIGN.md: badge Mẹo vặt `bg-secondary-container text-on-secondary-container`, badge Gom link `bg-tertiary-fixed text-on-tertiary-fixed` (khai báo `app/globals.css`, `[GD-07]`), map bằng `Record<CategoryKey, string>` (`modules/posts/components/post-type-badge.tsx`). `meo-vat*`/`gom-link*` chỉ là alias cũ cho component chưa chuyển; không dùng mới. Ghép class bằng `cn()` (`components/cms/status-badge.tsx:6-9`). Không dùng mã màu cứng trong JSX (ngoại lệ: CSS nội tuyến của iframe xem trước, `components/cms/post-editor.tsx:176`).
 
 ### [QU-24] Component client tối thiểu
 
-`"use client"` chỉ đặt ở component cần state/hook (`components/cms/*` form, `components/site/mobile-nav.tsx:1`, `app/cms/_components/cms-shell.client.tsx:1`). Page luôn là Server Component, truyền dữ liệu qua props. Hook đọc dữ liệu runtime như `usePathname()` phải nằm trong `Suspense` vì `cacheComponents` (`WithPathname` trong `app/cms/_components/cms-shell.client.tsx`).
+`"use client"` chỉ đặt ở component cần state/hook (`components/cms/*` form, `app/(site)/_components/category-sheet.client.tsx`, `app/cms/_components/cms-shell.client.tsx:1`). Page luôn là Server Component, truyền dữ liệu qua props. Hook đọc dữ liệu runtime như `usePathname()` phải nằm trong `Suspense` vì `cacheComponents` (`WithPathname` trong `app/cms/_components/cms-shell.client.tsx`).
 
 ### [QU-25] Thứ tự Sản phẩm theo vị trí mảng
 
-`PostProduct.sortOrder` lấy từ chỉ số mảng khi ghi (`app/cms/actions.ts:43-45`) và mọi truy vấn Sản phẩm của bài `orderBy: { sortOrder: "asc" }` (`lib/posts.ts:17`, `:90`, `app/cms/posts/[id]/page.tsx:19`).
+`PostProduct.sortOrder` lấy từ chỉ số mảng khi ghi (`app/cms/actions.ts:43-45`) và mọi truy vấn Sản phẩm của bài `orderBy: { sortOrder: "asc" }` (`modules/posts/queries.ts`, `:90`, `app/cms/posts/[id]/page.tsx:19`).
 
 ## Tổ chức bên trong file và hàm
 
-> **Vinh duyệt 2026-11-05.** Rút từ code hiện có (`lib/posts.ts`, `app/cms/actions.ts`, `components/site/product-card.tsx`) và spine kiến trúc (AD-5, AD-8, Consistency Conventions). Vị trí file theo spine, không theo mục **Vị trí file** ở trên.
+> **Vinh duyệt 2026-11-05.** Rút từ code hiện có (`modules/posts/queries.ts`, `app/cms/actions.ts`, `modules/products/components/product-card.tsx`) và spine kiến trúc (AD-5, AD-8, Consistency Conventions). Vị trí file theo spine, không theo mục **Vị trí file** ở trên.
 
 ### [QU-26] Thứ tự trong một file
 
 1. Chỉ thị: `"use server"`, `"use client"` hoặc `import "server-only"` (AD-8).
 2. Import, mỗi nhóm một khối: thư viện ngoài → `@/platform/*` → `@/modules/*` → `@/components/*` → đường dẫn tương đối. `import type` viết inline trong cùng câu import (`app/cms/actions.ts:8-14`).
-3. Hằng và object Prisma `as const` dùng nội bộ (`lib/posts.ts:9-18`).
+3. Hằng và object Prisma `as const` dùng nội bộ (`modules/posts/queries.ts`).
 4. Kiểu xuất ra, suy từ nguồn ([QU-09]).
-5. Hàm phụ không export, khai báo trước chỗ dùng (`lib/posts.ts:31-38`).
+5. Hàm phụ không export, khai báo trước chỗ dùng (`modules/posts/queries.ts`).
 6. Hàm hoặc component export.
 
-File component: một component export chính mỗi file. Biến thể của cùng thực thể được ở chung file (`PostCard` + `PostListItem`, `components/site/post-card.tsx`).
+File component: một component export chính mỗi file. Biến thể của cùng thực thể được ở chung file (`PostCard` + `PostListItem`, `modules/posts/components/post-card.tsx`).
 
 ### [QU-27] Chữ ký hàm theo vai trò
 

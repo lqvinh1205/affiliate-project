@@ -95,6 +95,7 @@ npx tsc --noEmit && npm run lint
 - `docs/kiem-chung.md` §1 và dòng "Schema/migration" ở §3; `npm run build` khi chạm query public hoặc cache.
 - Có Vitest (sau epic nền): test `schema.ts` cho giới hạn mới; test tích hợp `service.ts` (AD-16).
 - Thay đổi "cần chuyển dữ liệu": chạy migration trên DB cục bộ **đang có dữ liệu seed** trước khi reset, kiểm dữ liệu sau chuyển như spec ghi.
+- **Migration thu hẹp cột** (giảm `@db.VarChar(n)`, đổi `String` → `VarChar(n)`, hạ độ dài): trước khi áp lên DB **có dữ liệu** (DB cục bộ có dữ liệu thật, và ghi vào hướng dẫn áp production cho Vinh), chạy cho **từng cột** bị thu hẹp `SELECT id, length("<cột>") FROM "<Bảng>" WHERE length("<cột>") > <n>;`. Có dòng → dừng, sửa dữ liệu (hoặc hỏi Vinh) rồi mới áp; Postgres sẽ từ chối `ALTER COLUMN TYPE` giữa chừng. Bước này áp cho mọi migration thu hẹp cột, xem `docs/kiem-chung.md` §3.
 
 ## Checklist
 
@@ -108,5 +109,6 @@ npx tsc --noEmit && npm run lint
 - [ ] Một migration cho story; không sửa migration đã áp (AD-15, `[PR-13]`).
 - [ ] Đã `npx prisma generate`; không sửa `generated/` ([QD-02], `[PR-21]`).
 - [ ] Chỉ chạy lệnh ghi vào `localhost:54329`; `migrate reset` + `db:seed` cục bộ chạy sạch ([QD-07]).
+- [ ] Migration thu hẹp cột: đã chạy `SELECT … WHERE length(col) > n` cho từng cột trước khi áp lên DB có dữ liệu (Bước 4).
 - [ ] Query đổi vẫn gắn đủ tag; ghi đổi vẫn `updateTag` đủ tag (AD-7).
 - [ ] Mọi mục trong **Checklist khi review** của `docs/quy-dinh.md`.

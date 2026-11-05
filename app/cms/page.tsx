@@ -4,7 +4,7 @@ import { connection } from "next/server";
 import { ChevronRight, Plus } from "lucide-react";
 import { db } from "@/platform/db";
 import { formatDate } from "@/platform/format";
-import { CategoryBadge } from "@/components/site/category-badge";
+import { PostTypeBadge } from "@/modules/posts/components/post-type-badge";
 import { StatusBadge } from "@/components/cms/status-badge";
 import { buttonVariants } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -50,7 +50,7 @@ async function PostList() {
             <div className="min-w-0 flex-1 space-y-1.5">
               <div className="flex items-center gap-2">
                 <StatusBadge status={p.status} />
-                <CategoryBadge category={p.postType} className="text-[11px]" />
+                <PostTypeBadge postType={p.postType} />
               </div>
               <p className="line-clamp-2 font-semibold leading-snug">{p.title}</p>
               <p className="text-xs text-muted-foreground">

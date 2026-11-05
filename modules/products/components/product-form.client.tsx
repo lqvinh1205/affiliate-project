@@ -1,18 +1,20 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { formatShortDate } from "@/platform/format";
+import type { CategoryOption } from "@/modules/categories/types";
 import { saveProduct } from "@/modules/products/actions";
 import { PRODUCT_NAME_MAX, PRODUCT_PRICE_TEXT_MAX } from "@/modules/products/constants";
 import { productInputSchema, type ProductFormValues } from "@/modules/products/schema";
 import { CmsForm } from "@/components/shared/cms-form.client";
+import { UploadField } from "@/components/shared/upload-field.client";
 import { Field, FieldDescription, FieldError, FieldLabel, FieldLegend, FieldSet } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 
-type CategoryOption = { id: string; name: string };
 
 // Native <select>: dễ dùng trên điện thoại; cùng kiểu viền/focus với Input, `data-slot="input"` để cao 44px trong CMS mobile.
 const SELECT_CLASS =
@@ -32,11 +34,15 @@ export function ProductForm({
 }) {
   const router = useRouter();
   const form = useForm({ resolver: zodResolver(productInputSchema), defaultValues });
+  // Số file đang tải lên: > 0 thì chặn Lưu (URL chưa có trong form).
+  const [uploading, setUploading] = useState(0);
+  const onUploadingChange = (active: boolean) => setUploading((n) => n + (active ? 1 : -1));
 
   return (
     <CmsForm
       form={form}
       action={saveProduct}
+      busyLabel={uploading > 0 ? "Đang tải ảnh…" : null}
       onSaved={(saved, values) => {
         if (!values.id) router.replace(`/cms/san-pham/${saved.id}`);
         else router.refresh();
@@ -50,7 +56,13 @@ export function ProductForm({
             <FieldLabel htmlFor="product-name">
               Tên ({field.value.length}/{PRODUCT_NAME_MAX})
             </FieldLabel>
-            <Input id="product-name" autoComplete="off" aria-invalid={fieldState.invalid} {...field} />
+            <Input
+              id="product-name"
+              autoComplete="off"
+              maxLength={PRODUCT_NAME_MAX}
+              aria-invalid={fieldState.invalid}
+              {...field}
+            />
             <FieldError errors={[fieldState.error]} />
           </Field>
         )}
@@ -110,19 +122,22 @@ export function ProductForm({
         render={({ field, fieldState }) => (
           <Field data-invalid={fieldState.invalid}>
             <FieldLabel htmlFor="product-image">Ảnh</FieldLabel>
-            <Input
+            <UploadField
               id="product-image"
-              type="url"
-              inputMode="url"
-              autoComplete="off"
-              autoCapitalize="none"
-              spellCheck={false}
+              value={field.value}
+              onChange={field.onChange}
+              onBlur={field.onBlur}
               placeholder="https://down-vn.img.susercontent.com/…"
-              aria-invalid={fieldState.invalid}
-              aria-describedby="product-image-hint"
-              {...field}
+              invalid={fieldState.invalid}
+              describedBy="product-image-hint"
+              onUploadingChange={onUploadingChange}
+              onError={(message) =>
+                message ? form.setError("image", { message }) : form.clearErrors("image")
+              }
             />
-            <FieldDescription id="product-image-hint">Dán link ảnh từ Shopee. Không bắt buộc.</FieldDescription>
+            <FieldDescription id="product-image-hint">
+              Chụp/chọn ảnh từ máy hoặc dán link ảnh Shopee. Không bắt buộc.
+            </FieldDescription>
             <FieldError errors={[fieldState.error]} />
           </Field>
         )}
@@ -192,7 +207,23 @@ export function ProductForm({
                 aria-describedby="product-raw-images-hint"
                 {...field}
               />
-              <FieldDescription id="product-raw-images-hint">Mỗi dòng một link ảnh.</FieldDescription>
+              <FieldDescription id="product-raw-images-hint">
+                Mỗi dòng một link ảnh. Ảnh tải lên được thêm thành một dòng mới.
+              </FieldDescription>
+              <UploadField
+                mode="append"
+                id="product-raw-images-upload"
+                invalid={fieldState.invalid}
+                onUploadingChange={onUploadingChange}
+                onUploaded={(url) => {
+                  // Đọc giá trị lúc tải xong: người dùng có thể đã sửa ô trong lúc chờ.
+                  const current = form.getValues("rawImageUrls");
+                  field.onChange(current.trim() ? `${current.trimEnd()}\n${url}` : url);
+                }}
+                onError={(message) =>
+                  message ? form.setError("rawImageUrls", { message }) : form.clearErrors("rawImageUrls")
+                }
+              />
               <FieldError errors={[fieldState.error]} />
             </Field>
           )}

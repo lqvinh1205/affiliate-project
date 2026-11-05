@@ -1,6 +1,6 @@
 // Đường dẫn gốc đã dành cho hệ thống (spine AD-20): slug Danh mục không được trùng, vì Danh mục
-// nằm ở `/[danh-muc]` cùng cấp các route này. Thêm thư mục tĩnh ở gốc `app/(site)` thì thêm vào đây
-// (test `platform/slug.test.ts` so danh sách với thư mục thật).
+// nằm ở `/[danh-muc]` cùng cấp các route này. Thêm thư mục tĩnh ở gốc `app/` hoặc `app/(site)` thì thêm
+// vào đây (test `platform/slug.test.ts` so danh sách với thư mục thật).
 export const RESERVED_ROOT_SLUGS: readonly string[] = [
   "cms",
   "api",
@@ -10,6 +10,7 @@ export const RESERVED_ROOT_SLUGS: readonly string[] = [
   "meo-vat",
   "gom-link",
   "trang",
+  "uploads",
 ];
 
 // "Mẹo vặt Đẹp" → "meo-vat-dep"

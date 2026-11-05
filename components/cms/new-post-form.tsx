@@ -7,12 +7,14 @@ import { toast } from "sonner";
 import { createPost } from "@/app/cms/actions";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import type { CategoryKey } from "@/lib/categories";
-import { CategoryPicker, Field } from "./fields";
+import type { PostType } from "@/generated/prisma/enums";
+import type { CategoryOption } from "@/modules/categories/types";
+import { CategoryPicker, CategorySelect, Field } from "./fields";
 
-export function NewPostForm() {
+export function NewPostForm({ categories }: { categories: CategoryOption[] }) {
   const router = useRouter();
-  const [category, setCategory] = useState<CategoryKey>("GOM_LINK");
+  const [category, setCategory] = useState<PostType>("GOM_LINK");
+  const [categoryId, setCategoryId] = useState("");
   const [topic, setTopic] = useState("");
   const [pending, startTransition] = useTransition();
   const [mode, setMode] = useState<"ai" | "blank">("ai");
@@ -20,7 +22,7 @@ export function NewPostForm() {
   const submit = (useAi: boolean) => {
     setMode(useAi ? "ai" : "blank");
     startTransition(async () => {
-      const res = await createPost({ category, topic, useAi });
+      const res = await createPost({ category, categoryId, topic, useAi });
       if (!res.ok) {
         toast.error(res.error);
         return;
@@ -34,6 +36,9 @@ export function NewPostForm() {
     <div className="space-y-6">
       <Field label="Chuyên mục">
         <CategoryPicker value={category} onChange={setCategory} />
+      </Field>
+      <Field label="Danh mục">
+        <CategorySelect value={categoryId} onChange={setCategoryId} options={categories} />
       </Field>
       <Field label="Chủ đề / ý tưởng" hint="bắt buộc khi AI viết">
         <Textarea

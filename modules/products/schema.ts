@@ -20,23 +20,24 @@ const categoryId = z
   .transform((s) => s || null);
 
 // URL ảnh thô: một dòng một URL, bỏ dòng trống; mỗi dòng phải qua cùng luật `imageUrl` (host trong platform/images.ts).
+// "Dòng N" đếm theo dòng người dùng thấy trong ô (kể cả dòng trống).
 const rawImageUrls = z.string().transform((s, ctx) => {
   const lines = s
     .split("\n")
-    .map((l) => l.trim())
-    .filter(Boolean);
+    .map((text, i) => ({ text: text.trim(), lineNo: i + 1 }))
+    .filter((l) => l.text);
   if (lines.length > PRODUCT_RAW_IMAGE_URLS_MAX) {
     ctx.addIssue({ code: "custom", message: `Tối đa ${PRODUCT_RAW_IMAGE_URLS_MAX} ảnh` });
     return z.NEVER;
   }
-  for (const [i, line] of lines.entries()) {
-    const r = imageUrl.safeParse(line);
+  for (const { text, lineNo } of lines) {
+    const r = imageUrl.safeParse(text);
     if (!r.success) {
-      ctx.addIssue({ code: "custom", message: `Dòng ${i + 1}: ${r.error.issues[0].message}` });
+      ctx.addIssue({ code: "custom", message: `Dòng ${lineNo}: ${r.error.issues[0].message}` });
       return z.NEVER;
     }
   }
-  return lines;
+  return lines.map((l) => l.text);
 });
 
 export const productInputSchema = z.object({
@@ -50,6 +51,9 @@ export const productInputSchema = z.object({
   rawReviews: limitedText(PRODUCT_RAW_TEXT_MAX),
   rawImageUrls,
 });
+
+// Ẩn/hiện một chạm (FR-5); "Hoàn tác" gọi lại với giá trị ngược.
+export const setProductHiddenInputSchema = z.object({ id: productId, hidden: z.boolean() });
 
 // Giá trị form (trường tuỳ chọn là "", URL ảnh thô là chuỗi nhiều dòng) và dữ liệu đã parse.
 export type ProductFormValues = z.input<typeof productInputSchema>;

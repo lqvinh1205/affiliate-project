@@ -19,6 +19,8 @@ describe("isAllowedImageUrl", () => {
     "https://abc.supabase.co/a.png",
     "javascript:alert(1)",
     "khong-phai-url",
+    "/uploads/a.jpg?v=1",
+    "/uploads/a.jpg#x",
   ])("từ chối ảnh %s", (url) => {
     expect(isAllowedImageUrl(url)).toBe(false);
   });

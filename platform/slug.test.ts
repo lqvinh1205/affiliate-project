@@ -24,12 +24,21 @@ describe("RESERVED_ROOT_SLUGS", () => {
     }
   });
 
-  it("chứa mọi thư mục tĩnh ở gốc app/(site)", () => {
-    const siteDir = fileURLToPath(new URL("../app/(site)", import.meta.url));
-    const staticDirs = readdirSync(siteDir, { withFileTypes: true })
+  // Thư mục route tĩnh ở gốc (bỏ `[động]`, `_riêng`, `(nhóm)`).
+  const staticDirs = (dir: string) =>
+    readdirSync(fileURLToPath(new URL(dir, import.meta.url)), { withFileTypes: true })
       .filter((d) => d.isDirectory() && !/^[[_(]/.test(d.name))
       .map((d) => d.name);
-    expect(staticDirs.length).toBeGreaterThan(0);
-    for (const dir of staticDirs) expect(RESERVED_ROOT_SLUGS).toContain(dir);
+
+  it("chứa mọi thư mục tĩnh ở gốc app/(site)", () => {
+    const dirs = staticDirs("../app/(site)");
+    expect(dirs).toEqual(expect.arrayContaining(["bai-viet", "meo-vat", "gom-link"]));
+    for (const dir of dirs) expect(RESERVED_ROOT_SLUGS).toContain(dir);
+  });
+
+  it("chứa mọi thư mục tĩnh ở gốc app/ (cms, uploads…)", () => {
+    const dirs = staticDirs("../app");
+    expect(dirs).toEqual(expect.arrayContaining(["cms", "uploads"]));
+    for (const dir of dirs) expect(RESERVED_ROOT_SLUGS).toContain(dir);
   });
 });

@@ -10,7 +10,7 @@ Liên quan: Next.js (`docs/nen-tang-ky-thuat/nextjs-16.md`: caching `[NX-01]`–
 
 ### [GD-01] Những điều PHẢI biết trước khi đụng vào giao diện
 
-- **shadcn ở đây dựng trên Base UI, không phải Radix.** Không dùng `asChild`; dùng prop `render` (`components/site/mobile-nav.tsx:15`). Không chép mẫu shadcn/Radix từ trí nhớ; xem `[GD-04]`.
+- **shadcn ở đây dựng trên Base UI, không phải Radix.** Không dùng `asChild`; dùng prop `render` (`app/(site)/_components/bottom-tab-bar.client.tsx`, `CategorySheet trigger`). Không chép mẫu shadcn/Radix từ trí nhớ; xem `[GD-04]`.
 - **Không có `tailwind.config.*`, không có `postcss.config.*`.** Mọi token, biến thể, plugin khai báo trong `app/globals.css`. Tailwind chạy qua loader `@tailwindcss/turbopack` trong `next.config.ts:11-18`. Xem `[GD-03]`.
 - **`cn` là package `cn`, không phải clsx + tailwind-merge.** `components/ui/lib/utils.ts:1` chỉ re-export `cn` từ `"cn"`; import bằng `@/components/ui/lib/utils`. Không cài `clsx`/`tailwind-merge`. Xem `[GD-05]`.
 - **Toàn bộ site public phải tĩnh hoàn toàn:** `app/(site)/layout.tsx:6` đặt `ensureStatic = "navigation"`. Trong `app/(site)/**` không đọc `cookies()`, `headers()`, `searchParams` phía server, không truy vấn DB ngoài hàm `"use cache"`. Dữ liệu theo từng người đọc (tim, đã xem…) chỉ tải trong Client Component. Xem `[GD-18]`, `[GD-24]`.
@@ -21,14 +21,14 @@ Liên quan: Next.js (`docs/nen-tang-ky-thuat/nextjs-16.md`: caching `[NX-01]`–
 - **Ảnh dùng `next/image`, host phải nằm trong `IMAGE_HOSTS`** (`platform/images.ts:2`). Không dùng prop `priority` (đã deprecated ở Next 16). Xem `[GD-13]`, `[GD-30]`.
 - **Token lấy từ `DESIGN.md`, khai báo một lần ở `app/globals.css`; sáng/tối theo `prefers-color-scheme`, không có nút đổi tay.** Không viết mã hex trong component. Xem `[GD-07]`, `[GD-09]`.
 - **`/cms/styleguide` là bản tham chiếu sống** của token và component (`app/cms/styleguide/_components/styleguide-screen.tsx`, sau Basic Auth). Thêm token/component dùng chung thì thêm mẫu vào đó. Xem `[GD-15]`.
-- **Component mới đặt theo spine AD-11** (`modules/<miền>/components/`, `components/ui|shared/`, `_components/`); `components/site/`, `components/cms/` là code cũ chờ chuyển, không thêm file vào đó. Xem `[GD-10]`.
+- **Component mới đặt theo spine AD-11** (`modules/<miền>/components/`, `components/ui|shared/`, `_components/`); `components/cms/` là code cũ chờ chuyển (`components/site/` đã xoá), không thêm file vào đó. Xem `[GD-10]`.
 
 ## Khái niệm cốt lõi
 
 ### [GD-02] Server Component, Client Component và ranh giới `"use client"`
 
 - Mọi file trong `app/` và `components/` mặc định là **Server Component**: chạy trên server, được prerender, không có state, không có event handler, không dùng hook trình duyệt.
-- `"use client"` ở dòng đầu file đánh dấu **ranh giới**: file đó và mọi thứ nó import trở thành code client. Ví dụ ranh giới hiện có: `app/cms/_components/cms-shell.client.tsx:1`, `components/site/mobile-nav.tsx:1`, `components/cms/*` (trừ `seo-score.tsx`, `status-badge.tsx`), `components/ui/{dialog,sheet,tabs,label,sonner}.tsx`.
+- `"use client"` ở dòng đầu file đánh dấu **ranh giới**: file đó và mọi thứ nó import trở thành code client. Ví dụ ranh giới hiện có: `app/cms/_components/cms-shell.client.tsx:1`, `app/(site)/_components/{bottom-tab-bar,category-sheet}.client.tsx`, `components/cms/*` (trừ `seo-score.tsx`, `status-badge.tsx`), `components/ui/{dialog,sheet,tabs,label,sonner}.tsx`.
 - Server Component được import và render Client Component; ngược lại thì không (Client Component chỉ nhận Server Component qua `children`/props JSX).
 - Props từ server sang client phải tuần tự hóa được (chuỗi, số, mảng, object thuần, `Date`, Promise, JSX). Không truyền hàm, trừ Server Action. Ví dụ: `PostEditor` nhận `initial` là object thuần (`app/cms/posts/[id]/page.tsx:24-46`).
 - Server Action (`"use server"`, `app/cms/actions.ts:1`) được import thẳng vào Client Component và gọi như hàm async (`components/cms/new-post-form.tsx:7,27`).
@@ -54,7 +54,7 @@ Liên quan: Next.js (`docs/nen-tang-ky-thuat/nextjs-16.md`: caching `[NX-01]`–
 
 | Việc | Radix (KHÔNG dùng ở đây) | Base UI (đang dùng) |
 |---|---|---|
-| Đổi phần tử được render | `asChild` + con duy nhất | `render={<Button ... />}` hoặc `render={(props, state) => <el {...props} />}` (`components/ui/dialog.tsx:65-71`, `components/site/mobile-nav.tsx:15`) |
+| Đổi phần tử được render | `asChild` + con duy nhất | `render={<Button ... />}` hoặc `render={(props, state) => <el {...props} />}` (`components/ui/dialog.tsx:65-71`) |
 | Overlay | `Dialog.Overlay` | `Dialog.Backdrop` (`components/ui/dialog.tsx:31`) |
 | Nội dung popup | `Dialog.Content` | `Dialog.Popup` (`components/ui/dialog.tsx:53`) |
 | Tab | `Tabs.Trigger` / `Tabs.Content` | `Tabs.Tab` / `Tabs.Panel` (`components/ui/tabs.tsx:57,73`); wrapper shadcn vẫn tên `TabsTrigger`/`TabsContent` |
@@ -72,7 +72,7 @@ Liên quan: Next.js (`docs/nen-tang-ky-thuat/nextjs-16.md`: caching `[NX-01]`–
 - Đã chạy thử: `cn("h-8 px-2","h-10")` → `"px-2 h-10"`; `cn("text-xs text-muted-foreground","text-meo-vat")` → `"text-xs text-meo-vat"` (token màu tùy biến được nhận là màu, không đè cỡ chữ).
 - File trong `components/ui/*` import `cn` từ `"cn"` (CLI sinh như vậy, kể cả component mới; đã kiểm bằng `npx shadcn add switch --view`). Code của dự án import từ `"@/components/ui/lib/utils"` (`app/cms/_components/cms-shell.client.tsx`). Hai đường cùng một hàm (`[NO-22]`).
 - `cva` định nghĩa biến thể: `buttonVariants` (`components/ui/button.tsx:5-40`) có `variant` (`default`, `outline`, `secondary`, `ghost`, `destructive`, `link`) và `size` (`default`=h-8, `xs`, `sm`, `lg`=h-9, `icon`=size-8, `icon-xs`, `icon-sm`, `icon-lg`=size-9). `badgeVariants` (`components/ui/badge.tsx:6-27`), `tabsListVariants` (`components/ui/tabs.tsx:25-38`).
-- Dùng `buttonVariants(...)` để tạo kiểu nút cho `<a>`/`<Link>` (`components/site/product-card.tsx:38`).
+- Dùng `buttonVariants(...)` để tạo kiểu nút cho `<a>`/`<Link>` (`app/cms/san-pham/_components/product-list-screen.tsx`).
 
 ## Dự án dùng như thế nào
 
@@ -108,7 +108,7 @@ Biến shadcn là alias tới token (UX-DR3), khai báo một lần trong `:root
 | `border`, `input` / `ring` | `outline-variant` / `primary` | viền, ô nhập, focus ring |
 | `destructive` | `error` | lỗi, xoá |
 
-Alias tạm cho component cũ (không sửa màu trong component cũ; story chuyển component đổi sang tên token rồi bỏ alias): `meo-vat` → `on-secondary-container`, `meo-vat-soft` → `secondary-container`, `gom-link` → `on-tertiary-fixed`, `gom-link-soft` → `tertiary-fixed` (`components/site/category-badge.tsx`, `components/cms/status-badge.tsx`, `components/site/product-card.tsx`), `chart-3` → `on-surface-variant` (`components/cms/seo-score.tsx`). `chart-1..5` khác và `sidebar-*` đã bỏ.
+Alias tạm cho component cũ (không sửa màu trong component cũ; story chuyển component đổi sang tên token rồi bỏ alias): `meo-vat` → `on-secondary-container`, `meo-vat-soft` → `secondary-container`, (`components/cms/status-badge.tsx`; `gom-link*` đã bỏ ở lượt gộp 2.4–2.8 khi badge và ProductCard chuyển sang tên token), `chart-3` → `on-surface-variant` (`components/cms/seo-score.tsx`). `chart-1..5` khác và `sidebar-*` đã bỏ.
 
 Khác:
 
@@ -152,27 +152,28 @@ Khác:
 - `components/ui/skeleton.tsx`: `Skeleton` (`animate-pulse bg-muted`).
 - `components/ui/sonner.tsx`: `Toaster` (client; icon lucide, màu token `toast`; đã bỏ `useTheme` của next-themes).
 
-`components/` gốc (code cũ chờ chuyển):
+Đã chuyển / dựng ở vị trí mới (lượt gộp Story 2.4–2.8 chuyển hết `components/site/` và `components/json-ld.tsx`):
 
-- `components/json-ld.tsx`: thẻ `<script type="application/ld+json">`, escape `<` (server).
-
-Đã chuyển sang vị trí mới:
-
-- `app/(site)/_components/site-header.tsx` (**chuyển một phần**): header sticky `h-16`, logo, nav desktop (`md:flex`), `MobileNav` (vẫn import `components/site/{mobile-nav,nav-links}` nên còn trong `LEGACY_APP_FILES`).
 - `app/cms/_components/cms-shell.client.tsx`: `CmsShell` (client) — khung CMS, xem `[GD-11]`.
+- `app/(site)/_components/site-header.tsx`: SiteHeader (server) — logo chữ + dòng phụ "Tạp chí tổ ấm nhỏ", nút tìm (`/tim-kiem`, 404 tới Epic 8); ≥ 1024px nav ngang Mẹo vặt, Gom link, `DESKTOP_NAV_CATEGORIES` Danh mục đầu, phần dư trong menu "Thêm" (`more-menu.client.tsx`: đóng khi đổi trang, Esc, chạm ngoài; bọc `<Suspense>` vì dùng `usePathname`), nút "Đồ hay" (`/bio`, 404 tới Epic 6).
+- `app/(site)/_components/bottom-tab-bar.client.tsx`: BottomTabBar (client, `< lg`) 5 tab Tạp chí / Mẹo vặt / Gom link / Danh mục / Đồ hay; `activeTab()` khớp đoạn đầu đường dẫn (kể cả `/trang/n`), `aria-current="page"`; ẩn trên `/bai-viet/*`. Dùng `usePathname` nên layout bọc `<Suspense>` với `BottomTabBarView active={null}` làm fallback (`use-pathname.md` › Cache Components).
+- `app/(site)/_components/category-sheet.client.tsx`: CategorySheet — `Sheet side="bottom"`, dòng cao `touch-target`, đóng bằng vuốt xuống (> 80px), Esc, chạm nền; base-ui bẫy và trả focus.
+- `app/(site)/_components/site-footer.tsx`: SiteFooter — giới thiệu, link Danh mục, Mẹo vặt/Gom link/Đồ hay, `AffiliateDisclosure variant="text"`, ©; mobile chừa đáy cho BottomTabBar.
+- `app/(site)/_components/site-nav.ts`: đích điều hướng cố định (`BIO_PATH`, `SEARCH_PATH`, `POST_TYPE_LINKS`, `DESKTOP_NAV_CATEGORIES`).
+- `app/(site)/_components/{breadcrumb,pagination,post-list-screen,post-list-skeleton}.tsx`, `pagination-items.ts` (+ test), `post-type-route.ts` + `post-type-screen.tsx`, `list-page-metadata.ts` (+ test), `home-screen.tsx`: trang Danh mục / Loại bài (Breadcrumb một cấp `aria-label="Vị trí trang"`, Pagination đầu/cuối/±1, EmptyState với `emptyTitle`: "Danh mục này chưa có bài nào" / "Chưa có bài Mẹo vặt nào").
+- `app/(site)/_components/section-heading.tsx`, `json-ld.tsx`: chuyển nguyên từ `components/site/`, `components/`.
+- `modules/posts/components/post-card.tsx`: `PostCard` (ảnh 4:3) và `PostListItem`; ảnh qua `ImageFallback`; props `Pick<PostCardData, …>`.
+- `modules/posts/components/post-type-badge.tsx`: `PostTypeBadge postType=` — token `post-type-badge-meo-vat|gom-link` (nền + chữ, `rounded`, `label-meta`, chữ hoa).
+- `modules/products/components/affiliate-link.tsx`: `AffiliateLink` — mọi link Shopee: `target="_blank"`, `rel="sponsored nofollow noopener"` đặt sau props (không ghi đè được).
+- `modules/products/components/product-card.tsx`: `ProductCard variant="row" | "tile"` — cả thẻ là một `AffiliateLink`; ảnh `alt=""` trong `ImageFallback`; dòng "Giá tham khảo ~89.000đ · cập nhật dd/mm/yyyy" (`formatShortDate`); "nút Shopee" chỉ là hình (token `affiliate-link-button`: `bg-primary-container`, `h-9`, `rounded-lg`, `text-label-sm`) + chữ ẩn ", mở Shopee trong tab mới".
+- `modules/products/components/affiliate-disclosure.tsx`: `AffiliateDisclosure variant="box" | "text"` — token `affiliate-disclosure` (`bg-surface-container-low`, icon tròn `primary-fixed`, `rounded-xl`, `body-sm`), câu công khai theo EXPERIENCE.md.
+- `modules/products/components/product-status-badge.tsx` (`hidden` → "Ẩn" trung tính / "Hiện"), `product-visibility-button.client.tsx` (Ẩn/Hiện lại một chạm, Toast "Hoàn tác", không ConfirmDialog).
+- `components/shared/image-fallback.client.tsx`: `ImageFallback` — `next/image` + khung `surface-container` với icon `image-off` khi lỗi tải hoặc không có `src` (dùng với `fill` trong khung tỉ lệ cố định).
+- `components/shared/upload-field.client.tsx` (mẫu ở styleguide): `UploadField` — huỷ XHR khi gỡ khỏi màn; `onUploadingChange` để form chặn Lưu ("Đang tải ảnh…", prop `busyLabel` của `CmsForm`); — `mode="single"` (ô dán URL + nút "Chụp hoặc chọn ảnh" + xem trước đúng tỉ lệ) hoặc `mode="append"` (chỉ nút, trả `onUploaded(url)`); XHR tới `/cms/upload` có thanh tiến trình và "Huỷ"; luật loại/dung lượng từ `platform/upload-rules.ts`; lỗi qua `onError` → `form.setError` tại trường.
 
-Vị trí component **mới** theo spine AD-11: hiển thị/form của một thực thể → `modules/<miền>/components/` (form client `<x>-form.client.tsx`); nền shadcn → `components/ui/`; dùng chung không nghiệp vụ → `components/shared/` (hook ở `components/shared/hooks/`); chỉ CMS → `app/cms/_components/`; chỉ site → `app/(site)/_components/`. Link tới Shopee qua `AffiliateLink` của `modules/products/components` (đích, chưa có). Không có component phù hợp → `[COMPONENT-UNKNOWN]` và hỏi.
+Vị trí component **mới** theo spine AD-11: hiển thị/form của một thực thể → `modules/<miền>/components/` (form client `<x>-form.client.tsx`); nền shadcn → `components/ui/`; dùng chung không nghiệp vụ → `components/shared/` (hook ở `components/shared/hooks/`); chỉ CMS → `app/cms/_components/`; chỉ site → `app/(site)/_components/`. Link tới Shopee qua `AffiliateLink` của `modules/products/components`. Không có component phù hợp → `[COMPONENT-UNKNOWN]` và hỏi.
 
-`components/site/` (**code cũ chờ chuyển**, vị trí đích ở `docs/cong-thuc/chuyen-code-cu.md`; site public, tất cả là Server Component trừ `mobile-nav`):
-
-- `components/site/mobile-nav.tsx`: menu Sheet bên phải cho mobile (client, `md:hidden`).
-- `components/site/nav-links.tsx`: mảng `NAV_LINKS` (Trang chủ + mỗi loại bài trong `CATEGORIES`).
-- `components/site/site-footer.tsx`: footer, mô tả, link điều hướng, câu công khai affiliate ngắn.
-- `components/site/post-card.tsx`: `PostCard` (ảnh 4:3 + tiêu đề) và `PostListItem` (ảnh vuông nhỏ bên trái); kiểu `PostCardData`.
-- `components/site/product-card.tsx`: `ProductCard`: ảnh, tên, giá, nút "Xem trên Shopee" (`rel="sponsored nofollow noopener"`, `target="_blank"`).
-- `components/site/category-badge.tsx`: nhãn loại bài kiểu tạp chí (chữ hoa nhỏ, không nền), màu theo `STYLES`.
-- `components/site/section-heading.tsx`: tiêu đề khối + link "Xem tất cả →".
-- `components/site/affiliate-disclosure.tsx`: Nhãn công khai affiliate đặt đầu thân bài khi bài có Sản phẩm.
+**Bẫy `cn` với token chữ:** `cn("text-label-meta", "text-primary")` trả `"text-primary"` — tailwind-merge coi cỡ chữ token và màu chữ cùng nhóm (`[NO-25]`). Ghép chuỗi thường khi một phần tử có cả `text-<token cỡ chữ>` và `text-<màu>`.
 
 `components/cms/` (**code cũ chờ chuyển**; CMS):
 
@@ -203,7 +204,7 @@ Site public (`app/(site)`):
 - Khung: `body` là `min-h-full flex flex-col` (`app/layout.tsx:27`), `main.flex-1` đẩy footer xuống đáy (`app/(site)/layout.tsx:12`).
 - Vùng nội dung: `mx-auto max-w-6xl px-4` (header, footer, trang chủ, trang loại bài, trang bài). Khối chữ hẹp hơn: `max-w-5xl` (đầu bài, ảnh lớn), `max-w-3xl` (h1), cột thân bài + mục lục `lg:grid-cols-[1fr_14rem]` (`app/(site)/bai-viet/[slug]/page.tsx:106`).
 - Lưới thẻ: `grid gap-x-6 gap-y-10 sm:grid-cols-2 lg:grid-cols-3` (`app/(site)/page.tsx:50`, `app/(site)/[category]/page.tsx:38`). Dải cuộn ngang trên mobile: `-mx-4 flex snap-x snap-mandatory overflow-x-auto px-4` (`app/(site)/page.tsx:60`).
-- Header sticky `z-40` (`app/(site)/_components/site-header.tsx`); nav desktop ẩn dưới `md`, menu Sheet hiện dưới `md`.
+- Header sticky `z-40` (`app/(site)/_components/site-header.tsx`); nav ngang hiện từ `lg`; dưới `lg` là BottomTabBar `fixed` đáy (`z-40`), footer chừa đáy tương ứng.
 - Khoảng dọc: `py-8 sm:py-12`, giữa các khối `space-y-16`.
 
 CMS (`app/cms`): khung là `CmsShell` (`app/cms/_components/cms-shell.client.tsx`, UX-DR38), `app/cms/layout.tsx` chỉ giữ metadata, `maxDuration` và bọc `<CmsShell>`.
@@ -229,8 +230,8 @@ CMS (`app/cms`): khung là `CmsShell` (`app/cms/_components/cms-shell.client.tsx
 
 ### [GD-13] Ảnh với `next/image`
 
-- Ảnh trong khung tỉ lệ: cha `relative aspect-[4/3] overflow-hidden rounded-sm bg-muted`, ảnh `fill` + `sizes` + `object-cover` (`components/site/post-card.tsx:18-25`). `bg-muted` làm nền chờ.
-- Luôn có `sizes` đúng bố cục: lưới 3 cột `"(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"`; thumbnail cố định `"112px"` (`components/site/product-card.tsx:21`).
+- Ảnh trong khung tỉ lệ: cha `relative aspect-[4/3] overflow-hidden rounded-sm bg-muted`, ảnh `fill` + `sizes` + `object-cover` (`modules/posts/components/post-card.tsx`). `bg-muted` làm nền chờ.
+- Luôn có `sizes` đúng bố cục: lưới 3 cột `"(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"`; thumbnail cố định `"112px"` (`modules/products/components/product-card.tsx`: `"80px"`).
 - `alt` = tên Sản phẩm hoặc tiêu đề bài (tiếng Việt). Ảnh trang trí thuần thì `alt=""`.
 - Ảnh thiếu thì dùng `"/placeholder.svg"` (`public/placeholder.svg`); Next tự `unoptimized` khi `src` kết thúc bằng `.svg` (`node_modules/next/dist/docs/01-app/03-api-reference/02-components/image.md:940`).
 - Ảnh LCP (hero trang chủ, ảnh đầu Bài web) hiện dùng `priority` (`app/(site)/page.tsx:31`, `app/(site)/bai-viet/[slug]/page.tsx:100`). Prop này deprecated từ Next 16 (`image.md:292-294`); code mới dùng `preload` cho đúng một ảnh LCP, hoặc `fetchPriority="high"`/`loading="eager"`.
@@ -241,13 +242,13 @@ CMS (`app/cms`): khung là `CmsShell` (`app/cms/_components/cms-shell.client.tsx
 Ngôn ngữ và thuật ngữ:
 
 - Mọi chuỗi người dùng thấy hoặc nghe (nhãn, placeholder, toast, `aria-label`, `sr-only`, `title`, thông báo lỗi) viết tiếng Việt có dấu, giọng thân thiện ngắn gọn ("Đã lưu", "Xóa sản phẩm", "Mở menu").
-- Dùng thuật ngữ PRD §3 cho đối tượng nghiệp vụ: Sản phẩm, Bài web, Loại bài, Danh mục, Gợi ý AI, Lượt tim, Banner, Nhãn công khai affiliate. Lưu ý lệch hiện tại: `CATEGORIES` (`lib/categories.ts:3-17`, `MEO_VAT`/`GOM_LINK`) chính là **Loại bài** theo PRD, nhưng UI đang ghi "Chuyên mục" (`components/cms/new-post-form.tsx:39`, `components/site/mobile-nav.tsx:20`). **Danh mục** theo PRD (nhóm chủ đề do Vinh tạo) đã có bảng (model `Category`, `prisma/schema/categories.prisma`) nhưng chưa có giao diện. Màn mới không gọi Loại bài là "Danh mục".
+- Dùng thuật ngữ PRD §3 cho đối tượng nghiệp vụ: Sản phẩm, Bài web, Loại bài, Danh mục, Gợi ý AI, Lượt tim, Banner, Nhãn công khai affiliate. Lưu ý lệch còn lại: `POST_TYPES` (`modules/posts/constants.ts`, `MEO_VAT`/`GOM_LINK`) là **Loại bài** theo PRD, nhưng trình soạn bài cũ còn ghi "Chuyên mục" (`components/cms/new-post-form.tsx`) — `[NO-20]`. **Danh mục** theo PRD là model `Category` (CMS `/cms/danh-muc`, site `/[danh-muc]`). Màn mới không gọi Loại bài là "Danh mục".
 - Số tiền, ngày dùng định dạng vi-VN (`formatDate`, giá hiển thị nguyên chuỗi người nhập, ví dụ "89.000₫").
 
 Truy cập (a11y):
 
-- Nút chỉ có icon phải có `aria-label` tiếng Việt (`app/cms/_components/cms-shell.client.tsx` nút "Mở menu", `components/cms/fields.tsx:76`); icon trang trí cạnh chữ thêm `aria-hidden` (`components/site/product-card.tsx:41`).
-- Ký tự trang trí (`·`, `/`) bọc `aria-hidden` (`components/site/post-card.tsx:30`). Điều hướng phụ có `aria-label` ("Breadcrumb", "Mục lục", `app/(site)/bai-viet/[slug]/page.tsx:82,138`).
+- Nút chỉ có icon phải có `aria-label` tiếng Việt (`app/cms/_components/cms-shell.client.tsx` nút "Mở menu", `components/cms/fields.tsx:76`); icon trang trí cạnh chữ thêm `aria-hidden` (`modules/products/components/product-card.tsx`).
+- Ký tự trang trí (`·`, `/`) bọc `aria-hidden` (`modules/posts/components/post-card.tsx`). Điều hướng phụ có `aria-label` ("Breadcrumb", "Mục lục", `app/(site)/bai-viet/[slug]/page.tsx:82,138`).
 - Mỗi trang đúng một `h1`; thẻ/khối con dùng `h2`/`h3` theo thứ tự.
 - Nút bấm là `<button type="button">` hoặc `Button`; điều hướng là `<Link>`/`<a>`. Không gắn `onClick` lên `div`.
 - Focus: dùng sẵn `focus-visible:ring-*` của component shadcn; outline mặc định đã là `outline-ring/50` (`app/globals.css:134`). Không xóa `outline` mà không thay bằng ring.
@@ -263,12 +264,12 @@ Vùng chạm và mobile-first:
 
 Chuyển động:
 
-- Mọi chuyển động trang trí thêm biến thể giảm chuyển động: `motion-reduce:transform-none` cho hiệu ứng phóng ảnh (`components/site/post-card.tsx:24`); `scroll-behavior` tắt khi `prefers-reduced-motion` (`app/globals.css:147-151`).
+- Mọi chuyển động trang trí thêm biến thể giảm chuyển động: `motion-reduce:transform-none` cho hiệu ứng phóng ảnh (`modules/posts/components/post-card.tsx`); `scroll-behavior` tắt khi `prefers-reduced-motion` (`app/globals.css:147-151`).
 - Spinner `animate-spin` chỉ hiện trong lúc chờ, đi kèm chữ mô tả.
 
 ### [GD-15] `/cms/styleguide`: tham chiếu sống
 
-- `app/cms/styleguide/page.tsx` chỉ có metadata + `StyleguideScreen` (AD-12); nội dung ở `app/cms/styleguide/_components/styleguide-screen.tsx` (UX-DR82), hiển thị: mọi token màu với giá trị sáng và tối cạnh nhau (đọc thẳng `app/globals.css` qua `parseColorTokens` của `platform/design-tokens.ts` lúc build, không khai báo màu lần hai) và bảng alias shadcn; 12 kiểu chữ; bo góc; spacing; elevation; component hiện có (Button các biến thể, Toast qua `ToastDemo`, CategoryBadge, Input, PostCard + Skeleton, ProductCard + AffiliateDisclosure, SeoScore). Component render theo chế độ của hệ điều hành.
+- `app/cms/styleguide/page.tsx` chỉ có metadata + `StyleguideScreen` (AD-12); nội dung ở `app/cms/styleguide/_components/styleguide-screen.tsx` (UX-DR82), hiển thị: mọi token màu với giá trị sáng và tối cạnh nhau (đọc thẳng `app/globals.css` qua `parseColorTokens` của `platform/design-tokens.ts` lúc build, không khai báo màu lần hai) và bảng alias shadcn; 12 kiểu chữ; bo góc; spacing; elevation; component hiện có (Button các biến thể, Toast qua `ToastDemo`, PostTypeBadge, ProductStatusBadge, Input, PostCard + Skeleton, ProductCard *row*/*tile* + AffiliateLink + AffiliateDisclosure `box`/`text` + ImageFallback, Breadcrumb + Pagination, SeoScore). Component render theo chế độ của hệ điều hành.
 - Trang nằm dưới `app/cms/` nên sau Basic Auth của `proxy.ts`, nhận `CmsShell`, không chịu `ensureStatic`; `robots: { index: false }`; có trong menu CmsShell.
 - Các mảng mẫu (`TYPE_SCALE`, `ROUNDED`, `SPACING`, `ELEVATION`) ghi tên lớp đầy đủ để Tailwind quét được.
 
@@ -449,10 +450,10 @@ Các bước:
 
 ### [GD-19] Thêm component public thuần server (Banner, khối nội dung)
 
-1. Tạo component **không** có `"use client"` trong `modules/<miền>/components/` của module chủ (ví dụ Banner → `modules/banners/components/`; spine AD-11). Không tạo trong `components/site/`.
-2. Dữ liệu lấy qua hàm trong `modules/<miền>/queries.ts` có `"use cache"` + `cacheLife(...)` + `cacheTag(...)` của mọi module có bảng nó đọc (spine AD-7; mẫu code cũ `lib/posts.ts:45-56`); action CMS tương ứng gọi `updateTag` cùng tag.
+1. Tạo component **không** có `"use client"` trong `modules/<miền>/components/` của module chủ (ví dụ Banner → `modules/banners/components/`; spine AD-11). Không tạo trong `components/site/` (đã xoá).
+2. Dữ liệu lấy qua hàm trong `modules/<miền>/queries.ts` có `"use cache"` + `cacheLife(...)` + `cacheTag(...)` của mọi module có bảng nó đọc (spine AD-7; mẫu `modules/posts/queries.ts`); action CMS tương ứng gọi `updateTag` cùng tag.
 3. Ảnh theo `[GD-13]`; nếu ảnh nằm trên host mới, thêm host vào `IMAGE_HOSTS` (`platform/images.ts:2`), danh sách này dùng chung cho `next.config.ts` và validate form CMS.
-4. Màu theo token `[GD-07]`; nếu cần biến thể theo loại, dùng bảng ánh xạ tên lớp đầy đủ như `STYLES` (`components/site/category-badge.tsx:4-7`).
+4. Màu theo token `[GD-07]`; nếu cần biến thể theo loại, dùng bảng ánh xạ tên lớp đầy đủ như `STYLES` (`modules/posts/components/post-type-badge.tsx`).
 5. Thêm mẫu vào `/cms/styleguide`, kiểm theo `[GD-40]`.
 
 ### [GD-20] Thêm hoặc đổi design token
@@ -474,7 +475,7 @@ Các bước:
 - `Button` render thành phần tử không phải `<button>` (hiếm): thêm `nativeButton={false}`.
 - Component tự viết đặt trong `render` phải nhận `ref` và rải mọi props xuống phần tử DOM (`node_modules/@base-ui/react/docs/react/handbook/composition.md`). Component hàm React 19 nhận `ref` như prop thường; chỉ cần `{...props}`.
 - Muốn component tự viết có prop `render` giống Badge: dùng `useRender` + `mergeProps` (`components/ui/badge.tsx:29-49`).
-- Điều khiển mở/đóng: `open` + `onOpenChange` (`components/site/mobile-nav.tsx:11-13`); đóng sheet khi bấm link bằng `onClick={() => setOpen(false)}` (dòng 26).
+- Điều khiển mở/đóng: `open` + `onOpenChange` (`app/(site)/_components/category-sheet.client.tsx`); đóng sheet khi bấm link bằng `onClick={() => setOpen(false)}`.
 
 ## Bẫy hay gặp
 
@@ -499,7 +500,7 @@ Các bước:
 ### [GD-25] Làm mới cache toàn site trên mỗi lượt tương tác
 
 - Triệu chứng: mỗi lượt tim/lượt xem làm mọi trang public render lại; tải DB tăng vọt.
-- Nguyên nhân: action công khai gọi `updateTag(POSTS_TAG)`; tag `posts` gắn cho mọi truy vấn bài public (`lib/posts.ts:6-7`).
+- Nguyên nhân: action công khai gọi `updateTag(POSTS_TAG)`; tag `posts` gắn cho mọi truy vấn bài public (`modules/posts/queries.ts`, tag ở `modules/posts/tags.ts`).
 - Cách đúng: action công khai chỉ ghi số đếm; con số trên trang tĩnh chấp nhận cũ đến lần làm mới kế tiếp, phần "sống" đọc từ trình duyệt. Chỉ action CMS mới gọi `updateTag(POSTS_TAG)`.
 
 ### [GD-26] `"use client"` đặt quá cao
@@ -524,7 +525,7 @@ Các bước:
 
 - Triệu chứng: màu/kích thước không áp dụng dù tên lớp đúng trong DevTools.
 - Nguyên nhân: Tailwind chỉ sinh CSS cho tên lớp xuất hiện nguyên văn trong mã (`` `text-${category}` `` không được quét).
-- Cách đúng: bảng ánh xạ tên lớp đầy đủ (`components/site/category-badge.tsx:4-7`, `TYPE_SCALE`/`SPACING` trong `app/cms/styleguide/_components/styleguide-screen.tsx`).
+- Cách đúng: bảng ánh xạ tên lớp đầy đủ (`STYLES` trong `modules/posts/components/post-type-badge.tsx`, `TYPE_SCALE`/`SPACING` trong `app/cms/styleguide/_components/styleguide-screen.tsx`).
 
 ### [GD-30] Ảnh lỗi hoặc làm chậm trang
 

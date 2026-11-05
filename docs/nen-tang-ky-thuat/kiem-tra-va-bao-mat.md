@@ -13,7 +13,7 @@ Hành vi Zod và sanitize-html ghi trong tài liệu này đã được chạy t
 - Dùng cú pháp **Zod 4**: `z.url({ protocol, error })` (không `z.string().url()`), tham số `error` (không `message`, không `errorMap`), `z.input<>` cho kiểu form, `z.infer<>`/`z.output<>` cho kiểu sau parse.
 - HTML thân bài phải qua `sanitizePostHtml()` (`platform/html/sanitize.ts`) khi **ghi** (`savePost`, `createPost`) và khi **hiển thị** (`app/(site)/bai-viet/[slug]/page.tsx:47`). Allowlist không có `a`, `img` (spine AD-22).
 - Ảnh từ URL chỉ chấp nhận host trong `IMAGE_HOSTS` (`platform/images.ts:2`). Danh sách này dùng chung cho validate Zod và `next.config.ts` `images.remotePatterns` — chỉ sửa ở một chỗ.
-- Link affiliate chỉ nhận domain Shopee chính chủ (`shopeeAffiliateUrl`, `platform/validation/fields.ts:12-25`). Trên website: nguyên link, `target="_blank"`, `rel="sponsored nofollow noopener"` (hiện `components/site/product-card.tsx:34-39`; đích `AffiliateLink` của `modules/products/components`). Không chuyển hướng qua domain của site.
+- Link affiliate chỉ nhận domain Shopee chính chủ (`shopeeAffiliateUrl`, `platform/validation/fields.ts:12-25`). Trên website: nguyên link, `target="_blank"`, `rel="sponsored nofollow noopener"` (hiện `modules/products/components/product-card.tsx`; đích `AffiliateLink` của `modules/products/components`). Không chuyển hướng qua domain của site.
 - `.env` không bao giờ commit (`.gitignore:34-35`). Biến mới: thêm vào `.env.example` với giá trị giả. Không đặt bí mật trong biến `NEXT_PUBLIC_*`.
 - Website không thu thập dữ liệu cá nhân người đọc (NFR-7). Không thêm analytics, cookie theo dõi, pixel hay ảnh từ host lạ.
 
@@ -189,7 +189,7 @@ export const IMAGE_HOSTS = ["down-vn.img.susercontent.com", "cf.shopee.vn"];
 
 - `next.config.ts:2,7` import `IMAGE_HOSTS` và map thành `remotePatterns: [{ protocol: "https", hostname }]` cho `next/image`.
 - `isAllowedImageUrl` (`platform/images.ts:6-15`) dùng trong `imageUrl` của Zod: chấp nhận đường dẫn tương đối trong site chỉ khi giữ nguyên origin (`new URL(url, SAME_ORIGIN).origin === SAME_ORIGIN`, `:9`), hoặc URL `https:` có hostname **khớp đúng** một phần tử (`includes`, không hỗ trợ wildcard).
-- Mọi ảnh public render bằng `next/image` (`components/site/product-card.tsx:17`, `post-card.tsx`, trang bài `page.tsx:96`), nên host lạ sẽ làm `next/image` báo lỗi — validate Zod giúp chặn từ lúc lưu.
+- Mọi ảnh public render bằng `next/image` (`modules/products/components/product-card.tsx`, `post-card.tsx`, trang bài `page.tsx:96`), nên host lạ sẽ làm `next/image` báo lỗi — validate Zod giúp chặn từ lúc lưu.
 - Bị từ chối: `http://cf.shopee.vn/x`, `https://cf.shopee.vn.evil.com/x`, `//evil.com/x.png`, `/\t/evil.com/x.png`. Hành vi khoá bằng `platform/images.test.ts`.
 
 ### [BM-13] Bí mật và biến môi trường
@@ -209,7 +209,7 @@ export const IMAGE_HOSTS = ["down-vn.img.susercontent.com", "cf.shopee.vn"];
 
 ### [BM-14] Thuộc tính link affiliate
 
-`components/site/product-card.tsx:34-42` (code cũ; spine AD-11 đặt mọi link tới Shopee vào `AffiliateLink` của `modules/products/components` — đích, chưa có):
+`modules/products/components/product-card.tsx` (code cũ; spine AD-11 đặt mọi link tới Shopee vào `AffiliateLink` của `modules/products/components` — đích, chưa có):
 
 ```tsx
 <a href={product.affiliateUrl} target="_blank" rel="sponsored nofollow noopener" ...>
@@ -253,7 +253,7 @@ Ví dụ minh hoạ: thêm `Product.note` (ghi chú ngắn, tuỳ chọn, ≤ 20
 4. **Ô nhập:** thêm `<Input>` trong `ProductFields` (`modules/products/components/`, sau khi chuyển), `onChange={(e) => update(i, { note: e.target.value })}`.
 5. **Action:** trường của Sản phẩm đi theo `products` vào `replacePostProducts` (`app/cms/actions.ts:35-46`, kiểu `ProductRow` suy từ `productInputSchema` nên tự có `note`). Trường ở cấp `Post` đi qua `...rest` (`actions.ts:100-106`).
 6. **Hiển thị:** nếu là chữ thuần, render bằng JSX `{value}` (React tự escape). Không bao giờ `dangerouslySetInnerHTML` cho trường mới; nếu thật sự cần HTML thì qua `sanitizePostHtml`.
-7. **Cache:** nếu trường hiện ở trang public, chắc chắn query có cache (code cũ `lib/posts.ts`, đích `queries.ts` của module) lấy trường đó và action gọi `updateTag`.
+7. **Cache:** nếu trường hiện ở trang public, chắc chắn query có cache (`queries.ts` của module, vd `modules/posts/queries.ts`) lấy trường đó và action gọi `updateTag`.
 8. **Kiểm:** `npm test`, `npx tsc --noEmit`, `npm run lint`; thử lưu giá trị quá dài để thấy toast lỗi tiếng Việt.
 
 ### [BM-18] Thêm một Server Action có bảo vệ

@@ -11,13 +11,15 @@ import { Button } from "@/components/ui/button";
 
 // Khung form CMS (UX-DR60): validate tại trường bằng resolver của `form`, gửi giá trị form (chưa
 // transform) cho action — server parse lại bằng cùng schema. Lỗi server/mạng → Toast, dữ liệu giữ nguyên.
-// Nút Lưu dính đáy trên mobile, tắt + spinner khi gửi; có UnsavedChangesGuard.
+// Nút Lưu dính đáy trên mobile, tắt + spinner khi gửi; có UnsavedChangesGuard. `busyLabel` (vd "Đang tải ảnh…")
+// chặn Lưu khi form còn việc dở (đang upload file).
 export function CmsForm<TValues extends FieldValues, TOutput, TResult extends object>({
   form,
   action,
   onSaved,
   successMessage = "Đã lưu",
   submitLabel = "Lưu",
+  busyLabel = null,
   children,
 }: {
   form: UseFormReturn<TValues, unknown, TOutput>;
@@ -25,11 +27,13 @@ export function CmsForm<TValues extends FieldValues, TOutput, TResult extends ob
   onSaved?: (result: TResult, values: TValues) => void;
   successMessage?: string;
   submitLabel?: string;
+  busyLabel?: string | null;
   children: ReactNode;
 }) {
   const { isDirty, isSubmitting } = form.formState;
 
   const onSubmit = form.handleSubmit(async () => {
+    if (busyLabel) return;
     const values = form.getValues();
     const res = await callAction(() => action(values));
     if (!res.ok) {
@@ -47,9 +51,9 @@ export function CmsForm<TValues extends FieldValues, TOutput, TResult extends ob
       <UnsavedChangesGuard when={isDirty && !isSubmitting} />
       {children}
       <div className="sticky-bar sticky bottom-0 z-20 -mx-margin border-t px-margin pt-space-sm pb-[calc(env(safe-area-inset-bottom)+0.5rem)] shadow-sticky-bottom lg:static lg:mx-0 lg:border-0 lg:bg-transparent lg:p-0 lg:shadow-none lg:backdrop-blur-none">
-        <Button type="submit" size="lg" className="w-full lg:w-auto" disabled={isSubmitting}>
-          {isSubmitting && <Loader2 className="animate-spin" aria-hidden />}
-          {isSubmitting ? "Đang lưu…" : submitLabel}
+        <Button type="submit" size="lg" className="w-full lg:w-auto" disabled={isSubmitting || !!busyLabel}>
+          {(isSubmitting || busyLabel) && <Loader2 className="animate-spin" aria-hidden />}
+          {isSubmitting ? "Đang lưu…" : (busyLabel ?? submitLabel)}
         </Button>
       </div>
     </form>

@@ -5,6 +5,7 @@ import { formatShortDate } from "@/platform/format";
 import { PRODUCT_PAGE_SIZE } from "@/modules/products/constants";
 import { listProductsForCms } from "@/modules/products/cms-queries";
 import { ProductStatusBadge } from "@/modules/products/components/product-status-badge";
+import { ProductVisibilityButton } from "@/modules/products/components/product-visibility-button.client";
 import type { ProductListItem } from "@/modules/products/types";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -85,18 +86,22 @@ function Pagination({ q, page, pages }: { q: string; page: number; pages: number
   );
 }
 
+// `?trang`: số nguyên an toàn ≥ 1, còn lại về trang 1; vượt trang cuối do query kẹp lại.
+function pageParam(v: string) {
+  const n = Number(v);
+  return Number.isSafeInteger(n) && n >= 1 ? n : 1;
+}
+
 export async function ProductListScreen({ searchParams }: Pick<PageProps<"/cms/san-pham">, "searchParams">) {
   const params = await searchParams;
   const q = first(params.q).trim();
-  const page = Math.max(1, Math.floor(Number(first(params.trang))) || 1);
-  const { items, total } = await listProductsForCms({ q, page });
+  const { items, total, page } = await listProductsForCms({ q, page: pageParam(first(params.trang)) });
   const pages = Math.ceil(total / PRODUCT_PAGE_SIZE);
-  const filtered = q !== "" || page > 1;
 
   return (
     <div className="flex flex-col gap-space-md">
       <h1 className="text-headline-lg-mobile lg:text-headline-lg">Sản phẩm</h1>
-      {total === 0 && !filtered ? (
+      {total === 0 && !q ? (
         <div className="space-y-space-md rounded-xl border p-space-lg text-center">
           <p className="text-on-surface-variant">Chưa có Sản phẩm nào. Tạo Sản phẩm đầu tiên.</p>
           <CreateLink />
@@ -119,17 +124,15 @@ export async function ProductListScreen({ searchParams }: Pick<PageProps<"/cms/s
             <>
               <ul className="space-y-space-sm lg:hidden">
                 {items.map((p) => (
-                  <li key={p.id}>
-                    <Link
-                      href={`${LIST_PATH}/${p.id}`}
-                      className="block space-y-1 rounded-xl border bg-card p-space-md hover:bg-surface-container"
-                    >
+                  <li key={p.id} className="space-y-space-sm rounded-xl border bg-card p-space-md">
+                    <Link href={`${LIST_PATH}/${p.id}`} className="block space-y-1 hover:underline">
                       <span className="flex items-start justify-between gap-space-sm">
                         <span className="min-w-0 text-headline-sm">{p.name}</span>
-                        <ProductStatusBadge />
+                        <ProductStatusBadge hidden={p.hidden} />
                       </span>
                       <span className="block text-body-sm text-on-surface-variant">{meta(p)}</span>
                     </Link>
+                    <ProductVisibilityButton id={p.id} name={p.name} hidden={p.hidden} usageLink />
                   </li>
                 ))}
               </ul>
@@ -140,7 +143,8 @@ export async function ProductListScreen({ searchParams }: Pick<PageProps<"/cms/s
                     <th scope="col" className="py-2 pr-4 font-medium">Tên</th>
                     <th scope="col" className="py-2 pr-4 font-medium">Giá tham khảo</th>
                     <th scope="col" className="py-2 pr-4 font-medium">Danh mục</th>
-                    <th scope="col" className="py-2 font-medium">Trạng thái</th>
+                    <th scope="col" className="py-2 pr-4 font-medium">Trạng thái</th>
+                    <th scope="col" className="py-2 font-medium"><span className="sr-only">Thao tác</span></th>
                   </tr>
                 </thead>
                 <tbody>
@@ -164,8 +168,11 @@ export async function ProductListScreen({ searchParams }: Pick<PageProps<"/cms/s
                         )}
                       </td>
                       <td className="py-2 pr-4 text-on-surface-variant">{p.category?.name ?? "—"}</td>
-                      <td className="py-2">
-                        <ProductStatusBadge />
+                      <td className="py-2 pr-4">
+                        <ProductStatusBadge hidden={p.hidden} />
+                      </td>
+                      <td className="py-2 text-right">
+                        <ProductVisibilityButton id={p.id} name={p.name} hidden={p.hidden} usageLink />
                       </td>
                     </tr>
                   ))}

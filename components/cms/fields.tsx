@@ -1,7 +1,9 @@
 "use client";
 
 import { Label } from "@/components/ui/label";
-import { CATEGORIES, type CategoryKey } from "@/lib/categories";
+import type { PostType } from "@/generated/prisma/enums";
+import type { CategoryOption } from "@/modules/categories/types";
+import { POST_TYPE_KEYS, POST_TYPES } from "@/modules/posts/constants";
 import { cn } from "@/components/ui/lib/utils";
 
 export function Field({
@@ -24,10 +26,38 @@ export function Field({
   );
 }
 
-export function CategoryPicker({ value, onChange }: { value: CategoryKey; onChange: (v: CategoryKey) => void }) {
+// Chọn Danh mục (model `Category`) của bài; "" = chưa có Danh mục. Native <select> cho điện thoại.
+export function CategorySelect({
+  value,
+  onChange,
+  options,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  options: CategoryOption[];
+}) {
+  return (
+    <select
+      aria-label="Danh mục"
+      data-slot="input"
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      className="h-10 w-full rounded-md border bg-background px-2 text-base md:text-sm"
+    >
+      <option value="">Chưa có Danh mục</option>
+      {options.map((c) => (
+        <option key={c.id} value={c.id}>
+          {c.name}
+        </option>
+      ))}
+    </select>
+  );
+}
+
+export function CategoryPicker({ value, onChange }: { value: PostType; onChange: (v: PostType) => void }) {
   return (
     <div className="grid grid-cols-2 gap-2">
-      {(Object.keys(CATEGORIES) as CategoryKey[]).map((key) => (
+      {POST_TYPE_KEYS.map((key) => (
         <button
           key={key}
           type="button"
@@ -37,8 +67,8 @@ export function CategoryPicker({ value, onChange }: { value: CategoryKey; onChan
             value === key ? "border-primary ring-2 ring-primary/30" : "hover:border-foreground/30",
           )}
         >
-          <span className="block font-semibold">{CATEGORIES[key].label}</span>
-          <span className="block text-xs text-muted-foreground">{CATEGORIES[key].description}</span>
+          <span className="block font-semibold">{POST_TYPES[key].label}</span>
+          <span className="block text-xs text-muted-foreground">{POST_TYPES[key].description}</span>
         </button>
       ))}
     </div>

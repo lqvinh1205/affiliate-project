@@ -21,12 +21,12 @@ Không còn mục mở. [NO-01]–[NO-05] đã sửa ở Story 1.2, có unit tes
 
 ## Thấp — nhất quán và dọn dẹp
 
-[NO-16] (comment `lib/posts.ts` ghi `revalidateTag`) đã sửa ở Story 2.3.
+[NO-16] (comment `lib/posts.ts` ghi `revalidateTag`) đã sửa ở Story 2.3. [NO-18] (kiểu `PostCard` chép tay) đã sửa ở lượt gộp 2.4–2.8: `PostCardData` suy từ query trong `modules/posts/types.ts`.
 
+- **[NO-25]** `cn` (package `cn` = clsx + tailwind-merge) coi lớp cỡ chữ token (`text-label-meta`, `text-label-sm`, `text-headline-*`…) và lớp màu `text-<màu>` là cùng nhóm, nên bỏ mất cỡ chữ khi ghép chung. Component mới của lượt gộp ghép chuỗi thường ở các chỗ này (`bottom-tab-bar.client.tsx`, `pagination.tsx`, `product-card.tsx`, `post-type-badge.tsx`); sửa tận gốc cần `extendTailwindMerge` khai báo nhóm `font-size` cho token — chưa làm (`[GD-05]`, `[GD-29]`).
 - **[NO-17]** Hai kiểu cùng tên `ProductInput`, khác hình dạng: `lib/ai.ts` (`{ name, priceText? }`, Sản phẩm đưa cho AI) và `modules/products/schema.ts` (dữ liệu Kho đã parse). Bản ở `lib/post-input.ts` đã bỏ ở Story 2.3; bản ở `lib/ai.ts` hết khi prompt chuyển sang `modules/posts/prompts/` (AD-10).
-- **[NO-18]** Kiểu `PostCard` trong `lib/posts.ts` không được dùng, trùng tên component; hình dạng bị chép tay thành `PostCardData`.
 - **[NO-19]** Literal `"DRAFT" | "PUBLISHED"` và `["MEO_VAT","GOM_LINK"]` gõ lại ở nhiều file thay vì suy ra từ enum Prisma hoặc `CategoryKey` (`[KT-08]`, `[PR-27]`).
-- **[NO-20]** UI gọi enum `PostType` (trước là `Category`) là "Chuyên mục", trong khi PRD gọi là **Loại bài**; **Danh mục** là khái niệm khác (model `Category`, chưa có giao diện). Khoá `category` trong form, prop (`CategoryBadge category=`), `CategoryKey` và kết quả `lib/posts.ts` vẫn mang nghĩa Loại bài (`Post.postType`), trong khi `Post.category` của Prisma giờ là quan hệ Danh mục.
+- **[NO-20]** (thu hẹp ở lượt gộp 2.4–2.8) Phần site đã dùng đúng tên: `PostTypeBadge postType=`, `POST_TYPES` (`modules/posts/constants.ts`), thẻ bài có `postType`; **Danh mục** (model `Category`) có màn CMS `/cms/danh-muc` và trang `/[danh-muc]`. Còn lệch ở trình soạn bài cũ: khoá `category` trong `lib/post-input.ts`, `components/cms/{fields,new-post-form,post-editor}.tsx`, `createPost`/`savePost` (`app/cms/actions.ts`), `lib/ai.ts` vẫn mang nghĩa Loại bài (`Post.postType`); `CategoryPicker` hiện nhãn "Chuyên mục". Hết khi Epic 3 chuyển trình soạn bài.
 - **[NO-21]** `README.md` ở gốc repo vẫn là mẫu create-next-app.
 - **[NO-22]** Kiểu import `cn` lẫn lộn: `components/ui/*` import từ gói `cn`, phần còn lại từ `@/components/ui/lib/utils` (cả hai cùng một hàm). Xem `[GD-05]`.
 

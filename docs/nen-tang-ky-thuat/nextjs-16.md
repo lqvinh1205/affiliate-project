@@ -8,9 +8,9 @@ Mọi đường dẫn tài liệu dạng `docs/01-app/...` bên dưới là tư�
 
 - **Cache Components đang bật** (`cacheComponents: true`, `partialPrefetching: true` — `next.config.ts:9-10`). Dữ liệu mặc định là **động**; chỉ thứ bọc `"use cache"` mới được đưa vào bản prerender. Không dùng `export const dynamic`, `revalidate`, `fetchCache`, `dynamicParams`, `runtime` — chúng gây lỗi build. Xem [NX-01], [NX-62].
 - **Toàn bộ site public phải tĩnh hoàn toàn**: `app/(site)/layout.tsx:6` đặt `ensureStatic = "navigation"`. Trong `app/(site)/**` **cấm** truy vấn DB không cache, `connection()`, `cookies()`, `headers()`, `searchParams` phía server — **kể cả khi bọc `<Suspense>`**. Xem [NX-03], [NX-52].
-- Đọc dữ liệu public **chỉ** qua hàm `"use cache"` + `cacheLife(...)` + `cacheTag(...)`: code mới ở `modules/<miền>/queries.ts` (spine AD-7); code cũ hiện có ở `lib/posts.ts`. Xem [NX-22], [NX-32].
+- Đọc dữ liệu public **chỉ** qua hàm `"use cache"` + `cacheLife(...)` + `cacheTag(...)`: code mới ở `modules/<miền>/queries.ts` (spine AD-7); code cũ hiện có ở `modules/posts/queries.ts`. Xem [NX-22], [NX-32].
 - Ghi dữ liệu ảnh hưởng trang public → gọi `updateTag` với tag của **mọi** module có dữ liệu thay đổi (hiện chỉ có `POSTS_TAG`) **trong Server Action** (AD-7). `updateTag` chỉ chạy được trong Server Action; ở Route Handler dùng `revalidateTag(tag, "max")` hoặc `revalidateTag(tag, { expire: 0 })`. Xem [NX-06], [NX-54], [NX-55].
-- Comment `lib/posts.ts:6` ghi `revalidateTag("posts")` là **sai** so với code; code đúng dùng `updateTag` (`app/cms/actions.ts:112,132,143`). Xem [NX-50].
+- Comment `modules/posts/queries.ts` ghi `revalidateTag("posts")` là **sai** so với code; code đúng dùng `updateTag` (`app/cms/actions.ts:112,132,143`). Xem [NX-50].
 - Mỗi Server Action **tự** kiểm tra quyền bằng `requireAdmin()` (qua `run()` ở `platform/auth/run.ts:5-14`), trả về `Result` `{ ok: true, ... } | { ok: false, error }`, trừ ba ngoại lệ có tên của `[QD-20]`. Không dựa vào `proxy.ts`. Xem [NX-24], [NX-34], [NX-58].
 - File chặn request là `proxy.ts` (tên mới của `middleware.ts`), hàm export tên `proxy`. Matcher hiện chặn **cả `/cms/*` (trừ `/cms/upload`) và `/api/*`** bằng Basic Auth — không có endpoint công khai dưới `/api` (spine AD-6). Xem [NX-09], [NX-25], [NX-57].
 - Tính năng theo từng request (lượt xem, lượt thích) trên trang public: làm ở **Client Component** gọi action công khai của `[QD-20]` sau khi trang tĩnh đã tải; **không** gọi `updateTag` cho mỗi lượt. Xem [NX-35], [NX-36], [NX-56].
@@ -190,13 +190,14 @@ Nguồn: `docs/01-app/03-api-reference/03-file-conventions/error.md`, `not-found
 | URL | File | Chế độ | Ghi chú |
 | --- | --- | --- | --- |
 | (mọi trang) | `app/layout.tsx` | Tĩnh | Root layout: font, `Toaster`, `metadata` gốc — `app/layout.tsx:13-22` |
-| `/`, `/[category]`, `/bai-viet/[slug]` | `app/(site)/layout.tsx` | **Tĩnh hoàn toàn** | Route group `(site)` không thêm segment URL; `ensureStatic = "navigation"` — `app/(site)/layout.tsx:4-6` |
+| `/`, `/[danh-muc]`, `/meo-vat`, `/gom-link`, `/bai-viet/[slug]` | `app/(site)/layout.tsx` | **Tĩnh hoàn toàn** | Route group `(site)` không thêm segment URL; `ensureStatic = "navigation"` — `app/(site)/layout.tsx:4-6` |
 | `/` | `app/(site)/page.tsx` | Tĩnh | 3 truy vấn cached song song — `app/(site)/page.tsx:11-15` |
-| `/meo-vat`, `/gom-link` | `app/(site)/[category]/page.tsx` | Tĩnh | `generateStaticParams` từ hằng `CATEGORIES` — `:7-9`; slug lạ → `notFound()` — `:24` |
+| `/meo-vat`, `/gom-link` (+ `/trang/[n]`) | `app/(site)/{meo-vat,gom-link}/` (Loại bài); Danh mục ở `app/(site)/[danh-muc]/` | Tĩnh | Loại bài: trang `trang/[n]` từ số bài (`staticPageParams`, giữ chỗ `n="2"`); Danh mục: `generateStaticParams` từ `listCategoriesWithPostCounts`, slug lạ → tra `CategorySlugRedirect` → 308 hoặc `notFound()` trước `<Suspense>`; `trang/1` → 308 về trang gốc |
 | `/bai-viet/[slug]` | `app/(site)/bai-viet/[slug]/page.tsx` | Tĩnh + ISR | `generateStaticParams` từ DB — `:18-21`; không có bài → `notFound()` — `:45` |
 | 404 site | `app/(site)/not-found.tsx` | Tĩnh | |
 | `/cms` | `app/cms/page.tsx` | Shell tĩnh + danh sách động | `<Suspense>` + `connection()` + DB không cache — `:15-17`, `:22-27` |
 | `/cms/new` | `app/cms/new/page.tsx` | Tĩnh | Form client `NewPostForm` |
+| `/cms/upload` (POST), `/uploads/[...path]` (GET) | `app/cms/upload/route.ts`, `app/uploads/[...path]/route.ts` | Động (route handler) | Upload ngoài proxy, tự `requireAdmin()`; phục vụ file từ `UPLOAD_DIR` (Story 2.8) |
 | `/cms/posts/[id]` | `app/cms/posts/[id]/page.tsx` | Shell tĩnh + editor động | Không có `generateStaticParams`; `await params` **trong** `<Suspense>` — `:7-21` |
 | `/cms/*` | `app/cms/layout.tsx` | | `robots: noindex,nofollow` — `:5-8`; `maxDuration = 120` vì gọi AI (AD-18) — `:10-11` |
 | `/sitemap.xml` | `app/sitemap.ts` | Tĩnh (Route Handler đặc biệt) | |
@@ -206,16 +207,16 @@ Nguồn: `docs/01-app/03-api-reference/03-file-conventions/error.md`, `not-found
 - Không có `app/api/` (Route Handler) nào; không có `loading.tsx`, `error.tsx`, `global-error.tsx`.
 - `[category]` và `/bai-viet/[slug]` cùng cấp trong `(site)`: segment tĩnh `bai-viet` được ưu tiên hơn segment động `[category]` (hành vi định tuyến chuẩn; chưa tìm thấy câu khẳng định trong tài liệu cài sẵn — đừng đặt slug Danh mục trùng `bai-viet`).
 
-### [NX-22] Lớp đọc dữ liệu public — `lib/posts.ts` (code cũ, đích `modules/posts/queries.ts`)
+### [NX-22] Lớp đọc dữ liệu public — `modules/posts/queries.ts`
 
 - Năm hàm, mỗi hàm cùng một khuôn `"use cache"` → `cacheLife("days")` → `cacheTag(POSTS_TAG)` → truy vấn Prisma:
-  - `getLatestPosts(limit)` — `lib/posts.ts:45-56`
-  - `getPostsByCategory(category, limit?)` — `lib/posts.ts:58-69` (`category` ở đây là Loại bài, lọc `Post.postType` — `[NO-20]`)
-  - `getRelatedPosts(slug, category, limit = 3)` — `lib/posts.ts:71-82`
-  - `getPostBySlug(slug)` — `lib/posts.ts:84-102` (trả `null` nếu không có/chưa đăng)
-  - `getPublishedSlugs()` — `lib/posts.ts:104-114` (dùng cho `generateStaticParams` và sitemap)
-- `POSTS_TAG = "posts"` — `lib/posts.ts:7`. Mọi hàm chỉ lấy `status: "PUBLISHED"` — `lib/posts.ts:42`.
-- Đối số là primitive (`string`, `number`, union `CategoryKey`) → khoá cache ổn định. Giá trị trả về là object thường + `Date` → serialize được.
+  - `getLatestPosts(limit)` — `modules/posts/queries.ts`
+  - `getPostsByType(postType, limit?)` — `modules/posts/queries.ts` (`category` ở đây là Loại bài, lọc `Post.postType` — `[NO-20]`)
+  - `getRelatedPosts(slug, category, limit = 3)` — `modules/posts/queries.ts`
+  - `getPostBySlug(slug)` — `modules/posts/queries.ts` (trả `null` nếu không có/chưa đăng)
+  - `getPublishedSlugs()` — `modules/posts/queries.ts` (dùng cho `generateStaticParams` và sitemap)
+- `POSTS_TAG = "posts"` — `modules/posts/queries.ts`. Mọi hàm chỉ lấy `status: "PUBLISHED"` — `modules/posts/queries.ts`.
+- Đối số là primitive (`string`, `number`, union `PostType`) → khoá cache ổn định. Giá trị trả về là object thường + `Date` → serialize được.
 - Một tag chung cho mọi thứ: mọi lần ghi gọi `updateTag("posts")` làm mới toàn bộ danh sách + chi tiết + sitemap. Chấp nhận được vì lượng bài nhỏ và chỉ Vinh ghi. Spine AD-7: khi có module `products`, query đọc Sản phẩm gắn thêm tag của `products`.
 
 ### [NX-23] Lớp đọc dữ liệu CMS
@@ -250,9 +251,9 @@ Nguồn: `docs/01-app/03-api-reference/03-file-conventions/error.md`, `not-found
 ### [NX-26] SEO
 
 - Root `metadata`: `metadataBase: new URL(SITE_URL)`, `title.template: "%s | Mẹo Vặt Cuộc Sống"`, `openGraph.locale: "vi_VN"` — `app/layout.tsx:14-23`. `SITE_URL` lấy từ `NEXT_PUBLIC_SITE_URL` — `platform/site.ts:2`.
-- `generateMetadata` của chuyên mục: dữ liệu từ hằng `CATEGORIES`, `alternates.canonical` tương đối — `app/(site)/[category]/page.tsx:11-20`.
+- `generateMetadata` của trang Danh mục / Loại bài: `listPageMetadata` (`app/(site)/_components/list-page-metadata.ts`), `alternates.canonical` tương đối, meta description = mô tả.
 - `generateMetadata` của Bài web: gọi `getPostBySlug` (đã cache) nên hợp lệ dưới `ensureStatic='navigation'`; `openGraph.type: "article"`, `publishedTime`, `modifiedTime` — `app/(site)/bai-viet/[slug]/page.tsx:23-41`.
-- JSON-LD `Article` + `BreadcrumbList` qua `components/json-ld.tsx:2-9` (escape `<`) — `app/(site)/bai-viet/[slug]/page.tsx:54-79`.
+- JSON-LD `Article` + `BreadcrumbList` qua `app/(site)/_components/json-ld.tsx` (escape `<`) — `app/(site)/bai-viet/[slug]/page.tsx:54-79`.
 - `sitemap.ts` dùng `getPublishedSlugs()` (đã cache, tag `posts`) — `app/sitemap.ts:6-22`. `robots.ts` — `app/robots.ts:4-9`.
 - CMS: `robots: { index: false, follow: false }` — `app/cms/layout.tsx:5-8`.
 
@@ -271,7 +272,7 @@ Nguồn: `docs/01-app/03-api-reference/03-file-conventions/error.md`, `not-found
 ### [NX-30] Thêm một trang public tĩnh (không tham số)
 
 1. Tạo `app/(site)/<duong-dan>/page.tsx`. Trang tự kế thừa `ensureStatic = "navigation"`; không đặt lại.
-2. `page.tsx` mỏng (spine AD-12): chỉ metadata, `<Suspense fallback={<XSkeleton />}>` và một `<XScreen />`. Screen và skeleton đặt ở `_components/` cạnh route (`<x>-screen.tsx`, `<x>-skeleton.tsx`); Screen đọc dữ liệu bằng hàm cached trong `modules/<miền>/queries.ts` ([NX-32]). Không gọi `db` trực tiếp; không import `@/lib/*` (ESLint chặn trong route mới) — hàm cần dùng còn ở `lib/posts.ts` thì chuyển nó trước theo `docs/cong-thuc/chuyen-code-cu.md`.
+2. `page.tsx` mỏng (spine AD-12): chỉ metadata, `<Suspense fallback={<XSkeleton />}>` và một `<XScreen />`. Screen và skeleton đặt ở `_components/` cạnh route (`<x>-screen.tsx`, `<x>-skeleton.tsx`); Screen đọc dữ liệu bằng hàm cached trong `modules/<miền>/queries.ts` ([NX-32]). Không gọi `db` trực tiếp; không import `@/lib/*` (ESLint chặn trong route mới) — hàm cần dùng còn ở `modules/posts/queries.ts` thì chuyển nó trước theo `docs/cong-thuc/chuyen-code-cu.md`.
 3. Khai báo `metadata` tĩnh, có `alternates.canonical`.
 4. Thêm URL vào `app/sitemap.ts`.
 5. Chạy `npm run build`; lỗi "uncached or runtime data on a route that must be fully static" → xem [NX-40].
@@ -580,17 +581,17 @@ Spine AD-6 chỉ có **một** Route Handler: `app/cms/upload/route.ts` (AD-24).
 
 ## Bẫy hay gặp
 
-### [NX-50] Comment `lib/posts.ts:6` nói `revalidateTag`, code dùng `updateTag`
+### [NX-50] Comment `modules/posts/queries.ts` nói `revalidateTag`, code dùng `updateTag`
 
-- **Triệu chứng:** agent đọc `lib/posts.ts:6` ("khi publish/sửa bài gọi revalidateTag(\"posts\")") rồi viết action mới gọi `revalidateTag("posts")` hoặc `revalidateTag("posts", "max")`. Sau khi Vinh bấm Lưu/Đăng, trang public vẫn hiện nội dung cũ ở lần tải kế tiếp; trang hiện tại không render lại trong response của action.
+- **Triệu chứng:** agent đọc `modules/posts/queries.ts` ("khi publish/sửa bài gọi revalidateTag(\"posts\")") rồi viết action mới gọi `revalidateTag("posts")` hoặc `revalidateTag("posts", "max")`. Sau khi Vinh bấm Lưu/Đăng, trang public vẫn hiện nội dung cũ ở lần tải kế tiếp; trang hiện tại không render lại trong response của action.
 - **Nguyên nhân:** comment lỗi thời. `revalidateTag` một đối số đã deprecated; `revalidateTag(tag, "max")` là stale-while-revalidate, không re-render trong response của action. Code thật dùng `updateTag(POSTS_TAG)` — `app/cms/actions.ts:112,132,143`.
-- **Cách đúng:** trong Server Action dùng `updateTag(POSTS_TAG)`. Chỉ dùng `revalidateTag(tag, "max" | { expire: 0 })` ở Route Handler. Sửa comment này khi chuyển `lib/posts.ts` sang `modules/posts/queries.ts` (`[NO-16]`).
+- **Cách đúng:** trong Server Action dùng `updateTag(POSTS_TAG)`. Chỉ dùng `revalidateTag(tag, "max" | { expire: 0 })` ở Route Handler. Sửa comment này khi chuyển `modules/posts/queries.ts` sang `modules/posts/queries.ts` (`[NO-16]`).
 
 ### [NX-51] Đọc `headers()`/`cookies()` hoặc gọi `requireAdmin()` trong `"use cache"`
 
 - **Triệu chứng:** lỗi `next-request-in-use-cache`; có thể qua `next build` nhưng lỗi khi `next start`.
 - **Nguyên nhân:** scope cache cấm API request theo cả call stack; `requireAdmin()` gọi `headers()` (`platform/auth/require-admin.ts:7`).
-- **Cách đúng:** kiểm quyền và đọc request **bên ngoài** hàm cached, truyền giá trị cần thiết làm đối số. Hàm trong `lib/posts.ts` không nhận/đọc thông tin người dùng.
+- **Cách đúng:** kiểm quyền và đọc request **bên ngoài** hàm cached, truyền giá trị cần thiết làm đối số. Hàm trong `modules/posts/queries.ts` không nhận/đọc thông tin người dùng.
 
 ### [NX-52] Thêm dữ liệu động vào trang `(site)`
 
@@ -607,7 +608,7 @@ Spine AD-6 chỉ có **một** Route Handler: `app/cms/upload/route.ts` (AD-24).
 ### [NX-54] Ghi dữ liệu public mà quên vô hiệu cache
 
 - **Triệu chứng:** sửa/đăng/gỡ bài xong, trang public vẫn cũ tới 1 ngày.
-- **Nguyên nhân:** mọi truy vấn public `cacheLife("days")` (revalidate 1 ngày) — `lib/posts.ts:46,59,72,85,101`; không vô hiệu thì chỉ tự làm mới theo thời gian.
+- **Nguyên nhân:** mọi truy vấn public `cacheLife("days")` (revalidate 1 ngày) — `modules/posts/queries.ts`; không vô hiệu thì chỉ tự làm mới theo thời gian.
 - **Cách đúng:** mọi action thay đổi dữ liệu public gọi `updateTag` với tag của **mọi** module có dữ liệu thay đổi (AD-7; hiện chỉ có `POSTS_TAG`). Thêm tag mới thì cũng thêm lời gọi `updateTag` tương ứng ở mọi action ghi.
 
 ### [NX-55] Gọi `updateTag`/`refresh` ngoài Server Action
@@ -674,7 +675,7 @@ Spine AD-6 chỉ có **một** Route Handler: `app/cms/upload/route.ts` (AD-24).
 
 - **Triệu chứng:** lỗi serialize khi trả `URL`, instance class, hàm từ hàm `"use cache"`; client nhận nhiều dữ liệu thừa từ action.
 - **Nguyên nhân:** `"use cache"` và Server Action serialize đối số/kết quả; tài liệu yêu cầu chỉ trả dữ liệu UI cần.
-- **Cách đúng:** map qua DTO (như `toCard` — `lib/posts.ts:31-38`); `Date` dùng được; `URL` đổi thành chuỗi; action trả `{ ok, ...ítTrường }`.
+- **Cách đúng:** map qua DTO (như `toCard` — `modules/posts/queries.ts`); `Date` dùng được; `URL` đổi thành chuỗi; action trả `{ ok, ...ítTrường }`.
 
 ### [NX-66] Cache in-memory và nhiều instance
 
@@ -699,7 +700,7 @@ Spine AD-6 chỉ có **một** Route Handler: `app/cms/upload/route.ts` (AD-24).
 Trang public (`app/(site)/**`):
 
 - [ ] Không có truy vấn DB/fetch thiếu `"use cache"`; không `connection()`, `cookies()`, `headers()`, `searchParams` phía server — kể cả trong `<Suspense>` ([NX-52]).
-- [ ] Dữ liệu lấy qua hàm cached trong `modules/<miền>/queries.ts` (code cũ: `lib/posts.ts`), mỗi hàm có `"use cache"` + `cacheLife(...)` tường minh (≥ `minutes`) + `cacheTag(...)` của mọi module có bảng nó đọc ([NX-32], [NX-64]).
+- [ ] Dữ liệu lấy qua hàm cached trong `modules/<miền>/queries.ts` , mỗi hàm có `"use cache"` + `cacheLife(...)` tường minh (≥ `minutes`) + `cacheTag(...)` của mọi module có bảng nó đọc ([NX-32], [NX-64]).
 - [ ] Route động có `generateStaticParams` trả ≥ 1 phần tử từ hàm cached; không export `dynamicParams`/`dynamic`/`revalidate`/`runtime` ([NX-53], [NX-62]).
 - [ ] `await params` và `notFound()` ở cấp page, ngoài `<Suspense>` ([NX-63]).
 - [ ] `generateMetadata` chỉ dùng hàm cached; có `alternates.canonical`; URL mới có trong `app/sitemap.ts` ([NX-38]).

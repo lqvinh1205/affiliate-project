@@ -39,3 +39,4 @@ Gợi ý: một lớp trừu tượng duy nhất để các tính năng không b
 - Tab Threads trong `components/cms/post-editor.tsx` (bài cuối chứa link website) được thay bằng FR-14/FR-16.
 - Quy chuẩn bài web và giọng thương hiệu hiện nằm trong prompt `lib/ai.ts` → chuyển thành giá trị khởi tạo của Hồ sơ phong cách (FR-18).
 - Seed `prisma/seed.ts` dùng link `shopee.vn/search?keyword=...` — không phải Link affiliate, sẽ bị FR-3 từ chối khi sửa.
+  - **Câu hỏi mở (Story 2.3, ghi 2026-11-05):** thực tế link tìm kiếm `https://shopee.vn/search?keyword=…` **vẫn qua** kiểm tra domain của FR-3 (`shopee.vn` là domain chính chủ), nên lưu được làm Link affiliate. Code không tự thêm quy tắc đường dẫn (epics: "Không tự thêm quy tắc đường dẫn"). Cần PRD chốt: FR-3 chỉ kiểm domain, hay phải chặn thêm đường dẫn không phải link sản phẩm/affiliate (vd `/search`)?
