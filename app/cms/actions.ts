@@ -1,32 +1,21 @@
 "use server";
 
 import { updateTag } from "next/cache";
-import { db } from "@/lib/db";
 import { analyzeSeo, generatePost, toThreads, type SeoReport } from "@/lib/ai";
 import { POSTS_TAG } from "@/lib/posts";
 import {
-  firstError,
   newPostSchema,
   postInputSchema,
   type NewPostInput,
   type PostInput,
 } from "@/lib/post-input";
-import { requireAdmin } from "@/lib/require-admin";
-import { sanitizePostHtml } from "@/lib/sanitize";
-import { SITE_URL } from "@/lib/site";
-import { slugify } from "@/lib/slug";
-
-type Result<T = object> = ({ ok: true } & T) | { ok: false; error: string };
-
-async function run<T extends object>(fn: () => Promise<T>): Promise<Result<T>> {
-  try {
-    await requireAdmin();
-    return { ok: true, ...(await fn()) };
-  } catch (e) {
-    console.error(e);
-    return { ok: false, error: e instanceof Error ? e.message : "Có lỗi xảy ra" };
-  }
-}
+import { run } from "@/platform/auth/run";
+import { db } from "@/platform/db";
+import { UserError, type Result } from "@/platform/errors";
+import { sanitizePostHtml } from "@/platform/html/sanitize";
+import { SITE_URL } from "@/platform/site";
+import { slugify } from "@/platform/slug";
+import { firstError } from "@/platform/validation/errors";
 
 async function uniqueSlug(base: string, excludeId?: string) {
   const root = slugify(base) || "bai-viet";
@@ -43,18 +32,36 @@ const productRows = (products: { name: string; image: string | null; price: stri
 export async function createPost(input: NewPostInput) {
   return run(async () => {
     const parsed = newPostSchema.safeParse(input);
-    if (!parsed.success) throw new Error(firstError(parsed.error));
+    if (!parsed.success) throw new UserError(firstError(parsed.error));
     const { category, topic, products, useAi } = parsed.data;
 
     let data;
     if (useAi) {
-      if (products.length === 0) throw new Error("Cần ít nhất 1 sản phẩm để AI viết bài");
+      if (products.length === 0) throw new UserError("Cần ít nhất 1 sản phẩm để AI viết bài");
       const draft = await generatePost({ category, topic, products });
-      data = {
+      // Bản nháp AI qua cùng schema với bài viết tay.
+      const nonEmpty = (xs: string[]) => xs.map((x) => x.trim()).filter(Boolean);
+      const checked = postInputSchema.safeParse({
         ...draft,
+        tags: nonEmpty(draft.tags),
+        seoKeywords: nonEmpty(draft.seoKeywords),
+        slug: "",
         excerpt: draft.excerpt.slice(0, 500),
-        content: sanitizePostHtml(draft.content),
-        slug: await uniqueSlug(draft.title),
+        featuredImage: "",
+        category,
+        products: input.products,
+      });
+      if (!checked.success) throw new UserError(`AI trả về bản nháp chưa hợp lệ: ${firstError(checked.error)}`);
+      const { title, excerpt, seoTitle, seoDescription, tags, seoKeywords, content } = checked.data;
+      data = {
+        title,
+        excerpt,
+        seoTitle,
+        seoDescription,
+        tags,
+        seoKeywords,
+        content: sanitizePostHtml(content),
+        slug: await uniqueSlug(title),
       };
     } else {
       const title = topic || "Bài viết mới";
@@ -72,7 +79,7 @@ export async function createPost(input: NewPostInput) {
 export async function savePost(id: string, input: PostInput) {
   return run(async () => {
     const parsed = postInputSchema.safeParse(input);
-    if (!parsed.success) throw new Error(firstError(parsed.error));
+    if (!parsed.success) throw new UserError(firstError(parsed.error));
     const { products, slug, content, ...rest } = parsed.data;
 
     const post = await db.post.update({
@@ -92,9 +99,10 @@ export async function savePost(id: string, input: PostInput) {
 
 export async function setPostStatus(id: string, status: "DRAFT" | "PUBLISHED") {
   return run(async () => {
-    const current = await db.post.findUniqueOrThrow({ where: { id }, select: { publishedAt: true, content: true } });
+    const current = await db.post.findUnique({ where: { id }, select: { publishedAt: true, content: true } });
+    if (!current) throw new UserError("Không tìm thấy bài viết");
     if (status === "PUBLISHED" && !current.content.trim()) {
-      throw new Error("Bài chưa có nội dung, chưa thể xuất bản");
+      throw new UserError("Bài chưa có nội dung, chưa thể xuất bản");
     }
     await db.post.update({
       where: { id },

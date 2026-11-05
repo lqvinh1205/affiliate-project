@@ -6,8 +6,8 @@ Một thay đổi chỉ được báo là xong khi đã qua các bước dưới
 
 ## Tóm tắt cho agent
 
-- Repo **không có test suite** và **không có script typecheck**. `npm run lint` chỉ chạy ESLint.
-- Bước bắt buộc: `npx tsc --noEmit` và `npm run lint`, cả hai phải sạch.
+- Unit test chạy bằng `npm test` (Vitest); repo **không có script typecheck**. `npm run lint` chỉ chạy ESLint.
+- Bước bắt buộc: `npm test`, `npx tsc --noEmit` và `npm run lint`, cả ba phải sạch.
 - Thay đổi chạm DB hoặc giao diện thì chạy app thật để xem.
 - Postgres cục bộ ở cổng **54329** (không phải 5432), bật bằng `docker compose up -d`.
 
@@ -15,6 +15,7 @@ Một thay đổi chỉ được báo là xong khi đã qua các bước dưới
 
 - **[KC-01]** `npx tsc --noEmit` — typecheck toàn repo (tsconfig `strict: true`). Đã kiểm 2026-11-03: sạch, mã thoát 0.
 - **[KC-02]** `npm run lint` — ESLint với `eslint-config-next` (core-web-vitals + typescript). Đã kiểm 2026-11-03: sạch.
+- **[KC-07]** `npm test` — chạy Vitest (`vitest run`, cấu hình `vitest.config.ts`: alias `@/` theo `tsconfig`, `server-only` sang file rỗng). Test `*.test.ts` đặt cạnh file nguồn, tên tiếng Việt, không chạm DB, không gọi AI thật. Đã kiểm 2026-11-05: 8 file, 46 test xanh.
 - **[KC-03]** Sửa `prisma/schema.prisma` thì chạy `npx prisma generate` trước typecheck, vì kiểu nằm trong `generated/prisma/` (gitignore).
 
 ## 2. Chạy app cục bộ
@@ -43,10 +44,11 @@ npm run dev                   # http://localhost:3000
 
 ## 4. Dự kiến
 
-Chưa có framework test. Khi thêm (ví dụ Vitest cho `lib/` và Playwright cho luồng CMS), cập nhật tài liệu này và mục **Running and verifying** trong `AGENTS.md` (qua `bmad-project-context`).
+Đã có Vitest cho unit test `platform/` (Story 1.2). Test tích hợp DB cho `service.ts` thêm khi có module đầu tiên; không có e2e. Mục **Running and verifying** trong `AGENTS.md` cập nhật qua `bmad-project-context` (Story 1.5).
 
 ## Checklist báo cáo
 
+- [ ] Đã chạy `npm test` — kết quả.
 - [ ] Đã chạy `npx tsc --noEmit` — kết quả.
 - [ ] Đã chạy `npm run lint` — kết quả.
 - [ ] Đã chạy `npm run build` (nếu chạm cache/route/config) — kết quả.

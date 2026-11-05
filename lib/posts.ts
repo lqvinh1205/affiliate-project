@@ -1,7 +1,7 @@
 import { cacheLife, cacheTag } from "next/cache";
-import { db } from "@/lib/db";
+import { db } from "@/platform/db";
 import type { CategoryKey } from "@/lib/categories";
-import { readingMinutes } from "@/lib/content";
+import { readingMinutes } from "@/platform/html/content";
 
 // Mọi truy vấn bài public gắn tag "posts"; khi publish/sửa bài gọi revalidateTag("posts").
 export const POSTS_TAG = "posts";

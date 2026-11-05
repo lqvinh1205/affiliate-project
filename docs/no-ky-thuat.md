@@ -6,12 +6,7 @@ Danh sách những chỗ code đang lệch với quy định, PRD hoặc chính 
 
 ## Cao — bảo mật và tuân thủ
 
-- **[NO-01]** `lib/sanitize.ts` vẫn cho phép thẻ `a` và `img` trong thân bài, trái `[QD-12]`. Chỉ prompt AI cấm chúng. Xem `[BM-31]`.
-- **[NO-02]** `sanitizePostHtml` ghi đè `rel` của mọi link thành `noopener`, làm mất `sponsored nofollow` (`[QD-14]`). Link dạng `//host` và ảnh từ host bất kỳ vẫn qua được. Xem `[BM-25]`.
-- **[NO-03]** `isAllowedImageUrl` (`lib/images.ts`) chấp nhận `//evil.com/x.png` vì mọi chuỗi bắt đầu bằng `/` đều qua. Xem `[BM-26]`.
-- **[NO-04]** `"*.supabase.co"` khớp mọi độ sâu subdomain trong kiểm form nhưng chỉ một cấp trong `next/image` `remotePatterns`. Xem `[NX-60]`, `[BM-27]`.
-- **[NO-05]** `affiliateUrl` nhận mọi URL http(s), chưa giới hạn domain Shopee (PRD FR-3, `[QD-13]`). Xem `[BM-30]`, `[BM-32]`.
-- **[NO-06]** Bài nháp do AI tạo trong `createPost` (`app/cms/actions.ts`) không đi qua `postInputSchema`.
+Không còn mục mở. [NO-01]–[NO-05] đã sửa ở Story 1.2, có unit test trong `platform/`; [NO-06] đã sửa ở Story 1.2, test thêm khi action chuyển sang `modules/`.
 
 ## Vừa — hành vi sai hoặc dễ gây lỗi
 
@@ -19,7 +14,6 @@ Danh sách những chỗ code đang lệch với quy định, PRD hoặc chính 
 - **[NO-08]** `prisma/seed.ts` chạy `deleteMany()` toàn bộ bài trước khi seed — phá huỷ dữ liệu. Xem `[PR-14]`.
 - **[NO-09]** Sản phẩm bị xoá và tạo lại (đổi id) mỗi lần lưu bài. Xem `[PR-26]`.
 - **[NO-10]** `toThreads` (`lib/ai.ts`) đặt link website ở bài cuối chuỗi, trái PRD FR-14 (link affiliate nằm ở Bình luận kèm link).
-- **[NO-11]** `lib/require-admin.ts` ném lỗi tiếng Anh "Unauthorized"; `setPostStatus` dùng `findUniqueOrThrow` nên lỗi Prisma tiếng Anh lọt ra toast (`[QU-14]`, `[BM-24]`).
 - **[NO-12]** Giới hạn tóm tắt không khớp: editor và prompt AI dùng 200, Zod và DB cho 500 (`components/cms/post-editor.tsx`, `lib/post-input.ts`, `prisma/schema.prisma`).
 - **[NO-13]** `next/image` còn dùng `priority` (đã deprecate ở Next 16) — `app/(site)/page.tsx`, `app/(site)/bai-viet/[slug]/page.tsx`. Xem `[GD-30]`.
 - **[NO-14]** `proxy.ts` matcher chặn `/api/:path*` nhưng không có `app/api`; endpoint công khai tương lai không đặt được ở `/api`. Xem `[NX-57]`.

@@ -1,7 +1,7 @@
 import type { MetadataRoute } from "next";
 import { CATEGORIES } from "@/lib/categories";
 import { getPublishedSlugs } from "@/lib/posts";
-import { SITE_URL } from "@/lib/site";
+import { SITE_URL } from "@/platform/site";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const posts = await getPublishedSlugs();

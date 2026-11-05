@@ -5,8 +5,8 @@ import { ChevronRight } from "lucide-react";
 import { CategoryBadge } from "@/components/site/category-badge";
 import { StatusBadge } from "@/components/cms/status-badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { db } from "@/lib/db";
-import { formatDate } from "@/lib/format";
+import { db } from "@/platform/db";
+import { formatDate } from "@/platform/format";
 
 export default function CmsHome() {
   return (

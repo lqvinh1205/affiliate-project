@@ -2,12 +2,13 @@ import OpenAI from "openai";
 import { zodTextFormat } from "openai/helpers/zod";
 import { z } from "zod";
 import { CATEGORIES, type CategoryKey } from "@/lib/categories";
+import { UserError } from "@/platform/errors";
 
 let client: OpenAI | null = null;
 
 function getClient() {
   if (!process.env.OPENAI_API_KEY) {
-    throw new Error("Chưa cấu hình OPENAI_API_KEY trong .env");
+    throw new UserError("Chưa cấu hình OPENAI_API_KEY trong .env");
   }
   client ??= new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
   return client;
@@ -24,7 +25,7 @@ async function ask<T extends z.ZodType>(schema: T, name: string, system: string,
     ],
     text: { format: zodTextFormat(schema, name) },
   });
-  if (!res.output_parsed) throw new Error("AI không trả về kết quả hợp lệ, hãy thử lại");
+  if (!res.output_parsed) throw new UserError("AI không trả về kết quả hợp lệ, hãy thử lại");
   return res.output_parsed as z.infer<T>;
 }
 

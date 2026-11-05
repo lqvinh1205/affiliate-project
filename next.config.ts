@@ -1,9 +1,9 @@
 import type { NextConfig } from "next";
-import { IMAGE_HOSTS } from "./lib/images";
+import { IMAGE_HOSTS } from "./platform/images";
 
 const nextConfig: NextConfig = {
   images: {
-    // Ảnh sản phẩm Shopee và ảnh upload lên Supabase Storage.
+    // Ảnh sản phẩm Shopee.
     remotePatterns: IMAGE_HOSTS.map((hostname) => ({ protocol: "https" as const, hostname })),
   },
   cacheComponents: true,

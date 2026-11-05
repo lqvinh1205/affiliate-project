@@ -4,7 +4,7 @@ import { CategoryBadge } from "@/components/site/category-badge";
 import { PostCard, PostListItem } from "@/components/site/post-card";
 import { SectionHeading } from "@/components/site/section-heading";
 import { CATEGORIES } from "@/lib/categories";
-import { formatDate } from "@/lib/format";
+import { formatDate } from "@/platform/format";
 import { getLatestPosts, getPostsByCategory } from "@/lib/posts";
 
 export default async function HomePage() {

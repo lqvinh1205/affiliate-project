@@ -9,11 +9,11 @@ import { PostCard } from "@/components/site/post-card";
 import { ProductCard } from "@/components/site/product-card";
 import { SectionHeading } from "@/components/site/section-heading";
 import { CATEGORIES } from "@/lib/categories";
-import { withHeadingIds } from "@/lib/content";
-import { formatDate } from "@/lib/format";
+import { withHeadingIds } from "@/platform/html/content";
+import { formatDate } from "@/platform/format";
 import { getPostBySlug, getPublishedSlugs, getRelatedPosts } from "@/lib/posts";
-import { sanitizePostHtml } from "@/lib/sanitize";
-import { SITE_NAME, SITE_URL } from "@/lib/site";
+import { sanitizePostHtml } from "@/platform/html/sanitize";
+import { SITE_NAME, SITE_URL } from "@/platform/site";
 
 export async function generateStaticParams() {
   const posts = await getPublishedSlugs();

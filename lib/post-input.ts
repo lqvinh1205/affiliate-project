@@ -1,18 +1,11 @@
 import { z } from "zod";
-import { isAllowedImageUrl } from "@/lib/images";
-
-const optionalText = z.string().trim().transform((s) => s || null);
-const imageUrl = z
-  .string()
-  .trim()
-  .refine((s) => !s || isAllowedImageUrl(s), "Ảnh phải là link https từ Shopee hoặc Supabase")
-  .transform((s) => s || null);
+import { imageUrl, optionalText, shopeeAffiliateUrl } from "@/platform/validation/fields";
 
 export const productInputSchema = z.object({
   name: z.string().trim().min(1, "Thiếu tên sản phẩm"),
   image: imageUrl,
   price: optionalText,
-  affiliateUrl: z.url({ protocol: /^https?$/, error: "Link affiliate không hợp lệ" }),
+  affiliateUrl: shopeeAffiliateUrl,
 });
 
 export const postInputSchema = z.object({
@@ -39,7 +32,3 @@ export const newPostSchema = z.object({
   useAi: z.boolean(),
 });
 export type NewPostInput = z.input<typeof newPostSchema>;
-
-export function firstError(e: z.ZodError) {
-  return e.issues[0]?.message ?? "Dữ liệu không hợp lệ";
-}

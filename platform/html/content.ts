@@ -1,4 +1,4 @@
-import { slugify } from "./slug";
+import { slugify } from "@/platform/slug";
 
 export type Heading = { id: string; text: string };
 

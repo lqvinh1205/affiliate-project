@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { PostEditor } from "@/components/cms/post-editor";
 import { Skeleton } from "@/components/ui/skeleton";
-import { db } from "@/lib/db";
+import { db } from "@/platform/db";
 
 export default function EditPostPage({ params }: PageProps<"/cms/posts/[id]">) {
   return (
