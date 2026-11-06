@@ -1,0 +1,28 @@
+// Trang bio (FR-30, FR-31). Chủ: module `bio` (spine AD-4).
+
+// Giới thiệu và câu công khai của `/bio`. Một bản ghi duy nhất, tạo khi Vinh lưu lần đầu; thiếu bản ghi = giá trị
+// khởi tạo ở `modules/bio/constants.ts`. Câu công khai sửa được, không tắt được (bắt buộc có chữ).
+model BioSettings {
+  id         String   @id @default(uuid())
+  intro      String   @db.VarChar(500) // BIO_INTRO_MAX (modules/bio/constants.ts)
+  disclosure String   @db.VarChar(300) // BIO_DISCLOSURE_MAX
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+// Trạng thái một Sản phẩm trên Trang bio, tạo lười khi Vinh chỉnh ở `/cms/bio`: thiếu bản ghi = hiện, không ghim,
+// xếp theo `Product.createdAt`. `products` không ghi bảng này. Sản phẩm ẩn (FR-5) không hiện dù `visible`.
+model BioItem {
+  id        String    @id @default(uuid())
+  productId String    @unique
+  /// Xoá Sản phẩm thì xoá trạng thái bio của nó.
+  product   Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+  /// "Hiện trên bio" (FR-31).
+  visible   Boolean   @default(true)
+  pinned    Boolean   @default(false)
+  /// Khoá thứ tự (`modules/bio/order.ts`): món ghim xếp tăng dần (ghim gán lúc ghim → theo thứ tự đặt); món còn lại
+  /// xếp giảm dần theo `sortAt ?? Product.createdAt`. Null = chưa sắp tay.
+  sortAt    DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}

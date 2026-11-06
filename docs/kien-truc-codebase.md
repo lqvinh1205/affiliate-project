@@ -1,6 +1,6 @@
 # Kiến trúc codebase
 
-> Phiên bản: Next.js 16.4.3, React 19.3.0, Prisma 7.10 (`@prisma/adapter-pg`), Zod 4.6, Claude Code CLI (`claude -p`, lớp `platform/ai`), Tailwind 4, Tiptap 3, Vitest 5.1 (`package.json`) · Nguồn: mã nguồn repo, spine `_bmad-output/planning-artifacts/architecture/architecture-affiliate-project-2026-11-03/ARCHITECTURE-SPINE.md`, `node_modules/next/dist/docs/` · Kiểm lần cuối: 2026-11-06 (lượt gộp Epic 4, Story 4.1–4.5)
+> Phiên bản: Next.js 16.4.3, React 19.3.0, Prisma 7.10 (`@prisma/adapter-pg`), Zod 4.6, Claude Code CLI (`claude -p`, lớp `platform/ai`), Tailwind 4, Tiptap 3, Vitest 5.1 (`package.json`) · Nguồn: mã nguồn repo, spine `_bmad-output/planning-artifacts/architecture/architecture-affiliate-project-2026-11-03/ARCHITECTURE-SPINE.md`, `node_modules/next/dist/docs/` · Kiểm lần cuối: 2026-11-06 (lượt gộp Epic 6, Story 6.1–6.3)
 
 Tài liệu này là bản đồ của code **đang có**. Cấu trúc đích (spine AD-2, AD-17, Structural Seed) nằm ở mục [Dự kiến](#dự-kiến); spine thắng tài liệu này khi mâu thuẫn. Quy ước viết code xem `docs/quy-uoc-code.md`.
 
@@ -9,7 +9,7 @@ Tài liệu này là bản đồ của code **đang có**. Cấu trúc đích (s
 Tài liệu chỉ trỏ tới **file + tên hàm/hằng**, không ghi số dòng (file đổi thường xuyên làm số dòng lệch).
 
 - Ứng dụng là một Next.js App Router duy nhất, hai mặt: **site public** (`app/(site)/`) và **CMS** (`app/cms/`). Không có `app/api/`. Hai route handler: `app/cms/upload/route.ts` (POST upload) và `app/uploads/[...path]/route.ts` (GET file đã upload).
-- Repo đang chuyển dần sang `app → modules → platform` (spine AD-2, AD-17). Đã có `modules/categories`, `modules/style-profiles` (T0), `modules/products` (T1), `modules/posts`, `modules/research` (T2), `modules/content-sets` (T3, Bộ nội dung — Epic 5), `modules/suggestions` (T4). Không còn code cũ: `lib/` và `app/cms/actions.ts` đã chuyển/xoá ở Epic 4, `LEGACY_APP_FILES` rỗng.
+- Repo đang chuyển dần sang `app → modules → platform` (spine AD-2, AD-17). Đã có `modules/categories`, `modules/style-profiles` (T0), `modules/products` (T1), `modules/posts`, `modules/research` (T2), `modules/content-sets`, `modules/bio` (T3, Bộ nội dung — Epic 5, Trang bio — Epic 6), `modules/suggestions` (T4). Không còn code cũ: `lib/` và `app/cms/actions.ts` đã chuyển/xoá ở Epic 4, `LEGACY_APP_FILES` rỗng.
 - Bật `cacheComponents` và `partialPrefetching` (`next.config.ts`). Trang public chỉ đọc qua hàm `"use cache"` trong `modules/<miền>/queries.ts`; không truy vấn `db` trong trang.
 - Ghi dữ liệu: Server Action trong `modules/<miền>/actions.ts` (Danh mục, Sản phẩm, Bài web), bọc `run()` (`platform/auth/run.ts`, gọi `requireAdmin()`), rồi `updateTag` tag của module có dữ liệu đổi.
 - Auth là HTTP Basic: `proxy.ts` chặn `/cms` (trừ `/cms/upload`) + `/api`; Server Action và route upload tự kiểm lại. Realm chung `BASIC_AUTH_CHALLENGE` (`platform/auth/basic-auth.ts`).
@@ -33,7 +33,7 @@ flowchart TD
     MC["categories (T0)"]
     MPR["products (T1)"]
     MPO["posts, research (T2)"]
-    MCS["content-sets (T3)"]
+    MCS["content-sets, bio (T3)"]
     MSU["suggestions (T4)"]
   end
   subgraph Platform["platform/"]
@@ -62,6 +62,9 @@ flowchart TD
   MSU --> MPR
   MSU --> MC
   MCS --> MPO
+  MCS --> MPR
+  MCS --> MC
+  S --> MCS
   Modules --> PAI
   MPO --> MPR
   MPO --> MC
@@ -113,6 +116,7 @@ Hợp đồng file theo spine AD-5 (`schema`, `types`, `constants`, `tags`, `que
 | `modules/style-profiles/` (T0) | `StyleProfile` (một bản ghi mỗi `Platform`, tạo lười khi lưu); `constants.ts`: `STYLE_PROFILE_DEFAULTS` (giá trị khởi tạo duy nhất — FR-18), `STYLE_PLATFORMS`, `STYLE_HARD_LIMITS` (chép giới hạn cứng của `posts`/`content-sets`, test `modules/content-sets/style-limits.test.ts`); `styleProfileInputSchema`; `saveStyleProfileRecord`; action `saveStyleProfile`; `cms-queries.ts`: `listStyleProfilesForCms`, `getStyleProfileForCms(platform)` (thiếu bản ghi → giá trị khởi tạo); component `StyleProfileForm` | `/cms/phong-cach`, prompt nội dung (qua `suggestions/actions.ts`) |
 | `modules/products/` (T1) | `Product`; `PRODUCTS_TAG`; `productInputSchema`, `setProductHiddenInputSchema`; `saveProductRecord`, `setProductHiddenRecord`; actions `saveProduct`, `setProductHidden` (`updateTag(PRODUCTS_TAG)`); `queries.ts`: `visibleProductWhere`, `publicProductSelect`; `cms-queries.ts`: `listProductsForCms` (kẹp trang), `getProductForCms`, `listPickerProductsForCms(q, excludeIds)` (chỉ Sản phẩm đang hiện); components `AffiliateLink`, `AffiliateDisclosure`, `ProductCard`, `ProductForm`, `ProductStatusBadge`, `ProductVisibilityButton`, `ProductPicker` (`?sp=` trên URL) | `/cms/san-pham`, trình soạn bài, trang bài, `modules/posts/queries.ts` |
 | `modules/content-sets/` (T3) | `ContentSet` (Góc viết, Người đọc chụp lúc tạo + bản sửa; `postId` khoá đích `WEB_POST`), `ContentSetProduct`, `SocialPost` (`@@unique([contentSetId, platform])`, `linkComment`, `firstCopiedAt`, `postedAt`, `postUrl`); enum `Platform` khai báo ở `content-sets.prisma`; `CONTENT_SETS_TAG`; `constants.ts`: `PLATFORM_LABEL`, giới hạn cứng `THREADS_POST_MAX` (500)…; prompts `threads-post`, `facebook-post`, `link-comment` (+ `to…Payload`: bỏ link khỏi thân bài, giữ nguyên Link affiliate và câu công khai trong Bình luận); `service.ts`: `createContentSetRecord`, `setContentSetPostRecord`, `upsertSocialPostRecord`, `setLinkCommentRecord` (gọi từ Duyệt), `saveSocialPostRecord`, `saveLinkCommentRecord`, `recordCopyRecord`, `markPostedRecord`; actions `saveSocialPost`, `saveLinkComment`, `recordCopy`, `markPosted`, `unmarkPosted`; `cms-queries.ts`: `getContentSetForCms`, `getContentSetIdForPostForCms`, `listPostedPlatformsByProductForCms`, `listContentSetsForProductForCms`, `parse…Payload`; components `PlatformToggle`, `ThreadsPartsField`, `SocialTextField`, `SocialPostEditor`, `LinkCommentEditor`, `MarkPostedRow` | `/cms/bo-noi-dung/[id]`, Chi tiết Sản phẩm, `/cms/san-pham`, Soạn Bài web |
+| `modules/bio/` (T3) | `BioSettings` (một bản ghi, thiếu = `BIO_SETTINGS_DEFAULTS`), `BioItem` (tạo lười: thiếu = hiện, không ghim; `sortAt` khoá thứ tự); `BIO_TAG`; `order.ts` (thuần): `orderBioEntries`, `flattenBioEntries`, `planBioMove` — một luật thứ tự cho query public, CMS và ghi; `service.ts`: `saveBioSettingsRecord`, `setBioItemVisibleRecord`, `setBioItemPinnedRecord`, `moveBioItemRecord`; actions `saveBioSettings`, `setBioItemVisible`, `setBioItemPinned`, `moveBioItem` (`updateTag(BIO_TAG)`); `queries.ts`: `getBioPage` (tag `bio`, `products`, `categories`), `getBioHighlights(limit)` (tag `bio`, `products`); `cms-queries.ts`: `getBioForCms`; components `BioBrowser` (lọc chip phía client), `BioHighlights`, `BioSettingsForm`, `BioProductList` | `/bio`, `/cms/bio`, Trang chủ |
 | `modules/posts/` (T2) | `Post`, `PostProduct`, `PostSlugRedirect`; `POSTS_TAG` (`tags.ts`); `constants.ts`: `POST_TYPES`, giới hạn `POST_*_MAX` (= `@db.VarChar` hoặc chỉ Zod), `POST_STATUS_FILTERS`, `PAGE_SIZE`, `CMS_POST_PAGE_SIZE`, `ARTICLE_RESERVED_IDS`; `schema.ts`: `postInputSchema`, `postDraftInputSchema`, `newPostInputSchema`, `setPostStatusInputSchema`, `deletePostInputSchema`; `service.ts`: `savePostRecord` (ghi `PostProduct` theo thứ tự, chỉ gắn mới Sản phẩm đang hiện; đổi slug bài đã từng xuất bản → `PostSlugRedirect`), `createPostDraftRecord`, `applyWebPostSuggestionRecord` (Duyệt `WEB_POST`: tạo nháp gắn Sản phẩm của bộ hoặc ghi vào bài còn `DRAFT`), `setPostStatusRecord`, `deletePostRecord`; actions `savePost`, `createPostDraft`, `setPostStatus`, `deletePost`; `queries.ts`: `getLatestPosts`, `getPostsByType`, `getRelatedPosts` (cùng Danh mục), `getPostBySlug`, `getPostSlugRedirect`, `getPublishedSlugs`, `listCategoriesWithPostCounts`, `listNavCategories`, `listPostsByCategory`, `listPostsByType`; `cms-queries.ts`: `listPostsForCms`, `getPostForCms`, `listCategoriesForCms`, `listPostsUsingProductForCms`; components `PostCard` (*featured*/*grid*/*row*), `PostTypeBadge`, `PostStatusBadge`, `PostArticle` (thân trang bài dùng chung site + PreviewSheet), `ArticleBody`, `TableOfContents`, `PostTags`, `RelatedPosts`, `PostForm`, `NewPostForm`, `PostBodyEditor` (Tiptap), `PreviewSheet`, `PostActionBar`, `PostSeoCheck`, `SeoScore`, `RiskWarningList`, `WebPostSuggestionForm`; prompt `web-post.prompt.ts` (gợi ý `WEB_POST`, Hồ sơ phong cách Website); `types.ts`: `RiskWarning`, `PublishLock` (màn soạn nhận qua props) | mọi trang `app/(site)`, `app/sitemap.ts`, `/cms/bai-viet`, `/cms/danh-muc`, `/cms/san-pham/[id]` |
 
 ### lib/
@@ -125,17 +129,18 @@ Hợp đồng file theo spine AD-5 (`schema`, `types`, `constants`, `tags`, `que
 |---|---|---|
 | `app/layout.tsx` | Root layout: font Be Vietnam Pro, `metadata` gốc (title template, OpenGraph mặc định kèm `DEFAULT_OG_IMAGE`), link "Bỏ qua tới nội dung", `Toaster` | Next.js |
 | `app/globals.css` | Tailwind 4, token DESIGN.md, alias shadcn; utility `article-body` (ArticleBody/PostEditor); `body:has([data-article-action-bar]) [data-bottom-tab-bar]` ẩn BottomTabBar khi trang bài có ArticleActionBar; tắt `animate-pulse`/`animate-spin` khi reduced-motion | `platform/design-tokens.ts` đọc màu |
-| `app/robots.ts`, `app/sitemap.ts` | robots chặn `/cms`, `/api/`; sitemap: trang chủ, `/meo-vat`, `/gom-link`, mọi Danh mục, mọi Bài web đã xuất bản — không có `/…/trang/n` (AD-26) | `getPublishedSlugs`, `listCategoriesWithPostCounts` |
+| `app/robots.ts`, `app/sitemap.ts` | robots chặn `/cms`, `/api/`; sitemap: trang chủ, `/bio`, `/meo-vat`, `/gom-link`, mọi Danh mục, mọi Bài web đã xuất bản — không có `/…/trang/n` (AD-26) | `getPublishedSlugs`, `listCategoriesWithPostCounts` |
 | `app/(site)/layout.tsx` | `ensureStatic = "navigation"`; SiteHeader, SiteFooter, BottomTabBar (trong `<Suspense>`), dữ liệu `listNavCategories()` | mọi trang site |
 | `app/(site)/_components/` | `HomeScreen` + `HomeSkeleton`, `NotFoundScreen`, SiteHeader (+ `more-menu.client.tsx` "Thêm"), BottomTabBar, CategorySheet, SiteFooter, Pagination (+ `pagination-items.ts`), `PostListScreen`, `post-type-route.ts`, `post-type-screen.tsx`, `list-page-metadata.ts`, `SectionHeading`, `JsonLd` | trang site; styleguide |
-| `app/(site)/page.tsx` | Trang chủ (UX-DR62): Bài nổi bật, Mới cập nhật, Mẹo vặt hay | `getLatestPosts`, `getPostsByType` |
+| `app/(site)/page.tsx` | Trang chủ (UX-DR62): Bài nổi bật, Gom link đồ xinh (ẩn khi rỗng), Mới cập nhật, Mẹo vặt hay | `getLatestPosts`, `getPostsByType`, `getBioHighlights` |
+| `app/(site)/bio/page.tsx` + `_components/{bio-screen,bio-skeleton}.tsx` | Trang bio (UX-DR66): giới thiệu, AffiliateDisclosure với câu từ CMS, `BioBrowser`; không JSON-LD | `getBioPage` |
 | `app/(site)/[danh-muc]/page.tsx`, `trang/[n]/page.tsx` | Trang Danh mục có phân trang; `loadCategory()` (`_components/load-category.ts`) tra slug → lịch sử → 308/404 **trước** `<Suspense>` (AD-12, AD-20) | `getPublicCategory`, `getCategorySlugRedirect`, `listPostsByCategory` |
 | `app/(site)/meo-vat/`, `app/(site)/gom-link/` (+ `trang/[n]`) | Trang Loại bài, lọc `PostType` | `post-type-route.ts`, `post-type-screen.tsx`, `listPostsByType` |
 | `app/(site)/bai-viet/[slug]/page.tsx` + `_components/post-screen.tsx` | Trang Bài web: `page.tsx` gọi `loadPost()` (`_components/load-post.ts`: bài → lịch sử slug → 308/404 **trước** `<Suspense>`), `PostScreen` sanitize + `withHeadingIds`, JSON-LD `Article` + `BreadcrumbList`, render `PostArticle` + `ArticleActionBar` (mobile, khi có Sản phẩm) | `getPostBySlug`, `getPostSlugRedirect`, `getRelatedPosts`, `getPublishedSlugs` |
 | `app/cms/upload/route.ts` | POST upload: `requireAdmin()` trước khi đọc body (401 + `BASIC_AUTH_CHALLENGE`), kiểm loại/dung lượng, `put()` (AD-6 ngoại lệ 3, AD-24) | UploadField |
 | `app/uploads/[...path]/route.ts` | GET file upload, `Cache-Control` immutable; tên sai dạng → 404 | `next/image`, trình duyệt |
 | `app/cms/layout.tsx` | CmsShell, `noindex`, `maxDuration = 120` (AD-18) | trang CMS |
-| `app/cms/danh-muc/**`, `app/cms/san-pham/**` | Màn Danh mục, Kho Sản phẩm (Screen + skeleton trong `_components/`) | module tương ứng |
+| `app/cms/danh-muc/**`, `app/cms/san-pham/**`, `app/cms/bio/` | Màn Danh mục, Kho Sản phẩm, Trang bio (Screen + skeleton trong `_components/`) | module tương ứng |
 | `app/cms/page.tsx` | `redirect("/cms/bai-viet")` (307 — sau này thành dashboard) | — |
 | `app/cms/bai-viet/**` | Danh sách Bài web (lọc `?trang-thai=nhap\|da-xuat-ban`, `?q`, `?trang`), tạo (`moi/`), sửa (`[id]/`, ProductPicker đọc `?sp=`) — Screen + skeleton trong `_components/` | `modules/posts`, `modules/products`, `modules/content-sets` (`runThreads`) |
 | `app/cms/error.tsx`, `app/(site)/error.tsx`, `app/global-error.tsx`; `app/not-found.tsx`, `app/(site)/not-found.tsx`, `app/cms/not-found.tsx` | Trang lỗi (`ErrorScreen`, `components/shared/error-screen.client.tsx`) và 404 | Next.js |
@@ -145,10 +150,10 @@ Hợp đồng file theo spine AD-5 (`schema`, `types`, `constants`, `tags`, `que
 
 - `proxy.ts` — kiểm Basic Auth cho `matcher: ["/cms", "/cms/((?!upload$).*)", "/api/:path*"]`; `/cms/upload` nằm ngoài proxy và tự `requireAdmin()` (AD-24).
 - `next.config.ts` — `remotePatterns` từ `IMAGE_HOSTS`, `cacheComponents`, `partialPrefetching`. Ảnh `/uploads/…` là ảnh nội bộ, không cần `localPatterns` (mặc định cho mọi đường dẫn nội bộ không query).
-- `prisma/schema/` — `_base.prisma`, `categories.prisma` (`Category`, `CategorySlugRedirect`), `posts.prisma` (`Post`, `PostProduct`, `PostSlugRedirect`, enum `PostType`, `Status`), `products.prisma` (`Product`, có `hidden`). `prisma/seed.ts` upsert 8 Danh mục, xoá bài rồi tạo lại bài mẫu; Sản phẩm mẫu nhận diện bằng Link affiliate placeholder (`[NO-08]`).
+- `prisma/schema/` — `_base.prisma`, `categories.prisma` (`Category`, `CategorySlugRedirect`), `posts.prisma` (`Post`, `PostProduct`, `PostSlugRedirect`, enum `PostType`, `Status`), `products.prisma` (`Product`, có `hidden`), `bio.prisma` (`BioSettings`, `BioItem`). `prisma/seed.ts` upsert 8 Danh mục, xoá bài rồi tạo lại bài mẫu; Sản phẩm mẫu nhận diện bằng Link affiliate placeholder (`[NO-08]`).
 - `eslint.config.mjs` — luật ranh giới module (`TIERS`, `no-restricted-imports`, `import/no-cycle`); file cũ miễn qua `LEGACY_APP_FILES` (rỗng từ Epic 4).
 - `vitest.config.ts` (unit), `vitest.db.config.ts` + `vitest.db.setup.ts` + `vitest.db.helpers.ts` + `vitest.db.mocks.ts` (test DB và khung test Server Action — `docs/kiem-chung.md` [KC-08]).
-- `components/shared/` — `CmsForm`, `ConfirmDialog`, `UnsavedChangesGuard`, `callAction`, `ImageFallback`, `UploadField`, `Breadcrumb`, `EmptyState`, `ErrorScreen`. `components/ui/` — shadcn base-ui.
+- `components/shared/` — `CmsForm`, `ConfirmDialog`, `FilterChips`, `UnsavedChangesGuard`, `callAction`, `ImageFallback`, `UploadField`, `Breadcrumb`, `EmptyState`, `ErrorScreen`. `components/ui/` — shadcn base-ui.
 
 ## Read path — trang public
 
@@ -252,7 +257,7 @@ Theo spine (AD-2, AD-17, Structural Seed), PRD và `addendum.md` A1, A4. Chỉ l
 
 - **Nhà AI dự phòng** theo spine Deferred (`deferred-work.md`).
 - **Seed** (A4): link `https://shopee.vn/search?...` qua được `shopeeAffiliateUrl` (đúng domain) — câu hỏi mở ở `addendum.md` §A4.
-- **Trang bio, Lượt xem, Tìm kiếm, Banner, Cảm hứng**: module và route mới theo spine; `/bio`, `/tim-kiem` hiện 404.
+- **Lượt xem, Tìm kiếm, Banner, Cảm hứng**: module và route mới theo spine; `/tim-kiem` hiện 404.
 
 ## Checklist khi review thay đổi kiến trúc
 

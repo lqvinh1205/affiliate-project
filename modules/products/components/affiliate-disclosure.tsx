@@ -1,18 +1,19 @@
 import { Info } from "lucide-react";
 
-// Câu công khai mặc định (EXPERIENCE.md › Voice and Tone). Câu trên `/bio` lấy từ CMS (FR-31, Epic 6).
+// Câu công khai mặc định (EXPERIENCE.md › Voice and Tone). Câu trên `/bio` lấy từ CMS (FR-31) qua `sentence`.
 const POST_DISCLOSURE =
   "Bài viết có link tiếp thị liên kết Shopee. Bạn mua qua link, mình nhận một khoản hoa hồng nhỏ để duy trì trang web, giá bạn trả hoàn toàn không đổi.";
 const SITE_DISCLOSURE =
   "Trang có link tiếp thị liên kết Shopee. Bạn mua qua link, mình nhận một khoản hoa hồng nhỏ để duy trì trang web, giá bạn trả hoàn toàn không đổi.";
 
 // Nhãn công khai affiliate (FR-24, DESIGN.md › AffiliateDisclosure): không thu nhỏ, không giảm độ mờ.
-// `box` — hộp trên trang bài (chỉ render khi bài có ≥ 1 Sản phẩm đang hiện); `text` — dòng chữ ở footer.
-export function AffiliateDisclosure({ variant = "box" }: { variant?: "box" | "text" }) {
+// `box` — hộp trên trang bài (chỉ render khi bài có ≥ 1 Sản phẩm đang hiện) và đầu `/bio`; `text` — dòng chữ ở footer
+// và dưới tiêu đề dải "Gom link đồ xinh" Trang chủ. `sentence` thay câu mặc định (câu của `/bio` sửa ở CMS).
+export function AffiliateDisclosure({ variant = "box", sentence }: { variant?: "box" | "text"; sentence?: string }) {
   if (variant === "text") {
     return (
       <p className="text-body-sm text-on-surface-variant">
-        <strong className="font-semibold text-on-surface">Minh bạch liên kết:</strong> {SITE_DISCLOSURE}
+        <strong className="font-semibold text-on-surface">Minh bạch liên kết:</strong> {sentence ?? SITE_DISCLOSURE}
       </p>
     );
   }
@@ -25,7 +26,7 @@ export function AffiliateDisclosure({ variant = "box" }: { variant?: "box" | "te
         <Info className="size-4" strokeWidth={1.5} aria-hidden />
       </span>
       <p>
-        <strong className="font-semibold text-on-surface">Minh bạch liên kết:</strong> {POST_DISCLOSURE}
+        <strong className="font-semibold text-on-surface">Minh bạch liên kết:</strong> {sentence ?? POST_DISCLOSURE}
       </p>
     </aside>
   );

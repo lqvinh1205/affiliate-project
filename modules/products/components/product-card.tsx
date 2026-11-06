@@ -1,4 +1,4 @@
-import { ExternalLink } from "lucide-react";
+import { ExternalLink, Pin } from "lucide-react";
 import { formatShortDate } from "@/platform/format";
 import type { PublicProduct } from "@/modules/products/types";
 import { AffiliateLink } from "@/modules/products/components/affiliate-link";
@@ -36,8 +36,26 @@ const CARD =
 
 // ProductCard (UX-DR20, UX-DR35): cả thẻ là một `<a>` (AffiliateLink), không phần tử bấm lồng; tên truy cập đọc
 // tên → giá → "Xem trên Shopee, mở Shopee trong tab mới"; ảnh `alt=""` vì tên đã có trong link.
-// *row*: trong bài viết, `/bio`; *tile*: dải "Gom link đồ xinh" Trang chủ.
-export function ProductCard({ product, variant = "row" }: { product: PublicProduct; variant?: "row" | "tile" }) {
+// Dấu Ghim (Trang bio, DESIGN.md › ProductCard): icon pin trên nền `primary-fixed`, chữ ẩn "Nổi bật".
+function PinnedMark() {
+  return (
+    <span className="absolute top-1 left-1 flex size-6 items-center justify-center rounded-full bg-primary-fixed text-on-primary-fixed">
+      <Pin className="size-3.5" strokeWidth={1.5} aria-hidden />
+      <span className="sr-only">Nổi bật</span>
+    </span>
+  );
+}
+
+// *row*: trong bài viết, `/bio`; *tile*: dải "Gom link đồ xinh" Trang chủ. `pinned`: món ghim trên `/bio`.
+export function ProductCard({
+  product,
+  variant = "row",
+  pinned = false,
+}: {
+  product: PublicProduct;
+  variant?: "row" | "tile";
+  pinned?: boolean;
+}) {
   if (variant === "tile") {
     return (
       <AffiliateLink href={product.affiliateUrl} className={cn(CARD, "flex w-40 flex-col gap-space-sm p-space-sm lg:w-auto")}>
@@ -54,6 +72,7 @@ export function ProductCard({ product, variant = "row" }: { product: PublicProdu
     <AffiliateLink href={product.affiliateUrl} className={cn(CARD, "flex gap-space-md p-space-md")}>
       <span className="relative block size-20 shrink-0 overflow-hidden rounded-lg bg-surface-container">
         <ImageFallback src={product.image} alt="" fill sizes="80px" className="object-cover" />
+        {pinned && <PinnedMark />}
       </span>
       <span className="flex min-w-0 flex-1 flex-col items-start gap-space-xs">
         <span className="line-clamp-2 text-headline-sm">{product.name}</span>

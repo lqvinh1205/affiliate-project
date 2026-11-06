@@ -1,7 +1,7 @@
 import { POST_TYPES } from "@/modules/posts/constants";
 
 // Điều hướng site (EXPERIENCE.md › Điều hướng mobile): đích cố định của tab và nav ngang.
-// `/bio`, `/tim-kiem` chưa có trang: giữ link, trả 404 tới epic tương ứng.
+// `/tim-kiem` chưa có trang: giữ link, trả 404 tới Epic 8.
 export const BIO_PATH = "/bio";
 export const SEARCH_PATH = "/tim-kiem";
 export const POST_TYPE_LINKS = [

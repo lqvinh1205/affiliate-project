@@ -17,6 +17,7 @@ const NAV_ITEMS: NavItem[] = [
   { label: "Bài web", href: "/cms/bai-viet", match: (p) => p === "/cms/bai-viet" || p.startsWith("/cms/bai-viet/") },
   { label: "Sản phẩm", href: "/cms/san-pham", match: (p) => p === "/cms/san-pham" || p.startsWith("/cms/san-pham/") },
   { label: "Danh mục", href: "/cms/danh-muc", match: (p) => p === "/cms/danh-muc" || p.startsWith("/cms/danh-muc/") },
+  { label: "Trang bio", href: "/cms/bio", match: (p) => p === "/cms/bio" },
   { label: "Hồ sơ phong cách", href: "/cms/phong-cach", match: (p) => p.startsWith("/cms/phong-cach") },
   { label: "Styleguide", href: "/cms/styleguide", match: (p) => p.startsWith("/cms/styleguide") },
 ];

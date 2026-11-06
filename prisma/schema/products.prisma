@@ -19,10 +19,11 @@ model Product {
   categoryId         String?
   category           Category?           @relation(fields: [categoryId], references: [id], onDelete: Restrict)
   postProducts       PostProduct[]
-  /// Quan hệ ngược (AD-4): bảng của `suggestions`, `research`, `content-sets`.
+  /// Quan hệ ngược (AD-4): bảng của `suggestions`, `research`, `content-sets`, `bio`.
   suggestions        Suggestion[]
   researchProfile    ResearchProfile?
   contentSetProducts ContentSetProduct[]
+  bioItem            BioItem?
   /// Migration đặt `createdAt`/`updatedAt` = lúc áp cho Sản phẩm có sẵn.
   createdAt          DateTime            @default(now())
   updatedAt          DateTime            @updatedAt

@@ -3,6 +3,9 @@ import { SITE_NAME } from "@/platform/site";
 import { POST_TYPES } from "@/modules/posts/constants";
 import { getLatestPosts, getPostsByType } from "@/modules/posts/queries";
 import { PostCard } from "@/modules/posts/components/post-card";
+import { BIO_HIGHLIGHTS_LIMIT } from "@/modules/bio/constants";
+import { getBioHighlights } from "@/modules/bio/queries";
+import { BioHighlights } from "@/modules/bio/components/bio-highlights";
 import { EmptyState } from "@/components/shared/empty-state";
 import { SectionHeading } from "@/app/(site)/_components/section-heading";
 
@@ -13,23 +16,33 @@ const MEO_VAT_COUNT = 4;
 const TYPE_LINK =
   "inline-flex min-h-touch-target items-center rounded-full border px-space-md text-label-md hover:border-primary hover:text-primary";
 
-// Màn Trang chủ (UX-DR62): Bài nổi bật (PostCard *featured*, bài xuất bản mới nhất) → Mới cập nhật (bỏ bài nổi bật;
-// cuối khu link "Mẹo vặt", "Gom link") → Mẹo vặt hay (PostCard *row*, "Xem tất cả" → `/meo-vat`). Banner, Gom link đồ
-// xinh, Xem nhiều thuộc epic sau: chưa render, không chừa chỗ. Khu rỗng thì ẩn. Không JSON-LD (AD-26).
+// Màn Trang chủ (UX-DR62): Bài nổi bật (PostCard *featured*, bài xuất bản mới nhất) → Gom link đồ xinh (≤ 8 món theo
+// thứ tự bio) → Mới cập nhật (bỏ bài nổi bật; cuối khu link "Mẹo vặt", "Gom link") → Mẹo vặt hay (PostCard *row*,
+// "Xem tất cả" → `/meo-vat`). Banner, Xem nhiều thuộc epic sau: chưa render, không chừa chỗ. Khu rỗng thì ẩn.
+// Không JSON-LD (AD-26).
 export async function HomeScreen() {
-  const [latest, meoVat] = await Promise.all([getLatestPosts(LATEST_COUNT + 1), getPostsByType("MEO_VAT", MEO_VAT_COUNT)]);
+  const [latest, meoVat, highlights] = await Promise.all([
+    getLatestPosts(LATEST_COUNT + 1),
+    getPostsByType("MEO_VAT", MEO_VAT_COUNT),
+    getBioHighlights(BIO_HIGHLIGHTS_LIMIT),
+  ]);
   const [featured, ...rest] = latest;
 
   return (
     <div className="mx-auto max-w-container-max space-y-space-xl px-margin py-space-lg lg:px-margin-desktop lg:py-space-xl">
       <h1 className="sr-only">{SITE_NAME}</h1>
       {!featured ? (
-        <EmptyState title="Chưa có bài viết nào" description="Mình đang viết những mẹo đầu tiên, bạn ghé lại sau nhé." />
+        <>
+          <EmptyState title="Chưa có bài viết nào" description="Mình đang viết những mẹo đầu tiên, bạn ghé lại sau nhé." />
+          <BioHighlights products={highlights} />
+        </>
       ) : (
         <>
           <section aria-label="Bài nổi bật">
             <PostCard post={featured} variant="featured" headingLevel="h2" preload />
           </section>
+
+          <BioHighlights products={highlights} />
 
           {rest.length > 0 && (
             <section aria-labelledby="moi-cap-nhat">
