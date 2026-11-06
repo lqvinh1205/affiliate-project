@@ -38,8 +38,8 @@ function PopularSection({ posts, id, className }: { posts: PostCardData[]; id: s
 // nhiều Lượt xem nhất 30 ngày, PostCard *rank*) → Mới cập nhật (bỏ bài nổi bật; cuối khu link "Mẹo vặt", "Gom link")
 // → Mẹo vặt hay (PostCard *row*, "Xem tất cả" → `/meo-vat`). Desktop: Bài nổi bật (7 cột) + Xem nhiều (5 cột) cạnh
 // nhau rồi tới Gom link đồ xinh — Xem nhiều dựng hai chỗ (mobile / desktop) để thứ tự đọc và Tab đúng ở cả hai. Khu
-// rỗng thì ẩn. Không JSON-LD (AD-26). `getLiveBanners` revalidate 60 giây nên Trang chủ tạo lại tối đa mỗi phút
-// (Banner tới lịch / hết hạn tự đổi — AD-7).
+// rỗng thì ẩn. Không JSON-LD (AD-26). `getLiveBanners` revalidate 30 giây, expire 5 phút nên Trang chủ tạo lại
+// tối đa mỗi 30 giây (Banner tới lịch / hết hạn tự đổi — AD-7).
 export async function HomeScreen() {
   const [banners, latest, meoVat, highlights, popular] = await Promise.all([
     getLiveBanners(),

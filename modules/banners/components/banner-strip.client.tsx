@@ -2,10 +2,12 @@
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { cn } from "@/components/ui/lib/utils";
+import { VISIBLE_SLIDE_RATIO, visibleSlideIndex } from "@/modules/banners/strip";
 
 // Dải Banner khi có ≥ 2 (UX-DR15, UX-DR85): cuộn ngang snap theo thẻ, không thanh cuộn, **không tự chạy**; chấm vị trí
 // theo thẻ đang thấy, chạm chấm thì cuộn tới thẻ đó (cuộn mượt, tắt khi reduced-motion — UX-DR91). Trang không cuộn
-// ngang: dải tràn ra lề bằng `-mx-margin` như dải "Gom link đồ xinh". Mobile chừa một mép thẻ sau để báo còn nữa.
+// ngang: dải tràn ra lề bằng `-mx-margin` như dải "Gom link đồ xinh"; hàng chấm xuống dòng khi nhiều Banner (≥ 8 chấm
+// 44px không vừa 360px). Mobile chừa một mép thẻ sau để báo còn nữa.
 export function BannerStrip({ slides, titles }: { slides: ReactNode[]; titles: string[] }) {
   const list = useRef<HTMLUListElement>(null);
   const [active, setActive] = useState(0);
@@ -16,11 +18,12 @@ export function BannerStrip({ slides, titles }: { slides: ReactNode[]; titles: s
     const items = Array.from(root.children) as HTMLElement[];
     const observer = new IntersectionObserver(
       (entries) => {
-        for (const e of entries) {
-          if (e.isIntersecting) setActive(items.indexOf(e.target as HTMLElement));
-        }
+        const i = visibleSlideIndex(
+          entries.map((e) => ({ index: items.indexOf(e.target as HTMLElement), ratio: e.intersectionRatio })),
+        );
+        if (i !== null) setActive(i);
       },
-      { root, threshold: 0.6 },
+      { root, threshold: VISIBLE_SLIDE_RATIO },
     );
     items.forEach((el) => observer.observe(el));
     return () => observer.disconnect();
@@ -44,7 +47,7 @@ export function BannerStrip({ slides, titles }: { slides: ReactNode[]; titles: s
           </li>
         ))}
       </ul>
-      <div className="flex justify-center" role="group" aria-label="Chọn banner">
+      <div className="flex flex-wrap justify-center" role="group" aria-label="Chọn banner">
         {titles.map((title, i) => (
           <button
             key={i}

@@ -17,7 +17,10 @@ afterEach(() => vi.useRealTimers());
 afterAll(() => db.$disconnect());
 
 let seq = 0;
-async function banner(title: string, extra: { enabled?: boolean; startsAt?: Date; endsAt?: Date; sortOrder?: number } = {}) {
+async function banner(
+  title: string,
+  extra: { enabled?: boolean; startsAt?: Date; endsAt?: Date; sortOrder?: number; linkUrl?: string } = {},
+) {
   return db.banner.create({
     data: {
       title,
@@ -52,6 +55,14 @@ describe("getLiveBanners (FR-32, AD-7)", () => {
     expect((await getLiveBanners()).map((b) => b.title)).toEqual(["11.11"]);
     vi.setSystemTime(hour(0.5));
     expect(await getLiveBanners()).toEqual([]);
+  });
+
+  it("bỏ dòng có link đích không hợp lệ (ghi thẳng DB) để thẻ không thành link ngoài sai FR-25", async () => {
+    await banner("Lạ", { linkUrl: "https://lazada.vn/x" });
+    await banner("Vòng host", { linkUrl: "//evil.example/x" });
+    await banner("Shopee", { linkUrl: "https://s.shopee.vn/abc" });
+    await banner("Trong site", { linkUrl: "/bio" });
+    expect((await getLiveBanners()).map((b) => b.title)).toEqual(["Shopee", "Trong site"]);
   });
 
   it("0 Banner → mảng rỗng", async () => {

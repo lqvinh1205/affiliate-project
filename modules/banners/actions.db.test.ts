@@ -114,6 +114,16 @@ describe("moveBanner, deleteBanner", () => {
     expect(actionTest.updatedTags).toEqual(["banners", "banners"]);
   });
 
+  it("đổi thứ tự Banner đã bị xoá (tab khác) → lỗi không tìm thấy, không làm mới cache", async () => {
+    const a = await db.banner.create({ data: { title: "A", image: "/uploads/x.jpg", linkUrl: "/bio" } });
+    await db.banner.delete({ where: { id: a.id } });
+    expect(await moveBanner({ id: a.id, direction: "up" })).toEqual({
+      ok: false,
+      error: "Không tìm thấy Banner. Có thể đã bị xoá.",
+    });
+    expect(actionTest.updatedTags).toEqual([]);
+  });
+
   it("chưa đăng nhập không đổi thứ tự, không xoá", async () => {
     const a = await db.banner.create({ data: { title: "A", image: "/uploads/x.jpg", linkUrl: "/bio" } });
     actionTest.authorization = null;

@@ -2,7 +2,7 @@
 title: 'Lượt gộp Epic 9: Banner khuyến mãi — Story 9.1–9.2'
 type: 'feature'
 created: '2026-11-06'
-status: 'review'
+status: 'done'
 review_loop_iteration: 0
 baseline_revision: 'df39aabb459b2d6e5160d84047f53ca63a46a6ec'
 followup_review_recommended: true
@@ -23,7 +23,7 @@ deferred: []
 
 **Problem:** Vinh chưa đặt được Banner khuyến mãi theo dịp (11.11); Trang chủ chưa có khu Banner. Epic 9 gồm Story 9.1–9.2 trong `_bmad-output/planning-artifacts/epics.md` (đọc nguyên văn từng story).
 
-**Approach:** Một lượt triển khai 9.1 → 9.2, rồi một lượt kiểm chứng gộp (cách làm theo lượt, Vinh 2026-11-05). Module mới `banners` (T2) chủ bảng `Banner` (AD-4); trạng thái lịch tính bằng một hàm thuần duy nhất `bannerStatus` cho site và CMS; query public lấy "now" bên trong hàm `"use cache"` với `cacheLife("minutes")` (revalidate 60 giây — AD-7); link Shopee qua `AffiliateLink` của `products` (AD-11, FR-25); ảnh qua `UploadField` (AD-24).
+**Approach:** Một lượt triển khai 9.1 → 9.2, rồi một lượt kiểm chứng gộp (cách làm theo lượt, Vinh 2026-11-05). Module mới `banners` (T2) chủ bảng `Banner` (AD-4); trạng thái lịch tính bằng một hàm thuần duy nhất `bannerStatus` cho site và CMS; query public lấy "now" bên trong hàm `"use cache"` với hồ sơ cache riêng `LIVE_BANNERS_CACHE_LIFE` (revalidate 30 giây, expire 5 phút — AD-7; review gộp đổi từ `"minutes"`); link Shopee qua `AffiliateLink` của `products` (AD-11, FR-25); ảnh qua `UploadField` (AD-24).
 
 ## Boundaries & Constraints
 
@@ -46,7 +46,7 @@ deferred: []
 | Trang chủ 0 Banner | không Banner "Đang hiện" | không render khu, không chừa chỗ; Bài nổi bật đầu trang (ảnh `preload`) | — |
 | Trang chủ 1 Banner | một Banner đang hiện | một thẻ: ảnh 2:1 trên (mobile) / trái (từ md), nhãn "Khuyến mãi", tiêu đề, mô tả, CTA pill "Xem trên Shopee" / "Xem ngay" | ảnh lỗi → ImageFallback, thẻ vẫn bấm được |
 | Trang chủ ≥ 2 Banner | nhiều Banner đang hiện | dải cuộn ngang snap, mép thẻ sau lộ ra trên mobile, chấm vị trí (nút 44px, chạm → cuộn tới), không tự chạy; cuộn mượt tắt khi reduced-motion | — |
-| Hết lịch | qua `endsAt` | Banner biến khỏi Trang chủ ≤ ~1 phút, không deploy lại (revalidate 60 giây, `/` revalidate 1m) | — |
+| Hết lịch | qua `endsAt` | Banner biến khỏi Trang chủ ~30–60 giây khi có lượt xem đều, chậm nhất 5 phút khi trang lâu không ai xem; không deploy lại (`/` revalidate 30s, expire 5m) | — |
 | Sửa trong CMS | lưu/xoá/đổi thứ tự | Trang chủ đổi ngay nhờ `updateTag(banners)` | — |
 
 </intent-contract>
@@ -56,7 +56,7 @@ deferred: []
 - **9.1 Quản lý Banner:**
   - `prisma/schema/banners.prisma` `Banner` + migration `20261106160000_add_banner` (bảng + CHECK `Banner_schedule_check`).
   - `platform/format.ts` (+ test): `formatDateTime`, `toVietnamDateTimeInput`, `parseVietnamDateTime` (ô datetime-local luôn là giờ Việt Nam UTC+7, không phụ thuộc múi giờ máy).
-  - `modules/banners/{constants,tags,status,link,schema,service,actions,queries,cms-queries,types}.ts`; test `status.test.ts`, `link.test.ts`, `schema.test.ts`, `actions.db.test.ts`, `queries.db.test.ts`.
+  - `modules/banners/{constants,tags,status,link,strip,schema,service,actions,queries,cms-queries,types}.ts`; test `status.test.ts`, `link.test.ts`, `strip.test.ts`, `schema.test.ts`, `actions.db.test.ts`, `queries.db.test.ts`.
   - `modules/banners/components/{banner-form.client.tsx, banner-status-badge.tsx}`.
   - `app/cms/banner/{page.tsx, moi/page.tsx, [id]/page.tsx}`, `_components/{banner-list-screen, banner-list.client, banner-list-skeleton, banner-create-screen, banner-edit-screen, banner-form-skeleton, banner-screen-header}.tsx`.
   - `app/cms/_components/cms-shell.client.tsx`: mục "Banner" giữa "Danh mục" và "Trang bio".
@@ -82,8 +82,8 @@ Action: saveBanner / moveBanner / deleteBanner
 ```text
 Query: getLiveBanners() (queries.ts, public)
 - Module: banners                    - Trả về: LiveBanner[] { id, title, description, image, linkUrl } (rỗng khi không có)
-- Cache: "use cache" + cacheLife("minutes") (stale 5', revalidate 60", expire 1h) + cacheTag(banners); now = new Date() trong hàm
-- Lọc: enabled + bannerStatus(b, now) === "LIVE"; thứ tự bannerOrderBy (sortOrder, createdAt, id)
+- Cache: "use cache" + cacheLife(LIVE_BANNERS_CACHE_LIFE) (stale 30", revalidate 30", expire 5') + cacheTag(banners); now = new Date() trong hàm
+- Lọc: enabled + bannerStatus(b, now) === "LIVE" + bannerLinkKind(linkUrl) khác null; thứ tự bannerOrderBy (sortOrder, createdAt, id)
 - Gọi từ: app/(site)/_components/home-screen.tsx
 
 Query: listBannersForCms(), getBannerForCms(id) (cms-queries.ts)
@@ -112,13 +112,13 @@ Phân loại: **an toàn** (thêm bảng). Production: Vinh chạy `npx prisma m
 
 **Execution:**
 - [x] 9.1 bảng `Banner` + migration (CHECK lịch), `bannerStatus`, `bannerLinkKind`, schema/service/actions, `/cms/banner` (danh sách, tạo, sửa, lên/xuống, xoá), StatusBadge, UploadField tỉ lệ 2:1, mục CmsShell "Banner"
-- [x] 9.2 `getLiveBanners` (now trong hàm cache, revalidate 60 giây), `BannerCard` / `BannerStrip` / `BannerSection`, khu Banner đầu Trang chủ
+- [x] 9.2 `getLiveBanners` (now trong hàm cache, revalidate 30 giây, expire 5 phút), `BannerCard` / `BannerStrip` / `BannerSection`, khu Banner đầu Trang chủ
 - [x] Test cho mọi action/query/hàm thuần mới; docs
 - [x] Kiểm tay (`next start -p 3300`): xem mục Auto Run Result
 
 **Acceptance Criteria:**
 - Given lượt hoàn tất, when chạy mọi lệnh Verification, then xanh; mỗi dòng Matrix có test tự động hoặc bước kiểm tay đã chạy.
-- Given `npm run build`, when xem bảng route, then `/` tĩnh (`○`) với revalidate 1m; `/cms/banner` có trong bảng.
+- Given `npm run build`, when xem bảng route, then `/` tĩnh (`○`) với revalidate 30s, expire 5m; `/cms/banner` có trong bảng.
 - Given Trang chủ và `/cms/banner` ở 360px và 1280px, then đúng AC Story 9.1–9.2 trong `epics.md`.
 
 ## Spec Change Log
@@ -132,12 +132,15 @@ Phân loại: **an toàn** (thêm bảng). Production: Vinh chạy `npx prisma m
 3. **Lịch nhập bằng ô `datetime-local`, luôn hiểu là giờ Việt Nam** (không theo múi giờ máy mở CMS), khung `[bắt đầu, kết thúc)`: đúng giờ kết thúc là Hết hạn. Hai mốc đều tuỳ chọn. Tắt thắng lịch. Kết thúc phải sau bắt đầu (Zod + CHECK DB).
 4. **Thứ tự bằng lên/xuống trong danh sách** (UX-DR85, như Danh mục), không có ô số "thứ tự" trong form; Banner mới đứng cuối.
 5. **Xoá cứng Banner** (ConfirmDialog, gợi ý tắt nếu chỉ muốn ẩn) — Banner không được bảng nào tham chiếu. Bật/tắt nằm trong form (Switch "Bật Banner"), không có nút bật/tắt một chạm ở danh sách.
-6. **`getLiveBanners` dùng `cacheLife("minutes")`** (stale 5 phút, revalidate 60 giây, expire 1 giờ) → `/` revalidate 1m. Do cơ chế stale-while-revalidate, request đầu sau mốc 60 giây vẫn nhận bản cũ và kích tạo lại; Banner hết lịch biến khỏi site trong khoảng 1–2 phút tuỳ lượt truy cập; trình duyệt đang mở trang có thể giữ bản cũ tới 5 phút (stale của router client). Không dùng hồ sơ ngắn hơn vì `expire` < 5 phút hoặc `stale` < 30 giây làm `/` không còn tĩnh. Sửa trong CMS thì `updateTag(banners)` đổi ngay.
+6. **(Đã thay bằng quyết định 12 ở review gộp)** ~~`getLiveBanners` dùng `cacheLife("minutes")`~~ (stale 5 phút, revalidate 60 giây, expire 1 giờ) → `/` revalidate 1m. Do cơ chế stale-while-revalidate, request đầu sau mốc 60 giây vẫn nhận bản cũ và kích tạo lại; Banner hết lịch biến khỏi site trong khoảng 1–2 phút tuỳ lượt truy cập; trình duyệt đang mở trang có thể giữ bản cũ tới 5 phút (stale của router client). Không dùng hồ sơ ngắn hơn vì `expire` < 5 phút hoặc `stale` < 30 giây làm `/` không còn tĩnh. Sửa trong CMS thì `updateTag(banners)` đổi ngay.
 7. **Lọc lịch ở JavaScript bằng `bannerStatus`** sau khi đọc các Banner đang bật (bảng rất ít dòng), để site và CMS chắc chắn dùng cùng một hàm (AD-7), thay vì viết lại điều kiện lịch trong `where`.
 8. **Thẻ Banner:** nhãn nhỏ cố định "Khuyến mãi" (`tertiary-fixed`), CTA pill "Xem trên Shopee" (+ icon tab mới, chữ ẩn ", mở Shopee trong tab mới") cho đích Shopee, "Xem ngay" (+ mũi tên) cho đích trong site. Không thêm trường "nhãn" vào form (FR-32 không có). Không đặt thêm AffiliateDisclosure riêng cho Banner: footer mọi trang đã có câu công khai, và Bài nổi bật/Gom link có nhãn riêng.
 9. **Dải ≥ 2 Banner:** thẻ rộng 88% trên mobile (lộ mép thẻ sau), 100% từ desktop; chấm vị trí là nút 44px (`aria-label` "Banner i/n: tiêu đề", `aria-current`), chạm thì cuộn tới (mượt, tắt khi reduced-motion); chấm theo thẻ đang thấy ≥ 60% (IntersectionObserver). Không tự chạy.
 10. **Ảnh Banner đầu tiên `preload`** (là ảnh lớn đầu Trang chủ); khi có Banner, ảnh Bài nổi bật không `preload` nữa.
 11. **Migration tên `20261106160000_add_banner`** (đổi tên thư mục do Prisma sinh `…065000` để xếp sau các migration đặt tay trước đó).
+12. **(Review gộp) `getLiveBanners` dùng hồ sơ riêng `LIVE_BANNERS_CACHE_LIFE` = `{ stale: 30, revalidate: 30, expire: 300 }`** thay `cacheLife("minutes")` (expire 1 giờ). Đúng mức tối thiểu AD-7 nên `/` vẫn `○` (build: revalidate 30s, expire 5m; header `s-maxage=30, stale-while-revalidate=270`). Kết quả: có lượt xem đều thì Banner hết lịch rời site trong ~30–60 giây; trang lâu không ai xem thì lượt xem đầu tiên vẫn có thể nhận bản cũ, **chậm nhất 5 phút** sau lần dựng trước (trước đây tới 1 giờ); trình duyệt đang mở trang giữ bản cũ tối đa 30 giây. **AC "≤ 1 phút" của Story 9.2 / NFR-5 chỉ đạt khi có lượt xem đều, không bảo đảm cứng**: muốn bảo đảm cứng phải làm Banner thành phần động theo request (bỏ `○` của `/`, trái AD-7) hoặc lọc lịch phía client (spine cấm). Cần Vinh chấp nhận "chậm nhất 5 phút khi trang vắng" hoặc chọn hướng khác. Chữ gợi ý ở `/cms/banner` đã ghi rõ. Trade-off: `stale` 30 giây < 5 phút nên Banner nằm ngoài App Shell (`partialPrefetching`) — điều hướng client tới `/` lấy khu Banner ở bước prefetch theo link/điều hướng thay vì từ App Shell; Trang chủ tạo lại tối đa mỗi 30 giây khi có lượt xem (các query khác vẫn cache riêng).
+13. **(Review gộp) `getLiveBanners` bỏ dòng có link đích không hợp lệ** (`bannerLinkKind` = null — dòng ghi thẳng DB hoặc theo luật cũ) thay vì để `BannerCard` rơi về `<Link>` cùng tab tới URL lạ. Lọc ở query (không ở thẻ) để số Banner, dải/chấm và cờ `preload` của Bài nổi bật tính đúng trên danh sách đã lọc.
+14. **(Review gộp) Hàng chấm của dải xuống dòng (`flex-wrap`)** khi nhiều Banner; không giới hạn số Banner đang hiện (CMS không có trần, FR-32 không nêu). Chấm vẫn là vùng chạm 44px (UX-DR88).
 
 ### Auto Run Result (mốc trước review gộp)
 
@@ -147,11 +150,32 @@ Phân loại: **an toàn** (thêm bảng). Production: Vinh chạy `npx prisma m
 - Không gọi `claude -p` thật (epic không có tính năng AI).
 - Cần Vinh: xem Quyết định tự chọn (nhất là 1, 2, 5, 6, 8); thử trên điện thoại thật: tải ảnh Banner từ máy, vuốt dải, chạm Banner Shopee; chạy `npx prisma migrate deploy` khi triển khai.
 
+### 2026-11-06 — Review gộp Epic 9: phân loại
+
+| # | Phát hiện | Quyết định | Lý do / việc đã làm |
+|---|---|---|---|
+| 1 | Hàng chấm không xuống dòng: ≥ 8 Banner thì trang 360px cuộn ngang (thấp) | Sửa | Đúng: 8 × 44px = 352px > 328px. Thêm `flex-wrap` cho hàng chấm (quyết định 14). |
+| 2 | Banner hết hạn có thể còn trên site tới ~1 giờ khi ít lượt xem (thấp) | Sửa | Đúng (expire 1h của `"minutes"`). Đổi sang `LIVE_BANNERS_CACHE_LIFE` expire 5 phút; sửa chữ gợi ý CMS và Matrix nêu đúng trường hợp xấu nhất (quyết định 12). Build: `/` `○` 30s/5m. |
+| 3 | Chấm vị trí mở trang 360px đứng ở Banner 2, sai sau khi nhảy lùi (trung bình) | Sửa | Đúng: `isIntersecting` đúng cả khi chỉ ló mép. Hàm thuần `visibleSlideIndex` (`modules/banners/strip.ts`) chọn thẻ thấy nhiều nhất trong các thẻ ≥ 60% theo `intersectionRatio`, không thẻ nào đạt thì giữ chấm. Test đơn vị: mở trang (1 / 0,14 → 0), nhảy lùi (0,95 / 0,2 → 0), nhiều thẻ đạt ngưỡng, không thẻ nào đạt. |
+| 4 | AC "hết hạn biến khỏi site ≤ 1 phút" chỉ đạt khi may (trung bình) | Sửa một phần + cần Vinh | Gộp gốc với #2: hồ sơ AD-7 tối thiểu (`stale` 30, `revalidate` 30, `expire` 300) — có lượt xem đều ~30–60 giây, router client ≤ 30 giây. Lượt xem đầu sau thời gian vắng vẫn có thể thấy bản cũ ≤ 5 phút (bản chất stale-while-revalidate; nhận xét "~60 giây" của review chỉ đúng khi có lượt xem đều). Không thể bảo đảm cứng mà giữ `/` tĩnh và không lọc client → ghi rõ ở quyết định 12 để Vinh chốt. |
+| 5 | Thiếu test `moveBanner` với Banner đã bị xoá (thấp) | Sửa | Thêm test DB: trả `{ ok: false, error: "Không tìm thấy Banner. Có thể đã bị xoá." }`, `updatedTags` rỗng. |
+| 6 | Link đích không hợp lệ làm thẻ rơi về `<Link>` cùng tab; nhánh FR-25 chỉ kiểm tay (thấp) | Sửa | `getLiveBanners` bỏ dòng có `bannerLinkKind` = null (quyết định 13); test DB với `https://lazada.vn/x`, `//evil.example/x` bị bỏ, Shopee và `/bio` giữ. Nhánh `AffiliateLink` / `next/link` của `BannerCard` vẫn chỉ kiểm tay (repo chưa có test component) — kiểm lại khi chạy `next start`. |
+
+### Auto Run Result
+
+- Sửa 6 (#4 sửa một phần, gộp gốc với #2; phần còn lại là quyết định 12 cần Vinh chốt), hoãn 0, bác 0.
+- `npm test` 371/371 (44 file); `npm run test:db` 222/222 (26 file); `npx tsc --noEmit`, `npm run lint`, `npm run build` sạch (`/` `○` revalidate 30s expire 5m; `/cms/banner*` có trong bảng route).
+- `next start` cổng 3300: `/`, `/meo-vat`, `/gom-link`, `/tim-kiem`, `/bio`, `/sitemap.xml`, `/robots.txt` 200; `/khong-co-trang` 404; `/cms`, `/cms/banner` không đăng nhập 401; `/` trả `Cache-Control: s-maxage=30, stale-while-revalidate=270`. Chèn thẳng DB cục bộ 2 Banner thử (một `/bio`, một `https://lazada.vn/x`), không `updateTag`: sau ~35 giây Trang chủ có Banner `/bio`, không có Banner lazada. Dữ liệu thử đã xoá (trước đó bảng rỗng); server 3300 đã tắt; không đụng cổng 3100/3200.
+- Không gọi `claude -p` thật (epic không có tính năng AI).
+- Cần Vinh: chốt quyết định 12 (AC "≤ 1 phút" chỉ đạt khi có lượt xem đều, chậm nhất 5 phút); xem quyết định 1, 2, 5, 8, 13; thử trên điện thoại thật: mở Trang chủ có 2–3 Banner, chấm đầu phải sáng ở Banner 1, vuốt tới/lùi và chạm chấm; chạy `npx prisma migrate deploy` khi triển khai.
+
 ## Verification
 
 **Commands:**
 - `npm test`; `TEST_DATABASE_URL=postgresql://postgres:postgres@localhost:54329/affiliate_test npm run test:db` -- expected: xanh
 - `npx tsc --noEmit`, `npm run lint`, `npm run build` -- expected: sạch
+
+**Kết quả sau review gộp (2026-11-06):** `npm test` 371/371; `npm run test:db` 222/222; tsc, lint, build sạch.
 
 **Kết quả (mốc trước review gộp, 2026-11-06):** `npm test` 367/367; `npm run test:db` 220/220; tsc, lint, build sạch.
 

@@ -46,7 +46,7 @@ export async function BannerListScreen() {
           </div>
           <p className="text-body-sm text-on-surface-variant">
             Chỉ Banner &quot;Đang hiện&quot; lên Trang chủ, theo thứ tự dưới đây. Tới lịch hoặc hết lịch thì site tự đổi
-            trong khoảng 1 phút.
+            trong khoảng 1 phút (trang lâu không ai xem: chậm nhất 5 phút).
           </p>
           <BannerList
             items={banners.map((b) => ({
