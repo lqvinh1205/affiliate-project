@@ -16,7 +16,7 @@ export async function getBioForCms() {
         name: true,
         image: true,
         createdAt: true,
-        bioItem: { select: { visible: true, pinned: true, sortAt: true } },
+        bioItem: { select: { visible: true, pinned: true, sortAt: true, pinnedAt: true } },
       },
     }),
   ]);

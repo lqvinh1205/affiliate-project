@@ -20,9 +20,11 @@ model BioItem {
   /// "Hiện trên bio" (FR-31).
   visible   Boolean   @default(true)
   pinned    Boolean   @default(false)
-  /// Khoá thứ tự (`modules/bio/order.ts`): món ghim xếp tăng dần (ghim gán lúc ghim → theo thứ tự đặt); món còn lại
-  /// xếp giảm dần theo `sortAt ?? Product.createdAt`. Null = chưa sắp tay.
+  /// Khoá thứ tự nhóm còn lại (`modules/bio/order.ts`): xếp giảm dần theo `sortAt ?? Product.createdAt`. Null = chưa
+  /// sắp tay. Ghim/bỏ ghim không đổi cột này → bỏ ghim về chỗ cũ.
   sortAt    DateTime?
+  /// Khoá thứ tự nhóm "Đang ghim": xếp tăng dần (gán lúc ghim → theo thứ tự đặt). Null khi không ghim.
+  pinnedAt  DateTime?
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
 }

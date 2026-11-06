@@ -24,7 +24,8 @@ model Product {
   researchProfile    ResearchProfile?
   contentSetProducts ContentSetProduct[]
   bioItem            BioItem?
-  /// Migration đặt `createdAt`/`updatedAt` = lúc áp cho Sản phẩm có sẵn.
+  /// Migration đặt `createdAt`/`updatedAt` = lúc áp cho Sản phẩm có sẵn; `bio_pinned_at_untie_product_created_at` lùi
+  /// `createdAt` trùng nhau mỗi món 1 ms (giữ thứ tự cũ) để Trang bio sắp thứ tự không phải ghi lại cả Kho.
   createdAt          DateTime            @default(now())
   updatedAt          DateTime            @updatedAt
 

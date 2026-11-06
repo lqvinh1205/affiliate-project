@@ -1,19 +1,27 @@
 import { describe, expect, it } from "vitest";
-import { flattenBioEntries, orderBioEntries, planBioMove, type BioEntry } from "@/modules/bio/order";
+import {
+  BIO_KEY_FIELD,
+  flattenBioEntries,
+  orderBioEntries,
+  planBioMove,
+  type BioEntry,
+  type BioGroup,
+} from "@/modules/bio/order";
 
 const day = (n: number) => new Date(Date.UTC(2026, 10, n));
 const entry = (id: string, created: number, bio: Partial<NonNullable<BioEntry["bioItem"]>> | null = null): BioEntry => ({
   id,
   createdAt: day(created),
-  bioItem: bio && { visible: true, pinned: false, sortAt: null, ...bio },
+  bioItem: bio && { visible: true, pinned: false, sortAt: null, pinnedAt: null, ...bio },
 });
 const ids = (l: BioEntry[]) => l.map((e) => e.id);
 
 // Áp kế hoạch đổi chỗ vào danh sách rồi xếp lại (giả lập ghi DB).
-function applied(entries: BioEntry[], plan: { id: string; sortAt: Date }[]) {
+function applied(entries: BioEntry[], plan: { id: string; at: Date }[], kind: BioGroup = "rest") {
   return entries.map((e) => {
     const p = plan.find((x) => x.id === e.id);
-    return p ? { ...e, bioItem: { visible: true, pinned: false, ...e.bioItem, sortAt: p.sortAt } } : e;
+    const base = { visible: true, pinned: false, sortAt: null, pinnedAt: null, ...e.bioItem };
+    return p ? { ...e, bioItem: { ...base, [BIO_KEY_FIELD[kind]]: p.at } } : e;
   });
 }
 
@@ -24,15 +32,20 @@ describe("orderBioEntries (thứ tự Trang bio)", () => {
     expect(ids(rest)).toEqual(["b", "c", "a"]);
   });
 
-  it("món ghim theo thứ tự đặt (sortAt tăng dần) và đứng trước món còn lại", () => {
+  it("món ghim theo thứ tự đặt (pinnedAt tăng dần) và đứng trước món còn lại", () => {
     const list = [
       entry("a", 1),
-      entry("b", 2, { pinned: true, sortAt: day(20) }),
-      entry("c", 3, { pinned: true, sortAt: day(10) }),
+      entry("b", 2, { pinned: true, pinnedAt: day(20) }),
+      entry("c", 3, { pinned: true, pinnedAt: day(10) }),
       entry("d", 4),
     ];
     expect(ids(orderBioEntries(list).pinned)).toEqual(["c", "b"]);
     expect(ids(flattenBioEntries(list))).toEqual(["c", "b", "d", "a"]);
+  });
+
+  it("bỏ ghim giữ chỗ đã sắp tay ở nhóm còn lại (sortAt không phụ thuộc pinnedAt)", () => {
+    const list = [entry("a", 3), entry("b", 2), entry("c", 1, { sortAt: day(9), pinnedAt: null })];
+    expect(ids(orderBioEntries(list).rest)).toEqual(["c", "a", "b"]);
   });
 
   it("món đã sắp tay dùng sortAt thay cho ngày tạo; hoà khoá xếp theo id", () => {
@@ -47,8 +60,8 @@ describe("planBioMove", () => {
     const rest = orderBioEntries(list).rest;
     const plan = planBioMove(rest, "rest", "c", "up");
     expect(plan).toEqual([
-      { id: "b", sortAt: day(1) },
-      { id: "c", sortAt: day(2) },
+      { id: "b", at: day(1) },
+      { id: "c", at: day(2) },
     ]);
     expect(ids(orderBioEntries(applied(list, plan)).rest)).toEqual(["a", "c", "b"]);
   });
@@ -72,11 +85,15 @@ describe("planBioMove", () => {
 
   it("đưa xuống trong nhóm Đang ghim", () => {
     const list = [
-      entry("a", 1, { pinned: true, sortAt: day(10) }),
-      entry("b", 2, { pinned: true, sortAt: day(11) }),
-      entry("c", 3, { pinned: true, sortAt: day(12) }),
+      entry("a", 1, { pinned: true, pinnedAt: day(10), sortAt: day(30) }),
+      entry("b", 2, { pinned: true, pinnedAt: day(11) }),
+      entry("c", 3, { pinned: true, pinnedAt: day(12) }),
     ];
     const plan = planBioMove(orderBioEntries(list).pinned, "pinned", "a", "down");
-    expect(ids(orderBioEntries(applied(list, plan)).pinned)).toEqual(["b", "a", "c"]);
+    expect(plan.map((p) => p.id).sort()).toEqual(["a", "b"]);
+    const after = applied(list, plan, "pinned");
+    expect(ids(orderBioEntries(after).pinned)).toEqual(["b", "a", "c"]);
+    // Khoá của nhóm còn lại không đổi.
+    expect(after[0].bioItem?.sortAt).toEqual(day(30));
   });
 });

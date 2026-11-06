@@ -26,7 +26,7 @@ export function FilterChips({
     <div
       role="group"
       aria-label={label}
-      className="-mx-margin flex snap-x gap-space-sm overflow-x-auto px-margin py-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+      className="-mx-margin flex snap-x scroll-px-margin gap-space-sm overflow-x-auto px-margin py-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
     >
       {chips.map((chip) => {
         const active = chip.value === value;

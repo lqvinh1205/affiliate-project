@@ -17,7 +17,7 @@ const bioProductSelect = {
   ...publicProductSelect,
   createdAt: true,
   categoryId: true,
-  bioItem: { select: { visible: true, pinned: true, sortAt: true } },
+  bioItem: { select: { visible: true, pinned: true, sortAt: true, pinnedAt: true } },
 } as const satisfies Prisma.ProductSelect;
 
 // Sản phẩm đang hiện trên website và trên bio (thiếu `BioItem` = hiện), theo thứ tự bio (`order.ts`).

@@ -4,7 +4,7 @@ import type { Prisma } from "@/generated/prisma/client";
 import { db } from "@/platform/db";
 import { UserError } from "@/platform/errors";
 import { visibleProductWhere } from "@/modules/products/queries";
-import { bioStateOf, orderBioEntries, planBioMove, type BioState } from "@/modules/bio/order";
+import { BIO_KEY_FIELD, bioStateOf, orderBioEntries, planBioMove, type BioState } from "@/modules/bio/order";
 import type {
   BioSettingsInput,
   moveBioItemInputSchema,
@@ -47,13 +47,14 @@ export async function setBioItemVisibleRecord(data: z.infer<typeof setBioItemVis
   });
 }
 
-// Ghim: món mới ghim đứng cuối nhóm "Đang ghim" (theo thứ tự đặt). Bỏ ghim: về chỗ theo ngày tạo.
+// Ghim: món mới ghim đứng cuối nhóm "Đang ghim" (theo thứ tự đặt). Bỏ ghim: về chỗ cũ trong nhóm còn lại (`sortAt`
+// không đổi khi ghim — chưa sắp tay thì theo ngày tạo).
 export async function setBioItemPinnedRecord(data: z.infer<typeof setBioItemPinnedInputSchema>, tx?: Tx) {
   await inTransaction(tx, async (c) => {
     await requireVisibleProduct(c, data.productId);
     const current = await c.bioItem.findUnique({ where: { productId: data.productId }, select: { pinned: true } });
     if ((current?.pinned ?? false) === data.pinned) return;
-    await upsertBioItem(c, data.productId, { pinned: data.pinned, sortAt: data.pinned ? new Date() : null });
+    await upsertBioItem(c, data.productId, { pinned: data.pinned, pinnedAt: data.pinned ? new Date() : null });
   });
 }
 
@@ -63,11 +64,15 @@ export async function moveBioItemRecord(data: z.infer<typeof moveBioItemInputSch
     await requireVisibleProduct(c, data.productId);
     const rows = await c.product.findMany({
       where: visibleProductWhere,
-      select: { id: true, createdAt: true, bioItem: { select: { visible: true, pinned: true, sortAt: true } } },
+      select: {
+        id: true,
+        createdAt: true,
+        bioItem: { select: { visible: true, pinned: true, sortAt: true, pinnedAt: true } },
+      },
     });
     const self = rows.find((r) => r.id === data.productId);
     const kind = self && bioStateOf(self).pinned ? "pinned" : "rest";
     const plan = planBioMove(orderBioEntries(rows)[kind], kind, data.productId, data.direction);
-    for (const { id, sortAt } of plan) await upsertBioItem(c, id, { sortAt });
+    for (const { id, at } of plan) await upsertBioItem(c, id, { [BIO_KEY_FIELD[kind]]: at });
   });
 }

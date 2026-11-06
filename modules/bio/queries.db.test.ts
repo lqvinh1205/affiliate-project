@@ -71,7 +71,7 @@ describe("getBioHighlights (Story 6.3)", () => {
     for (let i = 1; i <= 10; i++) await product(`SP ${i}`, i);
     const oldest = await product("Ghim", 0);
     await product("Ẩn", 20, { hidden: true });
-    await db.bioItem.create({ data: { productId: oldest.id, pinned: true, sortAt: new Date() } });
+    await db.bioItem.create({ data: { productId: oldest.id, pinned: true, pinnedAt: new Date() } });
     const list = await getBioHighlights(BIO_HIGHLIGHTS_LIMIT);
     expect(list.map((p) => p.name)).toEqual(["Ghim", "SP 10", "SP 9", "SP 8", "SP 7", "SP 6", "SP 5", "SP 4"]);
     expect(Object.keys(list[0]).sort()).toEqual(["affiliateUrl", "id", "image", "name", "priceText", "priceUpdatedAt"].sort());

@@ -47,11 +47,14 @@ describe("Giới thiệu và câu công khai (FR-31)", () => {
       ok: false,
       error: "Bạn cần đăng nhập CMS",
     });
-    expect(await setBioItemVisible({ productId: "x", visible: false })).toEqual({
-      ok: false,
-      error: "Bạn cần đăng nhập CMS",
-    });
+    const a = await product("A", 1);
+    const denied = { ok: false, error: "Bạn cần đăng nhập CMS" };
+    expect(await setBioItemVisible({ productId: a.id, visible: false })).toEqual(denied);
+    expect(await setBioItemPinned({ productId: a.id, pinned: true })).toEqual(denied);
+    expect(await moveBioItem({ productId: a.id, direction: "down" })).toEqual(denied);
     expect(await db.bioSettings.count()).toBe(0);
+    expect(await db.bioItem.count()).toBe(0);
+    expect(actionTest.updatedTags).toEqual([]);
   });
 });
 
@@ -79,7 +82,7 @@ describe("Chọn món, ghim, sắp thứ tự (FR-31, UX-DR49)", () => {
     expect(actionTest.updatedTags).toEqual(["bio", "bio"]);
   });
 
-  it("ghim: theo thứ tự đặt, đứng đầu /bio; bỏ ghim về chỗ theo ngày tạo", async () => {
+  it("ghim: theo thứ tự đặt, đứng đầu /bio; bỏ ghim về chỗ cũ (chưa sắp tay = theo ngày tạo)", async () => {
     const a = await product("A", 1);
     const b = await product("B", 2);
     await product("C", 3);
@@ -96,6 +99,21 @@ describe("Chọn món, ghim, sắp thứ tự (FR-31, UX-DR49)", () => {
     expect((await cmsNames()).pinned).toEqual(["A", "B"]);
     await setBioItemPinned({ productId: a.id, pinned: false });
     expect(await cmsNames()).toEqual({ pinned: ["B"], rest: ["C", "A"] });
+    // Ghim lại món đang ghim không ghi gì nên không updateTag.
+    expect(actionTest.updatedTags).toEqual(["bio", "bio", "bio", "bio"]);
+  });
+
+  it("bỏ ghim trả món về chỗ đã sắp tay trong nhóm còn lại", async () => {
+    await product("A", 3);
+    await product("B", 2);
+    const c = await product("C", 1);
+    await moveBioItem({ productId: c.id, direction: "up" });
+    await moveBioItem({ productId: c.id, direction: "up" });
+    expect((await cmsNames()).rest).toEqual(["C", "A", "B"]);
+    await setBioItemPinned({ productId: c.id, pinned: true });
+    expect(await cmsNames()).toEqual({ pinned: ["C"], rest: ["A", "B"] });
+    await setBioItemPinned({ productId: c.id, pinned: false });
+    expect(await cmsNames()).toEqual({ pinned: [], rest: ["C", "A", "B"] });
   });
 
   it("lên/xuống trong từng nhóm, không vượt nhóm; thấy ngay trên /bio", async () => {
@@ -116,6 +134,8 @@ describe("Chọn món, ghim, sắp thứ tự (FR-31, UX-DR49)", () => {
     // Sản phẩm mới tạo sau vẫn lên đầu nhóm còn lại.
     await db.product.create({ data: { name: "E", affiliateUrl: "https://shopee.vn/e" } });
     expect(await publicNames()).toEqual(["B", "A", "E", "C", "D"]);
+    // 2 ghim + 4 lên/xuống (kể cả lần ở đầu/cuối nhóm không ghi gì) — mỗi action thành công đều updateTag(bio).
+    expect(actionTest.updatedTags).toEqual(Array(6).fill("bio"));
   });
 
   it("Sản phẩm cùng ngày tạo vẫn sắp được", async () => {
@@ -132,7 +152,9 @@ describe("Chọn món, ghim, sắp thứ tự (FR-31, UX-DR49)", () => {
     const err = { ok: false, error: "Sản phẩm không còn trong Kho hoặc đang ẩn. Tải lại trang." };
     expect(await setBioItemPinned({ productId: hidden.id, pinned: true })).toEqual(err);
     expect(await moveBioItem({ productId: "khong-co", direction: "up" })).toEqual(err);
+    expect(await setBioItemVisible({ productId: hidden.id, visible: false })).toEqual(err);
     expect(await db.bioItem.count()).toBe(0);
+    expect(actionTest.updatedTags).toEqual([]);
 
     await setBioItemPinned({ productId: a.id, pinned: true });
     // Ẩn bằng `db` (AD-2: không import action của `products`; action ẩn đã `updateTag(products)` — test ở `products`).

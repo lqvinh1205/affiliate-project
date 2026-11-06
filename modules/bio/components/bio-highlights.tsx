@@ -22,7 +22,7 @@ export function BioHighlights({ products }: { products: PublicProduct[] }) {
       <div className="mb-space-md">
         <AffiliateDisclosure variant="text" sentence={BIO_HIGHLIGHTS_DISCLOSURE} />
       </div>
-      <ul className="-mx-margin flex snap-x snap-mandatory gap-gutter overflow-x-auto px-margin pb-space-xs [scrollbar-width:none] lg:mx-0 lg:grid lg:grid-cols-4 lg:gap-gutter-desktop lg:overflow-visible lg:px-0 [&::-webkit-scrollbar]:hidden">
+      <ul className="-mx-margin flex snap-x snap-mandatory scroll-px-margin gap-gutter overflow-x-auto px-margin pb-space-xs [scrollbar-width:none] lg:mx-0 lg:grid lg:grid-cols-4 lg:gap-gutter-desktop lg:overflow-visible lg:px-0 [&::-webkit-scrollbar]:hidden">
         {products.map((p) => (
           <li key={p.id} className="flex shrink-0 snap-start lg:block">
             <ProductCard product={p} variant="tile" />
