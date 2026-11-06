@@ -26,9 +26,8 @@ export async function ProductEditScreen({ params }: Pick<PageProps<"/cms/san-pha
         badge={<ProductStatusBadge hidden={product.hidden} />}
         actions={<ProductVisibilityButton id={product.id} name={product.name} hidden={product.hidden} />}
       />
-      {/* Duyệt Danh mục gợi ý đổi `categoryId`: khoá theo Danh mục để form đọc lại giá trị mới (AD-12). */}
       <ProductForm
-        key={`${product.id}-${product.categoryId ?? ""}`}
+        key={product.id}
         categories={categories}
         priceUpdatedAt={product.priceUpdatedAt?.toISOString() ?? null}
         defaultValues={{

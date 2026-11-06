@@ -77,6 +77,34 @@ describe("ask", () => {
     await expect(ask({ prompt, input: { topic: "x" } })).rejects.toEqual(new UserError(AI_UNAVAILABLE));
   });
 
+  it("chỉ một nhà, lỗi tạm thời ở lần trước thì lần sau vẫn gọi nhà đó (không khoá AI suốt cooldown)", async () => {
+    let n = 0;
+    fakeAi.reply(() => {
+      if (++n === 1) throw new ProviderError("quota", "hết hạn mức");
+      return { title: "Lần sau" };
+    });
+    await expect(ask({ prompt, input: { topic: "x" } })).rejects.toEqual(new UserError(AI_UNAVAILABLE));
+    expect((await ask({ prompt, input: { topic: "y" } })).data).toEqual({ title: "Lần sau" });
+    expect(fakeAi.calls()).toHaveLength(2);
+  });
+
+  it("hết hạn của chính ask thì không cooldown nhà: nhà dự phòng vẫn được bỏ qua, nhà chính được gọi lại", async () => {
+    vi.stubEnv("AI_PROVIDERS", "fake,fake-2");
+    vi.stubEnv("AI_TIMEOUT_MS", "50");
+    let n = 0;
+    fakeAi.reply(async () => {
+      if (++n === 1) {
+        await new Promise((r) => setTimeout(r, 80));
+        return { title: 1 };
+      }
+      return { title: "Nhà chính" };
+    });
+    fakeAi.reply(() => ({ title: "Dự phòng" }), "fake-2");
+    await expect(ask({ prompt, input: { topic: "x" } })).rejects.toEqual(new UserError(AI_UNAVAILABLE));
+    expect((await ask({ prompt, input: { topic: "y" } })).data).toEqual({ title: "Nhà chính" });
+    expect(fakeAi.calls("fake-2")).toHaveLength(0);
+  });
+
   it("lỗi không phải của nhà cung cấp thì ném ra nguyên vẹn", async () => {
     fakeAi.reply(() => {
       throw new TypeError("lỗi lập trình");

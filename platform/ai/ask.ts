@@ -105,9 +105,11 @@ export async function ask<Input, Output extends z.ZodType, Style = void>(
   const user = prompt.user(opts.input);
   const images = opts.images ?? [];
 
-  for (const provider of providerChain()) {
-    if ((cooldownUntil.get(provider.name) ?? 0) > Date.now()) continue;
-
+  // Bỏ qua nhà đang cooldown; nếu mọi nhà đều đang cooldown (vd. chỉ cấu hình một nhà) thì vẫn thử cả chuỗi theo
+  // thứ tự — một lỗi tạm thời không được khoá mọi tính năng AI suốt thời gian cooldown.
+  const chain = providerChain();
+  const ready = chain.filter((p) => (cooldownUntil.get(p.name) ?? 0) <= Date.now());
+  for (const provider of ready.length > 0 ? ready : chain) {
     const skipped: AiCapability[] = [];
     if (opts.videoUrl && !provider.supports.video) skipped.push("video");
     const useImages = images.length > 0 && provider.supports.images;
@@ -124,7 +126,8 @@ export async function ask<Input, Output extends z.ZodType, Style = void>(
       let message = user;
       for (let attempt = 1; ; attempt++) {
         const remaining = deadline - Date.now();
-        if (remaining <= 0) throw new ProviderError("timeout", "hết hạn 90 giây");
+        // Hết hạn của chính `ask` (không phải nhà chậm): dừng, không cooldown nhà.
+        if (remaining <= 0) throw new UserError(AI_UNAVAILABLE);
         const res = await provider.generate({
           system,
           user: message,

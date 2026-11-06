@@ -16,7 +16,9 @@ import {
 // (`claude -p`) trên máy chủ, đăng nhập bằng gói thuê bao. Mỗi lần gọi:
 // - chạy trong một thư mục tạm riêng (`--restricted` giới hạn công cụ file trong thư mục này, `--safe-mode` bỏ
 //   CLAUDE.md, skill, hook, MCP của máy), không lưu phiên;
-// - chỉ bật công cụ cần: `Read` khi có ảnh (ảnh tải về thư mục tạm), `WebSearch`/`WebFetch` khi tìm web;
+// - chỉ bật công cụ cần: `Read` khi có ảnh (ảnh tải về thư mục tạm), `WebSearch`/`WebFetch` khi tìm web; luật cho
+//   phép `Read` chỉ mở đúng thư mục tạm (không dùng `Read` trần — luật trần cho phép đọc mọi đường dẫn, mà cùng lần
+//   gọi có dữ liệu ngoài như đánh giá Shopee, trang web và có `WebFetch`);
 // - kết quả theo `--json-schema`, đọc ở `structured_output` của `--output-format json`;
 // - tiến trình con chỉ nhận biến môi trường cần để chạy và đăng nhập (không có DATABASE_URL, mật khẩu CMS…).
 
@@ -50,8 +52,11 @@ function model(profile: ProviderRequest["profile"]) {
 }
 
 // Tham số dòng lệnh cho một lần gọi (tách riêng để test).
-export function buildClaudeArgs(req: ProviderRequest, opts: { hasImages: boolean }) {
-  const tools = [...(opts.hasImages ? ["Read"] : []), ...(req.webSearch ? ["WebSearch", "WebFetch"] : [])];
+export function buildClaudeArgs(req: ProviderRequest, opts: { hasImages: boolean; dir: string }) {
+  const web = req.webSearch ? ["WebSearch", "WebFetch"] : [];
+  const tools = [...(opts.hasImages ? ["Read"] : []), ...web];
+  // Đường dẫn tuyệt đối trong luật quyền viết dạng `//abs/path/**`.
+  const allowed = [...(opts.hasImages ? [`Read(/${path.resolve(opts.dir)}/**)`] : []), ...web];
   return [
     "-p",
     "--output-format",
@@ -69,7 +74,7 @@ export function buildClaudeArgs(req: ProviderRequest, opts: { hasImages: boolean
     "none",
     "--tools",
     tools.join(","),
-    ...(tools.length > 0 ? ["--allowedTools", tools.join(",")] : []),
+    ...(allowed.length > 0 ? ["--allowedTools", allowed.join(",")] : []),
   ];
 }
 
@@ -104,7 +109,9 @@ async function downloadImages(urls: string[], dir: string, signal: AbortSignal) 
   return files;
 }
 
-const QUOTA = /usage limit|rate limit|rate_limit|quota|429|overloaded|too many requests/i;
+// Hết hạn mức (cooldown dài): chỉ khớp cụm từ hoặc mã HTTP 429 đi sau "API Error"/"status"/"HTTP" — không khớp
+// "429" nằm trong mã yêu cầu, số byte… "overloaded" (HTTP 529) là quá tải tạm thời, tính là `unavailable`.
+const QUOTA = /usage limit|rate[ _]limit|quota|too many requests|\b(?:api error|status|http)\W{0,3}429\b/i;
 
 function run(args: string[], stdin: string, cwd: string, signal: AbortSignal) {
   return new Promise<{ code: number | null; stdout: string; stderr: string }>((resolve, reject) => {
@@ -112,8 +119,14 @@ function run(args: string[], stdin: string, cwd: string, signal: AbortSignal) {
     const child = spawn(bin, args, { cwd, env: childEnv(), signal, stdio: ["pipe", "pipe", "pipe"] });
     let stdout = "";
     let stderr = "";
-    child.stdout.on("data", (d) => (stdout += d));
-    child.stderr.on("data", (d) => (stderr += d));
+    // Giải mã UTF-8 theo luồng: ký tự tiếng Việt nhiều byte bị cắt giữa hai đoạn không thành U+FFFD.
+    child.stdout.setEncoding("utf8");
+    child.stderr.setEncoding("utf8");
+    child.stdout.on("data", (d: string) => (stdout += d));
+    child.stderr.on("data", (d: string) => (stderr += d));
+    // `claude` thoát trước khi đọc hết stdin → EPIPE trên luồng stdin; bỏ qua để mã thoát ở "close" báo lỗi
+    // (không có listener thì thành uncaught exception làm sập tiến trình Next).
+    child.stdin.on("error", () => {});
     child.on("error", (e) => {
       if (signal.aborted) reject(new ProviderError("timeout", "claude -p quá hạn"));
       else reject(new ProviderError("unavailable", `không chạy được claude: ${e.message}`));
@@ -162,7 +175,7 @@ export const claudeCliProvider: AiProvider = {
         images.length > 0
           ? `${req.user}\n\nẢnh Sản phẩm (mở từng file bằng công cụ Read để xem):\n${images.map((f) => `- ${f}`).join("\n")}`
           : req.user;
-      const { code, stdout, stderr } = await run(buildClaudeArgs(req, { hasImages: images.length > 0 }), user, dir, signal);
+      const { code, stdout, stderr } = await run(buildClaudeArgs(req, { hasImages: images.length > 0, dir }), user, dir, signal);
       if (signal.aborted) throw new ProviderError("timeout", "claude -p quá hạn");
       return { json: parseClaudeOutput(stdout, stderr, code), imagesUsed: images.length };
     } finally {

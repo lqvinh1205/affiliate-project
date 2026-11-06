@@ -2,7 +2,7 @@
 title: 'Lượt gộp Epic 4: Nghiên cứu Sản phẩm bằng AI — Story 4.1–4.5'
 type: 'feature'
 created: '2026-11-06'
-status: 'review'
+status: 'done'
 review_loop_iteration: 0
 baseline_revision: '6b14178375505c347137cebfad6b393fc122f602'
 followup_review_recommended: true
@@ -143,14 +143,42 @@ Tính năng AI: Nghiên cứu Sản phẩm (FR-6..FR-11)
 15. **Một action `researchProduct` cho cả "Nghiên cứu" và "Tạo lại"** (có chỉ dẫn tuỳ chọn); Tạo lại được từ Chờ duyệt, Lỗi, Đã từ chối; hồ sơ đã Duyệt thì không nghiên cứu lại (sửa trực tiếp hồ sơ). Từ chối hồ sơ không tự từ chối Danh mục gợi ý.
 16. **Người đọc mục tiêu, Góc viết hiện dạng sửa được (tên + lý do/câu mở đầu), chưa có AudiencePicker/AnglePicker để chọn** — việc chọn phục vụ tạo Bộ nội dung (Epic 5). Form không thêm/xoá ý; đổi nhiều thì Tạo lại kèm chỉ dẫn.
 17. **Form hồ sơ không dùng `CmsForm`** (nút Lưu dính đáy sẽ chồng nút Lưu của form Sản phẩm cùng màn); vẫn RHF + `zodResolver` + `UnsavedChangesGuard` + Toast.
-18. **Duyệt Danh mục gợi ý → `ProductForm` khoá theo `categoryId`** để form hiện Danh mục mới (AD-12 chỉ đọc `defaultValues` lúc mount); đổi lại mất thay đổi chưa lưu trên form Sản phẩm (ghi `deferred-work.md`).
+18. **Duyệt Danh mục gợi ý → `ProductForm` cập nhật riêng ô Danh mục** (`resetField("categoryId")` khi `categoryId` từ server đổi), không mount lại form — các ô khác đang sửa chưa lưu được giữ (sửa sau review gộp; trước đó khoá form theo `categoryId` làm mất thay đổi).
 19. **Dải Thông tin không có nguồn:** AI chỉ được ghi ý có nguồn; link nguồn chỉ nhận http(s) (chặn `javascript:`), sai thì bỏ link.
+20. **(review gộp) Mọi nhà đều đang cooldown thì vẫn thử cả chuỗi theo thứ tự** thay vì báo "AI đang bận" ngay — với một nhà duy nhất, lỗi tạm thời không khoá mọi tính năng AI suốt 2 phút–6 giờ; nhà hết hạn mức thật thì `claude -p` báo lỗi ngay, không tốn token. Cooldown vẫn có tác dụng khi có nhà dự phòng.
+21. **(review gộp) Hết hạn 90 giây của chính `ask` không cooldown nhà**, ném thẳng "AI đang bận…".
+22. **(review gộp) `overloaded`/529 tính là `unavailable` (60 giây), không phải `quota` (6 giờ);** `429` chỉ tính khi đi sau "API Error"/"status"/"HTTP".
+23. **(review gộp) Luật cho phép `Read` giới hạn đúng thư mục tạm** (`Read(//<thư mục tạm>/**)`), không dùng `Read` trần; vẫn giữ `WebFetch` không giới hạn tên miền (ghi `deferred-work.md`).
 
 ### 2026-11-06 — Kiểm chứng gộp (trước review gộp)
 
 - Lần gọi `claude -p` thật duy nhất của epic (chạy thẳng CLI với bộ cờ của adapter: `--output-format json --json-schema --safe-mode --restricted --permission-prompts none --tools ""`, model `haiku`): exit 0, trả JSON kết quả trong ~2 giây.
 - Gọi qua adapter với model không tồn tại (không tốn token) phát hiện và đã sửa hai lỗi gốc, có test chặn tái phát: (1) `claude --json-schema` từ chối khoá `"$schema"` draft 2020-12 mà `z.toJSONSchema` sinh ra → `ask()` bỏ khoá này; (2) adapter chuyển biến phiên `CLAUDE_CODE_*` cho tiến trình con → chỉ còn `CLAUDE_CONFIG_DIR`, `ANTHROPIC_*`. Sau sửa, lỗi API (`unrecognized_model`) được đọc đúng thành `ProviderError`.
 - `npm start` cổng 3300 (`AI_PROVIDERS=fake`), `curl` có Basic Auth: Chi tiết Sản phẩm trả 200 ở ba trạng thái — chưa có hồ sơ (nút "Nghiên cứu"), Đang tạo ("Đang nghiên cứu…", "Đang chọn Danh mục…", `role="status"`), Chờ duyệt (dải "AI chưa đọc được ảnh…", "1 nguồn AI đã đọc", Duyệt / Từ chối / Tạo lại, thẻ Danh mục gợi ý). Dữ liệu thử chèn vào DB cục bộ đã xoá; server đã tắt.
+
+### 2026-11-06 — Review gộp Epic 4: phân loại
+
+Người dùng (lệnh chạy): "duyệt 4 điểm và cách 1" — các Quyết định tự chọn vẫn để Vinh xem lại ở danh sách trên.
+
+| # | Phát hiện | Quyết định | Lý do / việc đã làm |
+|---|---|---|---|
+| 1 | `--allowedTools Read` trần cho đọc mọi file, cùng lần gọi có `WebFetch` (cao) | Sửa | `claude --help` (2.1.318) nói `--restricted` đã giới hạn công cụ file trong thư mục làm việc, nên phát hiện nói quá; vẫn sửa phòng thủ nhiều lớp: luật cho phép thành `Read(//<thư mục tạm>/**)`. Test `buildClaudeArgs`; CLI nhận luật này (chạy tới API với model không tồn tại). Giới hạn tên miền `WebFetch` → hoãn (`deferred-work.md`). |
+| 2 | Regex hết hạn mức khớp `429`/`overloaded` bất kỳ đâu → cooldown 6 giờ (trung bình) | Sửa | Regex chỉ khớp cụm hết hạn mức và `429` sau "API Error"/"status"/"HTTP"; `overloaded` → `unavailable`. Test cả hai chiều. |
+| 3 | Một lần chậm / hết hạn của `ask` → cooldown 2 phút mọi tính năng (thấp) | Sửa | Hết hạn của chính `ask` không cooldown; kết hợp sửa #6. Test với hai nhà giả. |
+| 4 | Ghép chunk Buffer bằng `+=` cắt hỏng ký tự UTF-8 tiếng Việt (thấp) | Sửa | `setEncoding("utf8")` cho stdout/stderr. Test CLI giả ghi từng byte (đã thấy test hỏng khi bỏ sửa). |
+| 5 | Không có listener `error` trên `child.stdin` → EPIPE sập tiến trình (thấp) | Sửa | `child.stdin.on("error", () => {})`, mã thoát ở `close` báo lỗi. Test CLI thoát ngay với stdin 4 MB (đã thấy EPIPE khi bỏ sửa). |
+| 6 | Cooldown của nhà duy nhất khoá mọi tính năng AI (trung bình) | Sửa (gốc chung với #2, #3) | Mọi nhà đều cooldown thì vẫn thử cả chuỗi (quyết định 20). Test một nhà: lỗi lần trước, lần sau vẫn gọi. |
+| 7 | Luồng nghiên cứu chưa chạy với nhà thật, hạn 90 giây chưa kiểm (trung bình) | Sửa một phần + hoãn | Đã kiểm (không tốn token, model không tồn tại): CLI nhận JSON Schema nghiên cứu `{data, sources}` cùng bộ cờ ảnh + tìm web, tới được API. Thời gian sonnet + tìm web + ảnh trong 90 giây: hết lượt gọi thật của epic → kiểm tay (`deferred-work.md`). |
+| 8 | Trùng #5 | Sửa | Như #5. |
+| 9 | Duyệt Danh mục gợi ý làm mất thay đổi chưa lưu trên form Sản phẩm (thấp) | Sửa | Bỏ khoá form theo `categoryId`; `ProductForm` `resetField("categoryId")` khi Danh mục từ server đổi (quyết định 18). Không có môi trường test component (vitest không có DOM) → kiểm bằng tsc/lint/build; xoá mục khỏi `deferred-work.md`. |
+| 10 | AC 4.1 chưa đạt: chưa có nhà dự phòng; gỡ `openai` sớm hơn AC (thấp) | Hoãn | Là Quyết định tự chọn 1 và 3, cần Vinh chấp nhận rồi sửa AC trong `epics.md`; ghi `deferred-work.md`. |
+
+### Auto Run Result
+
+- Sửa 8 (gồm 2 trùng), hoãn 2 phần (#7 đo 90 giây, #10 AC), bác 0.
+- `npm test` 251/251 (23 file); `npm run test:db` 131/131 (15 file); `npx tsc --noEmit`, `npm run lint`, `npm run build` sạch.
+- `next start` cổng 3300 (`AI_PROVIDERS=fake`): `/`, `/meo-vat`, `/sitemap.xml`, `/robots.txt` 200; `/cms`, `/cms/san-pham` không đăng nhập 401; có Basic Auth `/cms` 307, `/cms/san-pham` và Chi tiết Sản phẩm 200. Log chỉ có lỗi `crypto.randomUUID()` đã ghi từ trước. Server đã tắt.
+- Cần Vinh: xem Quyết định tự chọn (nhất là 1, 3, 20–23); bấm "Nghiên cứu" thật một lần và ghi thời gian.
 
 ## Verification
 
@@ -162,4 +190,6 @@ Tính năng AI: Nghiên cứu Sản phẩm (FR-6..FR-11)
 - Một lần gọi `claude -p` thật (smoke), ghi thời gian và kết quả — đã chạy, xem Review Triage Log.
 - Bấm "Nghiên cứu" thật trên `/cms/san-pham/[id]` với `AI_PROVIDERS=claude-cli` (chưa chạy: hết lượt gọi thật của epic) — rời màn, quay lại, Duyệt, Tạo lại.
 
-**Kết quả (2026-11-06):** `npm test` 246/246 (23 file); `npm run test:db` 131/131 (15 file); `npx tsc --noEmit`, `npm run lint`, `npm run build` sạch; `grep "openai\|@/lib/"` trong `app modules platform components` rỗng (trừ test cấu hình sai `AI_PROVIDERS=openai`); `lib/` không còn; `LEGACY_APP_FILES` rỗng.
+**Kết quả sau review gộp (2026-11-06):** `npm test` 251/251; `npm run test:db` 131/131; tsc, lint, build sạch.
+
+**Kết quả (2026-11-06, trước review):** `npm test` 246/246 (23 file); `npm run test:db` 131/131 (15 file); `npx tsc --noEmit`, `npm run lint`, `npm run build` sạch; `grep "openai\|@/lib/"` trong `app modules platform components` rỗng (trừ test cấu hình sai `AI_PROVIDERS=openai`); `lib/` không còn; `LEGACY_APP_FILES` rỗng.

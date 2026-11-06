@@ -19,7 +19,7 @@ afterEach(() => vi.unstubAllEnvs());
 
 describe("buildClaudeArgs", () => {
   it("không ảnh, không tìm web thì tắt mọi công cụ; luôn chạy hạn chế, không lưu phiên", () => {
-    const args = buildClaudeArgs(req, { hasImages: false });
+    const args = buildClaudeArgs(req, { hasImages: false, dir: "/tmp/ai-claude-x" });
     expect(args.slice(0, 3)).toEqual(["-p", "--output-format", "json"]);
     expect(args).toEqual(expect.arrayContaining(["--restricted", "--safe-mode", "--no-session-persistence"]));
     expect(args[args.indexOf("--tools") + 1]).toBe("");
@@ -28,11 +28,11 @@ describe("buildClaudeArgs", () => {
     expect(args[args.indexOf("--model") + 1]).toBe("sonnet");
   });
 
-  it("có ảnh và tìm web thì chỉ bật Read, WebSearch, WebFetch", () => {
+  it("có ảnh và tìm web thì chỉ bật Read, WebSearch, WebFetch; Read chỉ được phép trong thư mục tạm", () => {
     vi.stubEnv("CLAUDE_CLI_MODEL_FAST", "haiku-x");
-    const args = buildClaudeArgs({ ...req, profile: "fast", webSearch: true }, { hasImages: true });
+    const args = buildClaudeArgs({ ...req, profile: "fast", webSearch: true }, { hasImages: true, dir: "/tmp/ai-claude-x" });
     expect(args[args.indexOf("--tools") + 1]).toBe("Read,WebSearch,WebFetch");
-    expect(args[args.indexOf("--allowedTools") + 1]).toBe("Read,WebSearch,WebFetch");
+    expect(args[args.indexOf("--allowedTools") + 1]).toBe("Read(//tmp/ai-claude-x/**),WebSearch,WebFetch");
     expect(args[args.indexOf("--model") + 1]).toBe("haiku-x");
   });
 });
@@ -55,6 +55,15 @@ describe("parseClaudeOutput", () => {
     expect(() => parseClaudeOutput("không phải json", "lỗi lạ", 1)).toThrow(
       expect.objectContaining({ reason: "unavailable" }),
     );
+    expect(() => parseClaudeOutput("", "API Error: 429 rate limited", 1)).toThrow(
+      expect.objectContaining({ reason: "quota" }),
+    );
+  });
+
+  it("'overloaded' (529) hay số chứa 429 trong stderr không bị coi là hết hạn mức", () => {
+    for (const stderr of ["API Error: 529 overloaded_error", "request_id req_8429abc, 14290 bytes"]) {
+      expect(() => parseClaudeOutput("", stderr, 1)).toThrow(expect.objectContaining({ reason: "unavailable" }));
+    }
   });
 });
 
@@ -86,6 +95,23 @@ describe("claudeCliProvider.generate (CLI giả)", () => {
     expect(res.imagesUsed).toBe(0);
     expect(res.json).toMatchObject({ stdin: "Câu hỏi", db: null, admin: null, session: null });
     expect((res.json as { cwd: string }).cwd).toContain("ai-claude-");
+  });
+
+  it("kết quả tiếng Việt về nhiều đoạn, ký tự nhiều byte bị cắt giữa hai đoạn vẫn giải mã đúng", async () => {
+    // Ghi từng byte để mọi ký tự nhiều byte bị tách qua các lần đọc pipe.
+    await fakeCli(
+      "split.js",
+      `process.stdin.resume();const b=Buffer.from(JSON.stringify({is_error:false,structured_output:{t:"Mẹo vặt ữ ế ạ ".repeat(50)}}));let i=0;(function w(){if(i>=b.length)return;process.stdout.write(b.subarray(i,i+1));i++;setImmediate(w)})();`,
+    );
+    const res = await claudeCliProvider.generate(req);
+    expect((res.json as { t: string }).t).toBe("Mẹo vặt ữ ế ạ ".repeat(50));
+  });
+
+  it("claude thoát trước khi đọc stdin lớn thì báo ProviderError, không sập tiến trình (EPIPE)", async () => {
+    await fakeCli("exit.js", "process.exit(2);");
+    await expect(claudeCliProvider.generate({ ...req, user: "x".repeat(4 * 1024 * 1024) })).rejects.toMatchObject({
+      reason: "unavailable",
+    });
   });
 
   it("quá hạn thì dừng tiến trình và ném ProviderError timeout", async () => {

@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { formatShortDate } from "@/platform/format";
@@ -21,8 +21,8 @@ const SELECT_CLASS =
   "h-8 w-full min-w-0 rounded-lg border border-input bg-transparent px-2 text-base outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 md:text-sm dark:bg-input/30";
 
 // Form tạo/sửa Sản phẩm (UX-DR74): tên, Link affiliate, giá tham khảo, ảnh, Danh mục, Dữ liệu thô.
-// Chỉ đọc `defaultValues` lúc mount (AD-12). Tạo xong chuyển sang màn sửa; sửa xong làm mới ngày giá
-// và "nơi đang dùng".
+// Chỉ đọc `defaultValues` lúc mount (AD-12), trừ Danh mục (Duyệt Danh mục gợi ý đổi được). Tạo xong chuyển sang
+// màn sửa; sửa xong làm mới ngày giá và "nơi đang dùng".
 export function ProductForm({
   defaultValues,
   categories,
@@ -34,6 +34,12 @@ export function ProductForm({
 }) {
   const router = useRouter();
   const form = useForm({ resolver: zodResolver(productInputSchema), defaultValues });
+  // Duyệt Danh mục gợi ý đổi `categoryId` trên server: chỉ cập nhật đúng ô Danh mục, giữ các ô khác đang sửa
+  // chưa lưu (không remount form — NFR-2).
+  const serverCategoryId = defaultValues.categoryId;
+  useEffect(() => {
+    form.resetField("categoryId", { defaultValue: serverCategoryId });
+  }, [form, serverCategoryId]);
   // Số file đang tải lên: > 0 thì chặn Lưu (URL chưa có trong form).
   const [uploading, setUploading] = useState(0);
   const onUploadingChange = (active: boolean) => setUploading((n) => n + (active ? 1 : -1));

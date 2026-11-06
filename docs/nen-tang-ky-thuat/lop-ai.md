@@ -18,7 +18,7 @@
 - **`PromptDef`** `{ id, version, profile, output, system(style), user(input) }` ở `modules/<miền>/prompts/<tên>.prompt.ts`. `output` là Zod **không có transform** (sinh JSON Schema cho nhà cung cấp).
 - **Structured output:** `ask()` sinh JSON Schema từ `output` (`z.toJSONSchema`, bỏ khoá `$schema`), nhà cung cấp trả JSON theo schema, `ask()` parse lại bằng Zod; sai thì thử lại đúng một lần kèm lỗi Zod trong lời nhắc, vẫn sai thì `UserError`.
 - **Profile `fast` / `quality`:** chọn model theo `CLAUDE_CLI_MODEL_FAST` / `CLAUDE_CLI_MODEL_QUALITY` (mặc định `haiku` / `sonnet`).
-- **Chuyển nhà và cooldown** (NFR-2): nhà ném `ProviderError` (`quota` | `timeout` | `unavailable`) thì nghỉ 6 giờ / 2 phút / 60 giây (bộ nhớ tiến trình) và lời gọi chuyển sang nhà kế tiếp trong `AI_PROVIDERS`.
+- **Chuyển nhà và cooldown** (NFR-2): nhà ném `ProviderError` (`quota` | `timeout` | `unavailable`) thì nghỉ 6 giờ / 2 phút / 60 giây (bộ nhớ tiến trình) và lời gọi chuyển sang nhà kế tiếp trong `AI_PROVIDERS`. Mọi nhà đều đang nghỉ (vd. chỉ một nhà) thì vẫn thử cả chuỗi; hết hạn 90 giây của chính `ask` không làm nhà nghỉ. `claude -p`: `overloaded` (529) là `unavailable`, chỉ cụm hết hạn mức hoặc `API Error: 429` mới là `quota`.
 - **Hạn 90 giây** cho cả một lần `ask()` (gồm thử lại và chuyển nhà), đặt bằng `AI_TIMEOUT_MS`; route CMS `maxDuration = 120` (AD-18).
 - **`skipped`:** nhà không đọc ảnh/video hoặc không tìm web → ghi `images` / `video` / `webSearch`; có tìm web mà không ra nguồn hợp lệ nào cũng ghi `webSearch`. Không ném lỗi.
 - **`sources`:** khi tìm web, `ask()` bọc schema thành `{ data, sources: { url, title }[] }`; nguồn được lọc (chỉ http(s), không trùng, tối đa 20).
