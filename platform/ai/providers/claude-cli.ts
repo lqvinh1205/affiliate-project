@@ -173,7 +173,7 @@ export const claudeCliProvider: AiProvider = {
       const images = req.images.length > 0 ? await downloadImages(req.images, dir, signal) : [];
       const user =
         images.length > 0
-          ? `${req.user}\n\nẢnh Sản phẩm (mở từng file bằng công cụ Read để xem):\n${images.map((f) => `- ${f}`).join("\n")}`
+          ? `${req.user}\n\nẢnh kèm theo (mở từng file bằng công cụ Read để xem):\n${images.map((f) => `- ${f}`).join("\n")}`
           : req.user;
       const { code, stdout, stderr } = await run(buildClaudeArgs(req, { hasImages: images.length > 0, dir }), user, dir, signal);
       if (signal.aborted) throw new ProviderError("timeout", "claude -p quá hạn");

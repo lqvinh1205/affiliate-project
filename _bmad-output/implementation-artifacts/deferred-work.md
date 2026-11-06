@@ -70,3 +70,6 @@
 - source_spec: `_bmad-output/implementation-artifacts/spec-10-luot-gop-epic-10.md`
   summary: Cảm hứng có file video: AI chưa nhận "khung hình" của video (Story 10.2 AC) — `claude -p` không đọc video nên `ask({ videoUrl })` trả `skipped` có `video`; hồ sơ chỉ dựa trên link, ghi chú (và ảnh nếu file là ảnh). Link TikTok/Pinterest cũng chỉ đọc được tiêu đề/chú thích trang qua tìm web.
   evidence: Spine Deferred "cách đọc video từ link"; tách khung hình cần `ffmpeg` hoặc thư viện chưa có trong spine/UX/PRD (không cài theo luật lượt chạy). Màn Cảm hứng báo rõ và gợi ý tải ảnh chụp màn hình (`INSPIRATION_VIDEO_SKIPPED`). Chốt cùng nhà AI đọc được video.
+- source_spec: `_bmad-output/implementation-artifacts/spec-10-luot-gop-epic-10.md`
+  summary: Dải "AI chưa đọc được video" của gợi ý nghiên cứu Cảm hứng chọn câu theo file **hiện tại** của Cảm hứng, không theo file đã gửi cho AI lúc tạo gợi ý — sửa file (thêm/đổi ảnh) sau khi Nghiên cứu mà chưa Tạo lại thì câu có thể lệch (vd. nói "dựa trên ảnh chụp màn hình" dù lần đó chưa có ảnh).
+  evidence: Review gộp Epic 10 #4 (quyết định 16). Sửa gốc: lưu đầu vào đã gửi/đã đọc của gợi ý (vd. cột Json `Suggestion.input` hoặc thêm vào `skipped`) — đổi schema, làm cùng việc đọc khung hình video.

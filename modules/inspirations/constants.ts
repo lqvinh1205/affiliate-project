@@ -27,6 +27,11 @@ export const INSPIRATION_FILTERS = [
   { value: "bo-qua", status: "SKIPPED" },
 ] as const satisfies readonly { value: string; status: InspirationDisplayStatus }[];
 
+// `?trang-thai=`: giá trị lạ hoặc thiếu → *Mới* (mặc định của danh sách).
+export function inspirationFilterOf(value: string): (typeof INSPIRATION_FILTERS)[number] {
+  return INSPIRATION_FILTERS.find((f) => f.value === value) ?? INSPIRATION_FILTERS[0];
+}
+
 // Host link video (FR-2): link thuộc các host này được gửi cho AI như link video (`ask({ videoUrl })`); nhà AI chưa
 // đọc được video thì `skipped` có `video` và màn Cảm hứng báo rõ (AD-10).
 export const VIDEO_LINK_HOSTS = [

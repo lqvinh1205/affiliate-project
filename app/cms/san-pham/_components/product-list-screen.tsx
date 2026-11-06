@@ -3,6 +3,7 @@ import Link from "next/link";
 import { ChevronLeft, ChevronRight, Plus, Search } from "lucide-react";
 import type { Platform } from "@/generated/prisma/enums";
 import { formatShortDate } from "@/platform/format";
+import { first, pageParam } from "@/platform/search-params";
 import { listPostedPlatformsByProductForCms } from "@/modules/content-sets/cms-queries";
 import { PLATFORM_LABEL } from "@/modules/content-sets/constants";
 import { PRODUCT_PAGE_SIZE } from "@/modules/products/constants";
@@ -15,10 +16,6 @@ import { Input } from "@/components/ui/input";
 import { cn } from "@/components/ui/lib/utils";
 
 const LIST_PATH = "/cms/san-pham";
-
-function first(v: string | string[] | undefined) {
-  return (Array.isArray(v) ? v[0] : v) ?? "";
-}
 
 function pageHref(q: string, page: number) {
   const params = new URLSearchParams();
@@ -92,12 +89,6 @@ function Pagination({ q, page, pages }: { q: string; page: number; pages: number
       {page < pages ? link(page + 1, "Trang sau", ChevronRight, true) : <span />}
     </nav>
   );
-}
-
-// `?trang`: số nguyên an toàn ≥ 1, còn lại về trang 1; vượt trang cuối do query kẹp lại.
-function pageParam(v: string) {
-  const n = Number(v);
-  return Number.isSafeInteger(n) && n >= 1 ? n : 1;
 }
 
 export async function ProductListScreen({ searchParams }: Pick<PageProps<"/cms/san-pham">, "searchParams">) {

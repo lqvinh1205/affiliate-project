@@ -2,7 +2,7 @@
 title: 'Lượt gộp Epic 10: Kho Cảm hứng — Story 10.1–10.2'
 type: 'feature'
 created: '2026-11-06'
-status: 'review'
+status: 'done'
 review_loop_iteration: 0
 baseline_revision: '8fb16ea651920527d0ef23b3b2d5c6337a85de49'
 followup_review_recommended: true
@@ -150,6 +150,10 @@ Phân loại: **an toàn** (thêm bảng, thêm cột nullable, thêm FK cho c�
 13. **Mục CmsShell "Cảm hứng" đặt ngay sau "Sản phẩm"** (UX không nêu vị trí).
 14. **Migration tên `20261106170000_add_inspiration`** để xếp sau `add_banner`.
 15. **Không gọi `claude -p` thật trong epic này**: `platform/ai` và `skipped` video đã có test (Epic 4); gọi thật chỉ xác nhận lại adapter, không kiểm thêm gì của Epic 10. Vinh nên thử một lần "Nghiên cứu" với link TikTok thật.
+16. **(Review gộp) Câu "AI chưa đọc được video" chọn theo file hiện tại của Cảm hứng** (`inspirationSkippedMessages`, `modules/suggestions/inspiration-skipped.ts`): có ảnh và AI đọc được → "hồ sơ dựa trên ảnh chụp màn hình…", không gợi ý gì thêm; có ảnh mà AI không đọc được ảnh → chỉ nói dựa trên chữ; có file video → nói chưa trích khung hình, gợi ý thay bằng ảnh chụp màn hình; chỉ có link → gợi ý tải ảnh chụp màn hình. Không còn câu nào gợi ý "tải file video". Không lưu ảnh chụp đầu vào của từng gợi ý (cần cột mới) — sửa file sau khi Nghiên cứu mà chưa Tạo lại thì câu có thể lệch; ghi `deferred-work.md`.
+17. **(Review gộp) Ảnh gửi cho `claude -p` ghi "Ảnh kèm theo"** thay "Ảnh Sản phẩm" (chung mọi prompt); prompt `research.inspiration` nói rõ ảnh là ảnh chụp màn hình/khung hình của Cảm hứng, không phải ảnh sản phẩm → **lên v2**.
+18. **(Review gộp) `/uploads/...` nhận `Range` một khoảng** (206 + `Content-Range`, luôn `Accept-Ranges: bytes`); nhiều khoảng hoặc sai cú pháp → trả cả file 200 (RFC cho phép); khoảng ngoài file → 416. Không xử lý `If-Range` (tên file theo sha256, nội dung không đổi).
+19. **(Review gộp) Gom `first` / `pageParam` (đọc `?trang`) vào `platform/search-params.ts`** cho ba danh sách CMS (Bài web, Sản phẩm, Cảm hứng) thay ba bản chép; `inspirationFilterOf` chuyển vào `modules/inspirations/constants.ts`. Các màn khác còn bản `first` riêng (tạo/sửa Sản phẩm, sửa Bài web, Chi tiết Cảm hứng) — không đụng để giữ thay đổi gọn.
 
 ### Auto Run Result (mốc trước review gộp)
 
@@ -159,11 +163,32 @@ Phân loại: **an toàn** (thêm bảng, thêm cột nullable, thêm FK cho c�
 - Không gọi `claude -p` thật (quyết định 15).
 - Cần Vinh: xem Quyết định tự chọn (nhất là 1, 4, 6, 8, 9); thử trên điện thoại thật: chia sẻ link TikTok → dán vào "Lưu cảm hứng"; tải video ~50 MB; "Nghiên cứu" với AI thật; "Gắn sản phẩm" → tạo bộ → Cảm hứng thành *Đã dùng*; chạy `npx prisma migrate deploy` khi triển khai.
 
+### 2026-11-06 — Review gộp Epic 10: phân loại
+
+| # | Phát hiện | Quyết định | Lý do / việc đã làm |
+|---|---|---|---|
+| 1 | `extractLink` lưu cả đoạn chia sẻ khi đoạn bắt đầu bằng link (trung bình) | Sửa | Đúng: `new URL("https://a/b Xem video")` hợp lệ (mã hoá khoảng trắng). Chỉ giữ nguyên khi cả ô là link **không có khoảng trắng**; còn lại lấy link http(s) đầu tiên. Test: link + chú thích phía sau, link + xuống dòng, qua `inspirationInputSchema`. |
+| 2 | Tên Sản phẩm dài làm Chi tiết Cảm hứng cuộn ngang ở 360px (thấp) | Sửa | Đúng (`shrink-0` không xuống dòng, tên tới 200 ký tự). Phần "tên Sản phẩm · ngày" thành `min-w-0 max-w-[50%] truncate`. Repo chưa có test component — kiểm bằng đọc lớp CSS. |
+| 3 | `/uploads` bỏ qua `Range` → video tải lên khó phát trên iPhone (trung bình) | Sửa | Đúng: route luôn 200, không `Accept-Ranges`. Hàm thuần `parseByteRange` (`platform/storage/range.ts`), `openStoredFile` trả `read(start, end)`, route trả 206/416 (quyết định 18). Test đơn vị cho parser, test route (200, 206 đúng byte, 416, 404); `next start` 3300: `Range: bytes=0-1` → 206 `content-range: bytes 0-1/1000`. Chưa thử trên iPhone thật. |
+| 4 | Lời khuyên khi không đọc được video lặp vòng (trung bình) | Sửa | Đúng: có ảnh rồi vẫn gợi ý tải ảnh; gợi ý tải file video dẫn về đúng cảnh báo cũ. Hàm thuần `inspirationSkippedMessages` chọn câu theo ảnh đã có/đã đọc (quyết định 16), bỏ gợi ý tải video; test link + ảnh, link + ảnh không đọc được, file video, chỉ link. Phần "chọn theo file hiện tại thay vì file lúc tạo gợi ý" hoãn (cần lưu đầu vào của gợi ý — cột mới) → `deferred-work.md`. AC "khung hình nếu có file" vẫn hoãn như trước (đã ghi). |
+| 5 | Ảnh chụp màn hình Cảm hứng đến AI với nhãn "Ảnh Sản phẩm" (thấp) | Sửa | Đúng. Nhãn trung tính "Ảnh kèm theo" ở `claude-cli`; prompt Cảm hứng ghi rõ loại ảnh, lên v2 (quyết định 17). Không thêm test riêng cho chuỗi nhãn (provider cần tải ảnh thật để vào nhánh này). |
+| 6 | Dòng Matrix "giá trị lọc lạ → Mới, trang 1" không có test (thấp) | Sửa (gốc) | Đúng. Gom `pageParam`/`first` (chép ở 3 màn danh sách) vào `platform/search-params.ts` có test; `inspirationFilterOf` vào `modules/inspirations/constants.ts` có test (quyết định 19). |
+
+### Auto Run Result
+
+- Sửa 6 (#4 sửa phần lời khuyên lặp vòng; phần chọn theo đầu vào thật của gợi ý hoãn), hoãn 0 phát hiện trọn vẹn (1 phần → `deferred-work.md`), bác 0.
+- `npm test` 407/407 (51 file); `npm run test:db` 254/254 (29 file); `npx tsc --noEmit`, `npm run lint`, `npm run build` sạch (`/cms/cam-hung`, `/cms/cam-hung/[id]`, `/uploads/[...path]` có trong bảng route).
+- `next start` cổng 3300: `/`, `/meo-vat`, `/tim-kiem`, `/sitemap.xml`, `/robots.txt` 200; `/cms`, `/cms/cam-hung` không đăng nhập 401; `/uploads/../x` 404. Chạy lại với `UPLOAD_DIR` thư mục tạm (môi trường cục bộ chưa đặt `UPLOAD_DIR` → `/uploads/<sha>.mp4` 500, fail closed như thiết kế Story 2.8): file 1000 byte → không `Range` 200, `Range: bytes=0-1` 206 `content-range: bytes 0-1/1000`, `bytes=5000-` 416, tên không có file 404. Server 3300 đã tắt; không đụng cổng 3100/3200.
+- Không gọi `claude -p` thật (quyết định 15).
+- Cần Vinh: xem quyết định 16–19 (và 1, 4, 6, 8, 9 trước đó); trên iPhone thật mở Chi tiết Cảm hứng có video tải lên, kiểm phát được; "Nghiên cứu" một Cảm hứng link TikTok + ảnh chụp màn hình, kiểm dải thông báo không còn gợi ý tải ảnh; đặt `UPLOAD_DIR` trong `.env` máy chạy; chạy `npx prisma migrate deploy` khi triển khai.
+
 ## Verification
 
 **Commands:**
 - `npm test`; `TEST_DATABASE_URL=postgresql://postgres:postgres@localhost:54329/affiliate_test npm run test:db` -- expected: xanh
 - `npx tsc --noEmit`, `npm run lint`, `npm run build` -- expected: sạch
+
+**Kết quả sau review gộp (2026-11-06):** `npm test` 407/407; `npm run test:db` 254/254; tsc, lint, build sạch.
 
 **Kết quả (mốc trước review gộp, 2026-11-06):** `npm test` 391/391; `npm run test:db` 254/254; tsc, lint, build sạch.
 

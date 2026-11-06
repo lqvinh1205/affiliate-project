@@ -62,10 +62,13 @@ export const SKIPPED_MESSAGE = {
   video: "AI chưa đọc được nội dung video",
 } as const;
 
-// Cảm hứng không đọc được video (FR-2, UX-DR77): nói rõ hồ sơ dựa trên gì và gợi ý tải file lên.
+// Cảm hứng không đọc được video (FR-2, UX-DR77): nói rõ hồ sơ dựa trên gì; chỉ gợi ý tải ảnh chụp màn hình khi Cảm hứng
+// chưa có ảnh. Không gợi ý tải file video: chưa trích khung hình từ file video (deferred-work), làm theo sẽ quay lại cảnh báo cũ.
 export const INSPIRATION_VIDEO_SKIPPED = {
-  link: "AI chưa đọc được nội dung video từ link — hồ sơ chỉ dựa trên tiêu đề, chú thích đọc được và ghi chú. Tải file video hoặc ảnh chụp màn hình lên (mục Sửa Cảm hứng) rồi Tạo lại để AI có thêm dữ liệu.",
-  file: "AI chưa đọc được nội dung file video — hồ sơ chỉ dựa trên link và ghi chú. Hiện AI mới đọc được ảnh: đổi file sang ảnh chụp màn hình (mục Sửa Cảm hứng) rồi Tạo lại nếu cần.",
+  link: "AI chưa đọc được nội dung video từ link — hồ sơ chỉ dựa trên tiêu đề, chú thích đọc được và ghi chú. Muốn AI có thêm dữ liệu: tải ảnh chụp màn hình video lên (mục Sửa Cảm hứng) rồi Tạo lại.",
+  file: "AI chưa đọc được nội dung file video (chưa hỗ trợ trích khung hình) — hồ sơ chỉ dựa trên link và ghi chú. Muốn AI có thêm dữ liệu: thay file video bằng ảnh chụp màn hình (mục Sửa Cảm hứng) rồi Tạo lại.",
+  imageRead: "AI chưa đọc được nội dung video — hồ sơ dựa trên ảnh chụp màn hình, tiêu đề, chú thích đọc được và ghi chú.",
+  imageNotRead: "AI chưa đọc được nội dung video — hồ sơ chỉ dựa trên tiêu đề, chú thích đọc được và ghi chú.",
 } as const;
 
 // Thông báo lỗi tiếng Việt ghi vào `Suggestion.errorMessage` (UX-DR96).

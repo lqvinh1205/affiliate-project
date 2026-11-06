@@ -71,7 +71,8 @@ describe("openStoredFile", () => {
     const { url } = await put({ type: "image/png", body: streamOf(new Uint8Array([1, 2, 3])) }, 100);
     const file = await openStoredFile(url.slice("/uploads/".length));
     expect(file).toMatchObject({ type: "image/png", size: 3 });
-    expect([...(await readAll(file!.stream))]).toEqual([1, 2, 3]);
+    expect([...(await readAll(file!.read()))]).toEqual([1, 2, 3]);
+    expect([...(await readAll(file!.read(1, 2)))]).toEqual([2, 3]);
   });
 
   it.each(["..", "../etc/passwd", "a.png", `${"a".repeat(64)}.exe`, `${"a".repeat(64)}.png/..`, ".tmp-x"])(

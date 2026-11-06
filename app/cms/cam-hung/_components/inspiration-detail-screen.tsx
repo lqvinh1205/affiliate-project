@@ -99,7 +99,7 @@ export async function InspirationDetailScreen({ params, searchParams }: PageProp
       {suggestion?.status === "GENERATING" && <GeneratingPoller startedAt={suggestion.createdAt} />}
       <InspirationResearchCard
         inspirationId={inspiration.id}
-        hasVideoFile={inspiration.mediaKind === "video"}
+        mediaKind={inspiration.mediaKind}
         suggestion={suggestion}
         profile={profile}
       />
@@ -125,7 +125,7 @@ export async function InspirationDetailScreen({ params, searchParams }: PageProp
                   className="flex min-h-touch-target items-center justify-between gap-space-sm px-space-md py-2 hover:bg-surface-container"
                 >
                   <span className="min-w-0 truncate font-medium">{set.title}</span>
-                  <span className="shrink-0 text-body-sm text-on-surface-variant">
+                  <span className="min-w-0 max-w-[50%] truncate text-body-sm text-on-surface-variant">
                     {set.productName ? `${set.productName} · ` : ""}
                     {formatShortDate(new Date(set.createdAt))}
                   </span>

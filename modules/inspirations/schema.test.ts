@@ -12,6 +12,12 @@ describe("extractLink", () => {
     expect(extractLink("Xem nè (https://pin.it/abc).")).toBe("https://pin.it/abc");
     expect(extractLink("không có link")).toBe("không có link");
   });
+
+  it("đoạn chia sẻ bắt đầu bằng link: chỉ giữ link, bỏ chú thích phía sau", () => {
+    expect(extractLink("https://vt.tiktok.com/ZS123/ Xem video này nhé")).toBe("https://vt.tiktok.com/ZS123/");
+    expect(extractLink("https://s.shopee.vn/abc\nMua ngay!")).toBe("https://s.shopee.vn/abc");
+    expect(parse({ url: "https://pin.it/xyz Mẹo hay quá" }).data?.url).toBe("https://pin.it/xyz");
+  });
 });
 
 describe("inspirationInputSchema (FR-1)", () => {

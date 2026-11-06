@@ -38,7 +38,7 @@ export type InspirationResearchOutput = z.infer<typeof inspirationOutputSchema>;
 
 export const researchInspirationPrompt: PromptDef<InspirationResearchInput, typeof inspirationOutputSchema> = {
   id: "research.inspiration",
-  version: 1,
+  version: 2,
   profile: "quality",
   output: inspirationOutputSchema,
   system: () => `Bạn giúp người viết trang "Mẹo Vặt Cuộc Sống" biến một Cảm hứng (video/ảnh mẹo vặt họ lưu lại) thành bài mẹo có gắn sản phẩm bán trên Shopee.
@@ -49,7 +49,7 @@ Trả về JSON:
 Khi có link, dùng công cụ đọc trang để lấy tiêu đề và chú thích của trang đó (nếu đọc được). Không mở link Shopee cần đăng nhập. Bạn không xem được nội dung video.`,
   user: (input) => `Link: ${input.url ?? "(không có)"}${input.url && input.videoLink ? " (link video)" : ""}
 Ghi chú của người lưu: ${input.note || "(không có)"}
-File tải lên: ${input.hasImage ? "1 ảnh kèm theo" : input.hasVideoFile ? "1 file video (bạn không xem được nội dung video)" : "không có"}
+File tải lên: ${input.hasImage ? "1 ảnh kèm theo — ảnh chụp màn hình hoặc khung hình của Cảm hứng, không phải ảnh sản phẩm" : input.hasVideoFile ? "1 file video (bạn không xem được nội dung video)" : "không có"}
 ${input.instruction ? `\nChỉ dẫn khi viết lại: ${input.instruction}` : ""}`,
 };
 

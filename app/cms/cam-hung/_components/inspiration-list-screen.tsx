@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ChevronLeft, ChevronRight, FileVideo, ImageIcon, Link2 } from "lucide-react";
 import { formatShortDate } from "@/platform/format";
+import { first, pageParam } from "@/platform/search-params";
 import { listInspirationsForCms } from "@/modules/content-sets/cms-queries";
 import type { InspirationListItem } from "@/modules/content-sets/types";
 import {
@@ -8,6 +9,7 @@ import {
   INSPIRATION_FILTERS,
   INSPIRATION_PAGE_SIZE,
   INSPIRATION_STATUS_LABEL,
+  inspirationFilterOf,
   type InspirationDisplayStatus,
 } from "@/modules/inspirations/constants";
 import { InspirationStatusBadge } from "@/modules/inspirations/components/inspiration-status-badge";
@@ -24,26 +26,12 @@ const EMPTY_TEXT: Record<InspirationDisplayStatus, string> = {
   SKIPPED: "Không có Cảm hứng nào bị bỏ qua.",
 };
 
-function first(v: string | string[] | undefined) {
-  return (Array.isArray(v) ? v[0] : v) ?? "";
-}
-
-function filterOf(value: string): (typeof INSPIRATION_FILTERS)[number] {
-  return INSPIRATION_FILTERS.find((f) => f.value === value) ?? INSPIRATION_FILTERS[0];
-}
-
 function href(filter: string, page = 1) {
   const params = new URLSearchParams();
   if (filter !== INSPIRATION_FILTERS[0].value) params.set(INSPIRATION_FILTER_PARAM, filter);
   if (page > 1) params.set("trang", String(page));
   const s = params.toString();
   return s ? `${LIST_PATH}?${s}` : LIST_PATH;
-}
-
-// `?trang`: số nguyên an toàn ≥ 1, còn lại về trang 1; vượt trang cuối do query kẹp lại.
-function pageParam(v: string) {
-  const n = Number(v);
-  return Number.isSafeInteger(n) && n >= 1 ? n : 1;
 }
 
 function SourceIcon({ item }: { item: InspirationListItem }) {
@@ -71,7 +59,7 @@ function meta(item: InspirationListItem) {
 // `content-sets` — AD-2).
 export async function InspirationListScreen({ searchParams }: Pick<PageProps<"/cms/cam-hung">, "searchParams">) {
   const params = await searchParams;
-  const filter = filterOf(first(params[INSPIRATION_FILTER_PARAM]));
+  const filter = inspirationFilterOf(first(params[INSPIRATION_FILTER_PARAM]));
   const { items, total, page, counts } = await listInspirationsForCms({
     filter: filter.status,
     page: pageParam(first(params.trang)),

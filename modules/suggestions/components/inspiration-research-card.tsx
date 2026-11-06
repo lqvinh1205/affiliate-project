@@ -1,7 +1,7 @@
 import { Info } from "lucide-react";
 import type { InspirationResearchForCms } from "@/modules/research/types";
 import { InspirationResearchEditor } from "@/modules/research/components/inspiration-research-editor.client";
-import { INSPIRATION_VIDEO_SKIPPED, SKIPPED_MESSAGE } from "@/modules/suggestions/constants";
+import { inspirationSkippedMessages } from "@/modules/suggestions/inspiration-skipped";
 import type { InspirationResearchSuggestionView } from "@/modules/suggestions/types";
 import { GeneratingIndicator } from "@/modules/suggestions/components/generating-indicator.client";
 import { InspirationResearchApprovalForm } from "@/modules/suggestions/components/inspiration-research-approval-form.client";
@@ -14,23 +14,21 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 const TITLE = "Từ khoá Shopee và dàn ý";
 const HEADING_ID = "inspiration-research";
 
-// Dải `skipped` của hồ sơ Cảm hứng (UX-DR77): không đọc được video → nói rõ hồ sơ dựa trên gì, gợi ý tải file lên.
+// Dải `skipped` của hồ sơ Cảm hứng (UX-DR77): không đọc được video → nói rõ hồ sơ dựa trên gì, gợi ý thêm ảnh khi chưa có.
 function InspirationSkippedNotice({
   skipped,
-  hasVideoFile,
+  mediaKind,
 }: {
   skipped: InspirationResearchSuggestionView["skipped"];
-  hasVideoFile: boolean;
+  mediaKind: "image" | "video" | null;
 }) {
   if (skipped.length === 0) return null;
   return (
     <Alert role="status" className="border-0 bg-surface-container-high text-on-surface">
       <Info aria-hidden />
       <AlertDescription className="text-body-sm text-on-surface">
-        {skipped.map((s) => (
-          <p key={s}>
-            {s === "video" ? INSPIRATION_VIDEO_SKIPPED[hasVideoFile ? "file" : "link"] : SKIPPED_MESSAGE[s]}
-          </p>
+        {inspirationSkippedMessages(skipped, mediaKind).map((m) => (
+          <p key={m}>{m}</p>
         ))}
       </AlertDescription>
     </Alert>
@@ -42,12 +40,12 @@ function InspirationSkippedNotice({
 // form sửa hồ sơ đích (module `research`); Đã từ chối → đầu thẻ + Tạo lại; Lỗi → Alert + Tạo lại.
 export function InspirationResearchCard({
   inspirationId,
-  hasVideoFile,
+  mediaKind,
   suggestion,
   profile,
 }: {
   inspirationId: string;
-  hasVideoFile: boolean;
+  mediaKind: "image" | "video" | null;
   suggestion: InspirationResearchSuggestionView | null;
   profile: InspirationResearchForCms | null;
 }) {
@@ -90,7 +88,7 @@ export function InspirationResearchCard({
   if (status === "PENDING" && suggestion.payload) {
     return (
       <SuggestionCard title={TITLE} status={status} headingId={HEADING_ID}>
-        <InspirationSkippedNotice skipped={suggestion.skipped} hasVideoFile={hasVideoFile} />
+        <InspirationSkippedNotice skipped={suggestion.skipped} mediaKind={mediaKind} />
         {suggestion.sources.length > 0 && (
           <details className="text-body-sm">
             <summary className="min-h-touch-target cursor-pointer content-center text-on-surface-variant">

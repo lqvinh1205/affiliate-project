@@ -12,10 +12,6 @@ type SortValue = keyof typeof SORT_VALUES;
 
 export type PostListFilters = { status: PostStatusFilter | null; q: string; sort: SortValue | null };
 
-export function first(v: string | string[] | undefined) {
-  return (Array.isArray(v) ? v[0] : v) ?? "";
-}
-
 export function listHref({ status, q, sort }: PostListFilters, page = 1) {
   const params = new URLSearchParams();
   if (status) params.set(STATUS_PARAM, status);
@@ -24,12 +20,6 @@ export function listHref({ status, q, sort }: PostListFilters, page = 1) {
   if (page > 1) params.set("trang", String(page));
   const s = params.toString();
   return s ? `${LIST_PATH}?${s}` : LIST_PATH;
-}
-
-// `?trang`: số nguyên an toàn ≥ 1, còn lại về trang 1; vượt trang cuối do query kẹp lại.
-export function pageParam(v: string) {
-  const n = Number(v);
-  return Number.isSafeInteger(n) && n >= 1 ? n : 1;
 }
 
 export function statusParam(v: string): PostStatusFilter | null {

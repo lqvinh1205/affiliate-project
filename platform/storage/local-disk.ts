@@ -67,13 +67,16 @@ export async function put(
 }
 
 // Mở file đã lưu theo tên (một đoạn đường dẫn); tên không đúng dạng hash + đuôi (kể cả `..`) → null.
+// `read(start, end)` đọc đoạn byte [start, end] (mặc định cả file) — cho phản hồi 206 khi trình duyệt gửi `Range`.
 export async function openStoredFile(name: string) {
   const type = EXT_TYPES.get(path.extname(name));
   if (!STORED_NAME.test(name) || !type) return null;
   const file = path.join(/*turbopackIgnore: true*/ uploadDir(), name);
   try {
     const { size } = await stat(file);
-    return { size, type, stream: Readable.toWeb(createReadStream(file)) as ReadableStream<Uint8Array> };
+    const read = (start = 0, end = size - 1) =>
+      Readable.toWeb(createReadStream(file, { start, end })) as ReadableStream<Uint8Array>;
+    return { size, type, read };
   } catch {
     return null;
   }

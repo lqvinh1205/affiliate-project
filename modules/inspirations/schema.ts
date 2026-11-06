@@ -11,10 +11,11 @@ const isHttpUrl = (s: string) => {
 };
 
 // Ô link nhận cả đoạn chữ chia sẻ của app ("Xem video này… https://vt.tiktok.com/abc/"): giữ link http(s) đầu tiên
-// để dán một lần là lưu được (FR-1, UX-DR76).
+// để dán một lần là lưu được (FR-1, UX-DR76). Chỉ giữ nguyên khi cả ô là một link không khoảng trắng — `new URL()`
+// nhận cả "https://a/b Xem video" (mã hoá khoảng trắng) nên không dùng nó để nhận ra link trơn.
 export function extractLink(text: string) {
   const s = text.trim();
-  if (!s || isHttpUrl(s)) return s;
+  if (!s || (!/\s/.test(s) && isHttpUrl(s))) return s;
   const found = s.match(/https?:\/\/[^\s<>"']+/i)?.[0] ?? s;
   return found.replace(/[).,;!?…]+$/, "");
 }
