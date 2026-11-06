@@ -1,8 +1,9 @@
+import type { ReactNode } from "react";
 import { formatDate } from "@/platform/format";
 import type { Heading } from "@/platform/html/content";
 import { AffiliateDisclosure } from "@/modules/products/components/affiliate-disclosure";
 import { ProductCard } from "@/modules/products/components/product-card";
-import { PRODUCTS_SECTION_ID, PRODUCTS_TITLE_ID } from "@/modules/posts/constants";
+import { ARTICLE_ACTIONS_TITLE_ID, PRODUCTS_SECTION_ID, PRODUCTS_TITLE_ID } from "@/modules/posts/constants";
 import type { ArticlePost, PostCardData } from "@/modules/posts/types";
 import { ArticleBody } from "@/modules/posts/components/article-body";
 import { PostTags } from "@/modules/posts/components/post-tags";
@@ -15,20 +16,25 @@ import { ImageFallback } from "@/components/shared/image-fallback.client";
 // Thân trang Bài web (UX-DR63, FR-26), dùng chung cho trang public và PreviewSheet trong CMS (AD-11). Không tự tra
 // dữ liệu: `html` + `headings` là thân bài đã sanitize và gắn id h2 (AD-22), phút đọc tính trên HTML đó.
 // Thứ tự: Breadcrumb → PostTypeBadge + H1 + ngày · phút đọc → AffiliateDisclosure (nếu có Sản phẩm) → ảnh 16:9 →
-// TableOfContents → ArticleBody → khối Sản phẩm → PostTags → RelatedPosts. Mobile một cột (TOC thu gọn được ở đầu
-// bài); desktop thân 8 cột + cột phải dính (TOC) (UX-DR93).
+// TableOfContents → ArticleBody → khối Sản phẩm → PostTags → thả tim + chia sẻ → RelatedPosts. Mobile một cột (TOC
+// thu gọn được ở đầu bài); desktop thân 8 cột + cột phải dính (TOC, tim, chia sẻ) (UX-DR63, UX-DR93).
+// `actions`: LikeButton + ShareButtons do trang public truyền vào (`posts` không import `engagement` — AD-2); bản xem
+// trước không có.
 export function PostArticle({
   post,
   html,
   headings,
   related,
+  actions,
 }: {
   post: ArticlePost;
   html: string;
   headings: Heading[];
   related: PostCardData[];
+  actions?: ReactNode;
 }) {
   const hasProducts = post.products.length > 0;
+  const hasToc = headings.length >= 2;
   return (
     <article className="mx-auto max-w-container-max px-margin py-space-lg lg:px-margin-desktop lg:py-space-xl">
       <div className="lg:grid lg:grid-cols-12 lg:gap-gutter-desktop">
@@ -86,12 +92,28 @@ export function PostArticle({
           )}
 
           <PostTags tags={post.tags} />
+
+          {actions && (
+            <section
+              aria-labelledby={ARTICLE_ACTIONS_TITLE_ID}
+              className="flex flex-col items-center gap-space-sm rounded-xl bg-surface-container p-space-md text-center"
+            >
+              <h2 id={ARTICLE_ACTIONS_TITLE_ID} className="text-headline-sm">
+                Bạn thấy bài viết này hữu ích?
+              </h2>
+              <p className="text-body-sm text-on-surface-variant">
+                Một lượt thả tim hoặc chia sẻ là động lực để mình gom thêm nhiều mẹo hay!
+              </p>
+              {actions}
+            </section>
+          )}
         </div>
 
-        {headings.length >= 2 && (
+        {(hasToc || actions) && (
           <div className="hidden lg:col-span-4 lg:block">
-            <div className="sticky top-24">
-              <TableOfContents headings={headings} variant="sticky" />
+            <div className="sticky top-24 space-y-space-lg">
+              {hasToc && <TableOfContents headings={headings} variant="sticky" />}
+              {actions}
             </div>
           </div>
         )}

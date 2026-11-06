@@ -55,11 +55,31 @@ export const RELATED_POSTS_LIMIT = 3;
 export const PRODUCTS_SECTION_ID = "san-pham";
 export const PRODUCTS_TITLE_ID = "san-pham-title";
 export const RELATED_POSTS_TITLE_ID = "bai-lien-quan";
+// Khối thả tim + chia sẻ cuối bài.
+export const ARTICLE_ACTIONS_TITLE_ID = "tuong-tac";
 
 // Id đã dùng trên trang bài: h2 thân bài không được trùng (`withHeadingIds`).
-export const ARTICLE_RESERVED_IDS = [PRODUCTS_SECTION_ID, PRODUCTS_TITLE_ID, RELATED_POSTS_TITLE_ID, MAIN_CONTENT_ID];
+export const ARTICLE_RESERVED_IDS = [
+  PRODUCTS_SECTION_ID,
+  PRODUCTS_TITLE_ID,
+  RELATED_POSTS_TITLE_ID,
+  ARTICLE_ACTIONS_TITLE_ID,
+  MAIN_CONTENT_ID,
+];
 
 // Giới hạn cứng khi AI viết Bài web (AD-25): Hồ sơ phong cách Website không đặt mục tiêu vượt các số này
 // (`modules/style-profiles/constants.ts` chép lại — test `modules/content-sets/style-limits.test.ts`).
 export const WEB_POST_WORDS_MAX = 3000;
 export const WEB_POST_SECTIONS_MAX = 10;
+
+// Tìm kiếm `/tim-kiem` (FR-36, action công khai `searchPosts` — spine AD-6 ngoại lệ số 2).
+// Từ khoá: tối thiểu 2 ký tự (1 ký tự chưa tìm — UX-DR31), tối đa 100 ký tự và 8 từ (đủ cho câu hỏi tự nhiên, chặn
+// chuỗi dài làm truy vấn nặng).
+export const SEARCH_QUERY_MIN = 2;
+export const SEARCH_QUERY_MAX = 100;
+export const SEARCH_TERMS_MAX = 8;
+// Số kết quả trả về một lần (dòng "Tìm thấy N bài viết" vẫn đếm đủ N).
+export const SEARCH_RESULTS_LIMIT = 20;
+// Giới hạn tần suất: 60 lần tìm/phút mỗi nguồn (băm IP). Người đọc gõ có chờ 300 ms nên một lần tìm thật tốn vài
+// lượt; mức này chừa chỗ cho nhiều người chung IP mà vẫn chặn script dội.
+export const SEARCH_RATE_LIMIT = { limit: 60, windowMs: 60_000 };

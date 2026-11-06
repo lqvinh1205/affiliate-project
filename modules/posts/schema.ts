@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { PostType, Status } from "@/generated/prisma/enums";
+import { searchTerms } from "@/platform/search-text";
 import { imageUrl, optionalText, requiredText, slugField } from "@/platform/validation/fields";
 import {
   POST_CONTENT_MAX,
@@ -11,6 +12,9 @@ import {
   POST_TAG_MAX,
   POST_TAGS_MAX,
   POST_TITLE_MAX,
+  SEARCH_QUERY_MAX,
+  SEARCH_QUERY_MIN,
+  SEARCH_TERMS_MAX,
 } from "@/modules/posts/constants";
 
 const postId = z.string().min(1, "Thiếu Bài web");
@@ -107,3 +111,13 @@ export type PostInput = z.infer<typeof postInputSchema>;
 export type NewPostFormValues = z.input<typeof newPostInputSchema>;
 export type PostDraftFormValues = z.input<typeof postDraftInputSchema>;
 export type SeoCheckInput = z.input<typeof seoCheckInputSchema>;
+
+// Tìm Bài web (`searchPosts`, FR-36): từ khoá sau khi gấp không dấu còn ít nhất `SEARCH_QUERY_MIN` ký tự, tối đa
+// `SEARCH_TERMS_MAX` từ (từ thừa bị bỏ). Trả về các từ đã gấp (`searchTerms`).
+export const searchPostsInputSchema = z.object({
+  q: z
+    .string()
+    .max(SEARCH_QUERY_MAX)
+    .transform((q) => searchTerms(q).slice(0, SEARCH_TERMS_MAX))
+    .refine((terms) => terms.join(" ").length >= SEARCH_QUERY_MIN),
+});

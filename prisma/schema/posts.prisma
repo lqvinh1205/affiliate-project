@@ -14,6 +14,9 @@ model Post {
   seoKeywords    String[]
   status         Status             @default(DRAFT)
   publishedAt    DateTime?
+  /// Tìm kiếm không dấu (FR-36): tiêu đề, tóm tắt, thẻ, chữ thân bài — bỏ dấu, chữ thường (`toSearchText`).
+  /// Chỉ `posts/service.ts` ghi, ở mọi lần ghi bài.
+  searchText     String             @default("") @db.Text
   createdAt      DateTime           @default(now())
   updatedAt      DateTime           @updatedAt
   postProducts   PostProduct[]

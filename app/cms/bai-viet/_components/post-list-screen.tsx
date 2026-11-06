@@ -5,16 +5,17 @@ import { CMS_POST_PAGE_SIZE, POST_STATUS_FILTERS } from "@/modules/posts/constan
 import { listPostsForCms } from "@/modules/posts/cms-queries";
 import { PostStatusBadge } from "@/modules/posts/components/post-status-badge";
 import { PostTypeBadge } from "@/modules/posts/components/post-type-badge";
-import { getPostViewsForCms, listPostsByViewsForCms } from "@/modules/engagement/cms-queries";
-import type { CmsPostWithViews } from "@/modules/engagement/types";
+import { getPostStatsForCms, listPostsByStatForCms } from "@/modules/engagement/cms-queries";
+import type { CmsPostWithStats } from "@/modules/engagement/types";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/components/ui/lib/utils";
 import {
   first,
   LIST_PATH,
   pageParam,
-  SORT_BY_VIEWS,
   SORT_PARAM,
+  SORT_VALUES,
+  sortParam,
   STATUS_PARAM,
   statusParam,
   type PostListFilters,
@@ -35,35 +36,36 @@ function CreateLink() {
   );
 }
 
-// Meta một dòng: "Sửa dd/mm/yyyy · Danh mục · N Sản phẩm · N lượt xem".
-function meta(p: CmsPostWithViews) {
+// Meta một dòng: "Sửa dd/mm/yyyy · Danh mục · N Sản phẩm · N lượt xem · N lượt tim".
+function meta(p: CmsPostWithStats) {
   return [
     `Sửa ${formatShortDate(p.updatedAt)}`,
     p.category?.name ?? "Chưa có Danh mục",
     `${p._count.postProducts} Sản phẩm`,
     `${formatCount(p.views)}\u00a0lượt\u00a0xem`,
+    `${formatCount(p.likes)}\u00a0lượt\u00a0tim`,
   ].join(" · ");
 }
 
-// Một trang danh sách kèm Lượt xem (FR-38). Sắp theo Lượt xem: query của `engagement` (AD-2); mặc định: danh sách
-// của `posts` rồi ghép Lượt xem của các bài trên trang.
+// Một trang danh sách kèm Lượt xem, Lượt tim (FR-38). Sắp theo một số đếm: query của `engagement` (AD-2); mặc định:
+// danh sách của `posts` rồi ghép số đếm của các bài trên trang.
 async function loadPage(filters: PostListFilters, page: number) {
   const query = { status: filters.status ? POST_STATUS_FILTERS[filters.status] : null, q: filters.q, page };
-  if (filters.byViews) return listPostsByViewsForCms(query);
+  if (filters.sort) return listPostsByStatForCms({ ...query, by: SORT_VALUES[filters.sort] });
   const list = await listPostsForCms(query);
-  const views = await getPostViewsForCms(list.items.map((p) => p.id));
-  return { ...list, items: list.items.map((p) => ({ ...p, views: views[p.id] ?? 0 })) };
+  const stats = await getPostStatsForCms(list.items.map((p) => p.id));
+  return { ...list, items: list.items.map((p) => ({ ...p, ...stats[p.id] })) };
 }
 
 // Danh sách Bài web (UX-DR39, UX-DR71): DataList (mobile Card, desktop Table), lọc Nháp / Đã xuất bản, tìm theo
-// tiêu đề và sắp xếp (sửa gần nhất / Lượt xem) trên URL (`?trang-thai=`, `?q=`, `?sap-xep=`, `?trang=`), đọc qua
+// tiêu đề và sắp xếp (sửa gần nhất / Lượt xem / Lượt tim) trên URL (`?trang-thai=`, `?q=`, `?sap-xep=`, `?trang=`), đọc qua
 // `cms-queries` (AD-12). Xuất bản / chuyển về nháp / xoá ở màn sửa bài.
 export async function PostListScreen({ searchParams }: Pick<PageProps<"/cms/bai-viet">, "searchParams">) {
   const params = await searchParams;
   const filters: PostListFilters = {
     status: statusParam(first(params[STATUS_PARAM])),
     q: first(params.q).trim(),
-    byViews: first(params[SORT_PARAM]) === SORT_BY_VIEWS,
+    sort: sortParam(first(params[SORT_PARAM])),
   };
   const { items, total, page } = await loadPage(filters, pageParam(first(params.trang)));
   const pages = Math.ceil(total / CMS_POST_PAGE_SIZE);
@@ -121,6 +123,7 @@ export async function PostListScreen({ searchParams }: Pick<PageProps<"/cms/bai-
                     <th scope="col" className="py-2 pr-4 font-medium">Sản phẩm</th>
                     <th scope="col" className="py-2 pr-4 font-medium">Sửa lần cuối</th>
                     <th scope="col" className="py-2 pr-4 text-right font-medium">Lượt xem</th>
+                    <th scope="col" className="py-2 pr-4 text-right font-medium">Lượt tim</th>
                     <th scope="col" className="py-2 font-medium">Trạng thái</th>
                   </tr>
                 </thead>
@@ -139,6 +142,7 @@ export async function PostListScreen({ searchParams }: Pick<PageProps<"/cms/bai-
                       <td className="py-2 pr-4 text-on-surface-variant">{p._count.postProducts}</td>
                       <td className="py-2 pr-4 text-on-surface-variant">{formatShortDate(p.updatedAt)}</td>
                       <td className="py-2 pr-4 text-right tabular-nums">{formatCount(p.views)}</td>
+                      <td className="py-2 pr-4 text-right tabular-nums">{formatCount(p.likes)}</td>
                       <td className="py-2">
                         <PostStatusBadge status={p.status} />
                       </td>

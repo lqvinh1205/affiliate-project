@@ -2,7 +2,7 @@ import { afterAll, beforeEach, describe, expect, it } from "vitest";
 import { db } from "@/platform/db";
 import { resetTestDb } from "@/vitest.db.helpers";
 import { CMS_POST_PAGE_SIZE } from "@/modules/posts/constants";
-import { getPostViewsForCms, listPostsByViewsForCms } from "@/modules/engagement/cms-queries";
+import { getPostStatsForCms, listPostsByStatForCms } from "@/modules/engagement/cms-queries";
 
 beforeEach(async () => {
   await resetTestDb();
@@ -11,7 +11,9 @@ beforeEach(async () => {
 afterAll(() => db.$disconnect());
 
 // Bài sửa lần cuối cách nhau 1 phút theo thứ tự tạo (bài tạo sau = sửa gần hơn); `views` null = không có PostStat.
-async function seedPosts(rows: { title: string; views: number | null; status?: "DRAFT" | "PUBLISHED" }[]) {
+async function seedPosts(
+  rows: { title: string; views: number | null; likes?: number; status?: "DRAFT" | "PUBLISHED" }[],
+) {
   const base = Date.UTC(2026, 10, 1);
   const created = [];
   for (const [i, r] of rows.entries()) {
@@ -23,7 +25,7 @@ async function seedPosts(rows: { title: string; views: number | null; status?: "
         postType: "MEO_VAT",
         status: r.status ?? "PUBLISHED",
         updatedAt: new Date(base + i * 60_000),
-        ...(r.views !== null && { stat: { create: { views: r.views } } }),
+        ...(r.views !== null && { stat: { create: { views: r.views, likes: r.likes ?? 0 } } }),
       },
     });
     created.push(p);
@@ -31,18 +33,39 @@ async function seedPosts(rows: { title: string; views: number | null; status?: "
   return created;
 }
 
-describe("getPostViewsForCms", () => {
-  it("trả Lượt xem theo id, bài chưa có PostStat = 0", async () => {
+describe("getPostStatsForCms", () => {
+  it("trả Lượt xem, Lượt tim theo id, bài chưa có PostStat = 0", async () => {
     const [a, b] = await seedPosts([
-      { title: "a", views: 7 },
+      { title: "a", views: 7, likes: 2 },
       { title: "b", views: null },
     ]);
-    expect(await getPostViewsForCms([a.id, b.id])).toEqual({ [a.id]: 7, [b.id]: 0 });
-    expect(await getPostViewsForCms([])).toEqual({});
+    expect(await getPostStatsForCms([a.id, b.id])).toEqual({
+      [a.id]: { views: 7, likes: 2 },
+      [b.id]: { views: 0, likes: 0 },
+    });
+    expect(await getPostStatsForCms([])).toEqual({});
   });
 });
 
-describe("listPostsByViewsForCms", () => {
+describe("listPostsByStatForCms — Lượt tim", () => {
+  it("xếp Lượt tim giảm dần; bài 0 tim / chưa có PostStat xếp sau theo sửa gần nhất", async () => {
+    await seedPosts([
+      { title: "it-tim", views: 100, likes: 1 },
+      { title: "khong-stat", views: null },
+      { title: "nhieu-tim", views: 1, likes: 9 },
+      { title: "xem-khong-tim", views: 50, likes: 0 },
+    ]);
+    const { items } = await listPostsByStatForCms({ status: null, q: "", page: 1, by: "likes" });
+    expect(items.map((p) => [p.title, p.likes, p.views])).toEqual([
+      ["nhieu-tim", 9, 1],
+      ["it-tim", 1, 100],
+      ["xem-khong-tim", 0, 50],
+      ["khong-stat", 0, 0],
+    ]);
+  });
+});
+
+describe("listPostsByStatForCms — Lượt xem", () => {
   it("xếp Lượt xem giảm dần; bài 0 lượt xem / chưa có PostStat xếp sau theo sửa gần nhất", async () => {
     await seedPosts([
       { title: "it", views: 5 },
@@ -51,7 +74,7 @@ describe("listPostsByViewsForCms", () => {
       { title: "stat-0", views: 0 },
       { title: "bang-it", views: 5 },
     ]);
-    const { items, total, page } = await listPostsByViewsForCms({ status: null, q: "", page: 1 });
+    const { items, total, page } = await listPostsByStatForCms({ status: null, q: "", page: 1, by: "views" });
     // "bang-it" và "it" cùng 5 lượt: sửa gần nhất trước.
     expect(items.map((p) => [p.title, p.views])).toEqual([
       ["nhieu", 50],
@@ -69,7 +92,7 @@ describe("listPostsByViewsForCms", () => {
       { title: "meo-giat", views: 9, status: "DRAFT" },
       { title: "do-bep", views: 1 },
     ]);
-    const res = await listPostsByViewsForCms({ status: "PUBLISHED", q: "MEO", page: 1 });
+    const res = await listPostsByStatForCms({ status: "PUBLISHED", q: "MEO", page: 1, by: "views" });
     expect(res.items.map((p) => p.title)).toEqual(["meo-bep"]);
     expect(res.total).toBe(1);
   });
@@ -82,15 +105,15 @@ describe("listPostsByViewsForCms", () => {
       { title: "z2", views: null },
       { title: "z3", views: null },
     ]);
-    const p1 = await listPostsByViewsForCms({ status: null, q: "", page: 1 });
+    const p1 = await listPostsByStatForCms({ status: null, q: "", page: 1, by: "views" });
     expect(p1.items).toHaveLength(CMS_POST_PAGE_SIZE);
     expect(p1.items[0]).toMatchObject({ title: `v${viewed - 1}`, views: viewed });
     expect(p1.items.at(-1)).toMatchObject({ title: "z3", views: 0 });
 
-    const p2 = await listPostsByViewsForCms({ status: null, q: "", page: 2 });
+    const p2 = await listPostsByStatForCms({ status: null, q: "", page: 2, by: "views" });
     expect(p2.items.map((p) => p.title)).toEqual(["z2", "z1"]);
 
-    const clamped = await listPostsByViewsForCms({ status: null, q: "", page: 9 });
+    const clamped = await listPostsByStatForCms({ status: null, q: "", page: 9, by: "views" });
     expect(clamped.page).toBe(2);
     expect(clamped.items.map((p) => p.title)).toEqual(["z2", "z1"]);
   });

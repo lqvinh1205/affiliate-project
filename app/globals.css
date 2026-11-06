@@ -366,6 +366,23 @@ body:has([data-article-action-bar]) [data-bottom-tab-bar] {
   display: none;
 }
 
+/* Toast site (UX-DR36): nằm trên ArticleActionBar/BottomTabBar khi còn thanh dính đáy (< 1024px). */
+:root {
+  --site-toast-bottom: calc(env(safe-area-inset-bottom) + 5rem);
+}
+@media (width >= 64rem) {
+  :root {
+    --site-toast-bottom: 1.5rem;
+  }
+}
+
+/* Tim nảy khi thả (UX-DR25): ≤ 200 ms; chỗ dùng chỉ bật trong `motion-safe:` (UX-DR91). */
+@keyframes like-pop {
+  50% {
+    transform: scale(1.3);
+  }
+}
+
 /* UX-DR91: tắt cuộn mượt, nhấp nháy Skeleton, icon quay khi người dùng chọn giảm chuyển động. */
 @media (prefers-reduced-motion: reduce) {
   html {

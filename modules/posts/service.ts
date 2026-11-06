@@ -5,9 +5,11 @@ import { db } from "@/platform/db";
 import { UserError } from "@/platform/errors";
 import { visibleText } from "@/platform/html/content";
 import { sanitizePostHtml } from "@/platform/html/sanitize";
+import { toSearchText } from "@/platform/search-text";
 import { slugify } from "@/platform/slug";
 import { visibleProductWhere } from "@/modules/products/queries";
-import { POST_SLUG_MAX } from "@/modules/posts/constants";
+import { POST_SLUG_MAX, SEARCH_RESULTS_LIMIT } from "@/modules/posts/constants";
+import { newestFirst, postCardSelect, publishedPostWhere, toPostCard } from "@/modules/posts/queries";
 import type { WebPostPayload } from "@/modules/posts/prompts/web-post.prompt";
 import type {
   deletePostInputSchema,
@@ -28,6 +30,11 @@ type Tx = Prisma.TransactionClient;
 
 function prismaCode(e: unknown) {
   return e instanceof Prisma.PrismaClientKnownRequestError ? e.code : null;
+}
+
+// Cột tìm kiếm không dấu (FR-36): tiêu đề, tóm tắt, thẻ, chữ thân bài (HTML đã sanitize) — ghi ở mọi lần ghi bài.
+function searchTextOf(p: { title: string; excerpt: string | null; tags: string[]; content: string }) {
+  return toSearchText(p.title, p.excerpt, ...p.tags, visibleText(p.content));
 }
 
 function inTransaction<T>(tx: Tx | undefined, fn: (tx: Tx) => Promise<T>) {
@@ -100,7 +107,7 @@ export async function savePostRecord(data: PostInput, tx?: Tx) {
 
       const saved = await c.post.update({
         where: { id },
-        data: { ...fields, slug, content: html },
+        data: { ...fields, slug, content: html, searchText: searchTextOf({ ...fields, content: html }) },
         select: { id: true, slug: true },
       });
       await c.postProduct.deleteMany({ where: { postId: id } });
@@ -144,8 +151,9 @@ export async function createPostDraftRecord(data: z.infer<typeof postDraftInputS
       let slug = wantedSlug;
       if (!slug) slug = await freePostSlug(c, fields.title);
       else if (await slugOwnedByOther(c, slug)) throw new UserError(SLUG_TAKEN);
+      const html = sanitizePostHtml(content);
       return c.post.create({
-        data: { ...fields, slug, content: sanitizePostHtml(content) },
+        data: { ...fields, slug, content: html, searchText: searchTextOf({ ...fields, content: html }) },
         select: { id: true, slug: true },
       });
     });
@@ -185,18 +193,20 @@ export async function applyWebPostSuggestionRecord(
     postType,
     categoryId,
   };
+  const searchText = searchTextOf(fields);
   try {
     return await inTransaction(tx, async (c) => {
       if (data.postId) {
         const current = await c.post.findUnique({ where: { id: data.postId }, select: { status: true } });
         if (!current) throw new UserError(NOT_FOUND);
         if (current.status !== "DRAFT") throw new UserError(AI_TARGET_PUBLISHED);
-        return c.post.update({ where: { id: data.postId }, data: fields, select: { id: true } });
+        return c.post.update({ where: { id: data.postId }, data: { ...fields, searchText }, select: { id: true } });
       }
       const slug = await freePostSlug(c, title);
       return c.post.create({
         data: {
           ...fields,
+          searchText,
           slug,
           postProducts: { create: data.productIds.map((productId, sortOrder) => ({ productId, sortOrder })) },
         },
@@ -206,4 +216,19 @@ export async function applyWebPostSuggestionRecord(
   } catch (e) {
     mapWriteError(e);
   }
+}
+
+// Tìm Bài web đã xuất bản cho action công khai `searchPosts` (FR-36, AD-5: đọc không cache cho action công khai chỉ
+// đọc). Bài khớp khi `searchText` chứa đủ mọi từ đã gấp không dấu; mới xuất bản trước; trả tối đa
+// `SEARCH_RESULTS_LIMIT` thẻ và tổng số bài khớp.
+export async function searchPostsRecord(terms: string[]) {
+  const where = {
+    ...publishedPostWhere,
+    AND: terms.map((t) => ({ searchText: { contains: t } })),
+  } satisfies Prisma.PostWhereInput;
+  const [rows, total] = await db.$transaction([
+    db.post.findMany({ where, orderBy: [...newestFirst], take: SEARCH_RESULTS_LIMIT, select: postCardSelect }),
+    db.post.count({ where }),
+  ]);
+  return { items: rows.map(toPostCard), total };
 }

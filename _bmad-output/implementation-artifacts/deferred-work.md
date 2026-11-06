@@ -58,3 +58,9 @@
 - source_spec: `_bmad-output/implementation-artifacts/spec-7-luot-gop-epic-7.md`
   summary: `clientKey` (`platform/rate-limit.ts`) giả định đúng một tầng reverse proxy nối IP vào cuối `x-forwarded-for`. Đặt sau CDN (Cloudflare) + nginx thì mục cuối là IP của CDN → mọi người đọc chung một khoá, giới hạn 60/phút chặn nhầm; chạy `next start` lộ thẳng ra mạng (không proxy) thì client tự đặt cả header nên vẫn giả được.
   evidence: Review gộp Epic 7 (#1, #4). Chốt khi làm hạ tầng production (Deferred "Hạ tầng production" của spine): cấu hình proxy ghi đè `X-Forwarded-For` bằng `$remote_addr` hoặc thêm cấu hình số tầng proxy tin cậy (chỉ khi có CDN).
+- source_spec: `_bmad-output/implementation-artifacts/spec-8-luot-gop-epic-8.md`
+  summary: Trang 404 trong `(site)` (`/bai-viet/khong-co`, `/khong-co-trang-nay`) trả HTML vỏ lỗi `<html id="__next_error__">` — nội dung 404 (EmptyState, SearchBox, Xem nhiều) chỉ hiện sau khi JS dựng từ dữ liệu RSC; 404 gốc (`/a/b/c/d`) có HTML đủ.
+  evidence: Có từ trước Epic 8: dựng lại với `not-found-screen.tsx` của HEAD (dd3109f) vẫn ra vỏ lỗi; mã HTTP vẫn 404. Cần tìm nguyên nhân (có thể do `notFound()` trong route `ensureStatic = "navigation"` chưa prerender) — đọc `node_modules/next/dist/docs/` về `not-found` + `ensureStatic` rồi thử `instant`/vị trí `notFound()`.
+- source_spec: `_bmad-output/implementation-artifacts/spec-8-luot-gop-epic-8.md`
+  summary: Tìm kiếm xếp bài khớp theo mới xuất bản trước, không theo mức liên quan (tiêu đề khớp không được ưu tiên hơn thân bài); không có tìm theo cụm từ.
+  evidence: Quyết định tự chọn 8 của Epic 8. Khi số bài lớn (vài trăm bài trở lên) cân nhắc `pg_trgm`/full-text Postgres (thay đổi kiến trúc — sửa spine trước).

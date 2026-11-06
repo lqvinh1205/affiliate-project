@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import { MAIN_CONTENT_ID } from "@/platform/site";
 import { listNavCategories } from "@/modules/posts/queries";
+import { Toaster } from "@/components/ui/sonner";
 import { BottomTabBar, BottomTabBarView } from "@/app/(site)/_components/bottom-tab-bar.client";
 import { SiteFooter } from "@/app/(site)/_components/site-footer";
 import { SiteHeader } from "@/app/(site)/_components/site-header";
@@ -22,6 +23,13 @@ export default async function SiteLayout({ children }: LayoutProps<"/">) {
       <Suspense fallback={<BottomTabBarView categories={categories} active={null} />}>
         <BottomTabBar categories={categories} />
       </Suspense>
+      {/* Toast site (UX-DR36): đáy màn, nằm trên ArticleActionBar/BottomTabBar (< 1024px), 3 giây. */}
+      <Toaster
+        position="bottom-center"
+        duration={3000}
+        offset={{ bottom: "var(--site-toast-bottom)" }}
+        mobileOffset={{ bottom: "var(--site-toast-bottom)" }}
+      />
     </>
   );
 }

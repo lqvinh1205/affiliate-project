@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { Be_Vietnam_Pro } from "next/font/google";
-import { Toaster } from "@/components/ui/sonner";
 import { DEFAULT_OG_IMAGE, MAIN_CONTENT_ID, SITE_NAME, SITE_URL } from "@/platform/site";
 import "./globals.css";
 
@@ -34,7 +33,6 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           Bỏ qua tới nội dung
         </a>
         {children}
-        <Toaster position="top-center" />
       </body>
     </html>
   );

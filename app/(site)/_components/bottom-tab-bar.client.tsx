@@ -86,7 +86,7 @@ export function BottomTabBarView({ categories, active }: { categories: NavCatego
 }
 
 // BottomTabBar (UX-DR12): < 1024px, 5 tab. Trang bài có ArticleActionBar thì thanh đó thay chỗ: CSS ẩn BottomTabBar
-// khi trang có `[data-article-action-bar]` (globals.css) — bài không có Sản phẩm vẫn còn BottomTabBar.
+// khi trang có `[data-article-action-bar]` (globals.css).
 export function BottomTabBar({ categories }: { categories: NavCategory[] }) {
   const pathname = usePathname();
   return <BottomTabBarView categories={categories} active={activeTab(pathname, categories)} />;

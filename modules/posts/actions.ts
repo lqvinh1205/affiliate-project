@@ -1,19 +1,23 @@
 "use server";
 
 import { updateTag } from "next/cache";
+import { headers } from "next/headers";
 import type { z } from "zod";
 import type { Status } from "@/generated/prisma/enums";
 import { ask } from "@/platform/ai/ask";
 import { run } from "@/platform/auth/run";
-import { UserError, type Result } from "@/platform/errors";
+import { INVALID_INPUT_ERROR, RATE_LIMITED_ERROR, UNEXPECTED_ERROR, UserError, type Result } from "@/platform/errors";
+import { clientKey, createRateLimiter } from "@/platform/rate-limit";
 import { firstError } from "@/platform/validation/errors";
 import { CATEGORIES_TAG } from "@/modules/categories/tags";
+import { SEARCH_RATE_LIMIT } from "@/modules/posts/constants";
 import { seoReviewPrompt } from "@/modules/posts/prompts/seo-review.prompt";
 import {
   deletePostInputSchema,
   newPostInputSchema,
   postDraftInputSchema,
   postInputSchema,
+  searchPostsInputSchema,
   seoCheckInputSchema,
   setPostStatusInputSchema,
   type NewPostFormValues,
@@ -21,8 +25,15 @@ import {
   type PostFormValues,
   type SeoCheckInput,
 } from "@/modules/posts/schema";
-import { createPostDraftRecord, deletePostRecord, savePostRecord, setPostStatusRecord } from "@/modules/posts/service";
+import {
+  createPostDraftRecord,
+  deletePostRecord,
+  savePostRecord,
+  searchPostsRecord,
+  setPostStatusRecord,
+} from "@/modules/posts/service";
 import { POSTS_TAG } from "@/modules/posts/tags";
+import type { SearchPostItem } from "@/modules/posts/types";
 
 // Mọi ghi Bài web làm đổi trang bài, danh sách, Trang chủ (tag `posts`) và Danh mục có/hết bài đã xuất bản
 // (điều hướng site, trang Danh mục — tag `categories`) (AD-7). Sản phẩm trong Kho không đổi: không cần tag `products`.
@@ -110,4 +121,29 @@ export async function deletePost(input: z.input<typeof deletePostInputSchema>): 
     refreshPublicPages();
     return {};
   });
+}
+
+const searchLimiter = createRateLimiter(SEARCH_RATE_LIMIT);
+
+// Tìm Bài web đã xuất bản (FR-36) — ngoại lệ số 2 của AD-6 ([QD-20]): action **chỉ đọc** công khai, không
+// `run()`/`requireAdmin()`; validate; giới hạn tần suất theo băm IP trong bộ nhớ (AD-23); chỉ Bài web đã xuất bản;
+// không ghi log từ khoá hay định danh (NFR-7) — vì vậy không `console.error`. Ngày đăng qua ranh giới client là chuỗi
+// ISO (AD-8).
+export async function searchPosts(
+  input: z.input<typeof searchPostsInputSchema>,
+): Promise<Result<{ total: number; terms: string[]; items: SearchPostItem[] }>> {
+  const parsed = searchPostsInputSchema.safeParse(input);
+  if (!parsed.success) return { ok: false, error: INVALID_INPUT_ERROR };
+  try {
+    if (!searchLimiter.hit(clientKey(await headers()))) return { ok: false, error: RATE_LIMITED_ERROR };
+    const { items, total } = await searchPostsRecord(parsed.data.q);
+    return {
+      ok: true,
+      total,
+      terms: parsed.data.q,
+      items: items.map((p) => ({ ...p, publishedAt: p.publishedAt?.toISOString() ?? null })),
+    };
+  } catch {
+    return { ok: false, error: UNEXPECTED_ERROR };
+  }
 }

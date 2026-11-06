@@ -16,7 +16,7 @@ import { POSTS_TAG } from "@/modules/posts/tags";
 
 // Điều kiện "Bài web đã xuất bản" — module tầng cao hơn đọc bảng `Post` dùng lại, không viết lại (AD-2).
 export const publishedPostWhere = { status: "PUBLISHED" } as const;
-const newestFirst = [{ publishedAt: "desc" }, { id: "desc" }] as const;
+export const newestFirst = [{ publishedAt: "desc" }, { id: "desc" }] as const;
 
 // Ảnh đại diện fallback = ảnh Sản phẩm đang hiện đầu tiên của bài.
 const firstVisibleProduct = {
@@ -26,7 +26,9 @@ const firstVisibleProduct = {
   select: { product: { select: publicProductSelect } },
 } as const;
 
-const cardSelect = {
+// Cột và cách dựng thẻ Bài web public (PostCard) — module tầng cao hơn liệt kê bài (vd "Xem nhiều" của
+// `engagement`, tìm kiếm) dùng lại, không viết lại (AD-2).
+export const postCardSelect = {
   slug: true,
   title: true,
   excerpt: true,
@@ -37,9 +39,9 @@ const cardSelect = {
   postProducts: firstVisibleProduct,
 } as const satisfies Prisma.PostSelect;
 
-type CardRow = Prisma.PostGetPayload<{ select: typeof cardSelect }>;
+type CardRow = Prisma.PostGetPayload<{ select: typeof postCardSelect }>;
 
-function toCard({ content, postProducts, ...p }: CardRow) {
+export function toPostCard({ content, postProducts, ...p }: CardRow) {
   return {
     ...p,
     featuredImage: p.featuredImage ?? postProducts[0]?.product.image ?? null,
@@ -56,8 +58,8 @@ export async function getLatestPosts(limit: number) {
   "use cache";
   cacheLife("days");
   cacheTag(POSTS_TAG, PRODUCTS_TAG);
-  const rows = await db.post.findMany({ where: publishedPostWhere, orderBy: [...newestFirst], take: limit, select: cardSelect });
-  return rows.map(toCard);
+  const rows = await db.post.findMany({ where: publishedPostWhere, orderBy: [...newestFirst], take: limit, select: postCardSelect });
+  return rows.map(toPostCard);
 }
 
 export async function getPostsByType(postType: PostType, limit?: number) {
@@ -68,9 +70,9 @@ export async function getPostsByType(postType: PostType, limit?: number) {
     where: { ...publishedPostWhere, postType },
     orderBy: [...newestFirst],
     take: limit,
-    select: cardSelect,
+    select: postCardSelect,
   });
-  return rows.map(toCard);
+  return rows.map(toPostCard);
 }
 
 // Bài liên quan cuối trang bài (UX-DR17): tối đa `RELATED_POSTS_LIMIT` bài cùng Danh mục, mới nhất trước;
@@ -84,9 +86,9 @@ export async function getRelatedPosts(slug: string, categoryId: string | null) {
     where: { ...publishedPostWhere, categoryId, slug: { not: slug } },
     orderBy: [...newestFirst],
     take: RELATED_POSTS_LIMIT,
-    select: cardSelect,
+    select: postCardSelect,
   });
-  return rows.map(toCard);
+  return rows.map(toPostCard);
 }
 
 // Bài public kèm Sản phẩm đang hiện và Danh mục (breadcrumb theo Danh mục — AD-26).
@@ -168,11 +170,11 @@ async function listPublishedPage(where: { categoryId: string } | { postType: Pos
       orderBy: [...newestFirst],
       skip: (page - 1) * PAGE_SIZE,
       take: PAGE_SIZE,
-      select: cardSelect,
+      select: postCardSelect,
     }),
     db.post.count({ where: filter }),
   ]);
-  return { items: rows.map(toCard), total, pages: pageCount(total) };
+  return { items: rows.map(toPostCard), total, pages: pageCount(total) };
 }
 
 export async function listPostsByCategory(categoryId: string, page: number) {

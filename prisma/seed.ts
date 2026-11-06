@@ -1,6 +1,8 @@
 import "dotenv/config";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient, type PostType } from "../generated/prisma/client";
+import { visibleText } from "../platform/html/content";
+import { toSearchText } from "../platform/search-text";
 
 const db = new PrismaClient({
   adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL }),
@@ -219,6 +221,8 @@ async function main() {
         tags: p.tags,
         seoDescription: p.excerpt,
         seoKeywords: p.tags,
+        // Như `posts/service.ts` (FR-36): tìm kiếm không dấu.
+        searchText: toSearchText(p.title, p.excerpt, ...p.tags, visibleText(p.content)),
         status: "PUBLISHED",
         publishedAt: new Date(now - i * 86_400_000),
         postProducts: {

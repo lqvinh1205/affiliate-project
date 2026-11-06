@@ -8,6 +8,8 @@ export type PostCardData = Awaited<ReturnType<typeof getLatestPosts>>[number];
 export type PublicPost = NonNullable<Awaited<ReturnType<typeof getPostBySlug>>>;
 // Một trang danh sách Bài web (trang Danh mục / Loại bài).
 export type PostListPage = Awaited<ReturnType<typeof listPostsByType>>;
+// Một kết quả tìm kiếm (`searchPosts`): thẻ Bài web, ngày đăng là chuỗi ISO khi qua ranh giới client (AD-8).
+export type SearchPostItem = Omit<PostCardData, "publishedAt"> & { publishedAt: string | null };
 export type NavCategory = Awaited<ReturnType<typeof listNavCategories>>[number];
 // Một dòng danh sách Bài web trong CMS.
 export type CmsPostListItem = Awaited<ReturnType<typeof listPostsForCms>>["items"][number];

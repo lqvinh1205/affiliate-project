@@ -1,4 +1,4 @@
-import type { listPostsByViewsForCms } from "@/modules/engagement/cms-queries";
+import type { listPostsByStatForCms } from "@/modules/engagement/cms-queries";
 
-// Một dòng danh sách Bài web CMS kèm Lượt xem (suy từ query — [QU-09]).
-export type CmsPostWithViews = Awaited<ReturnType<typeof listPostsByViewsForCms>>["items"][number];
+// Một dòng danh sách Bài web CMS kèm Lượt xem, Lượt tim (suy từ query — [QU-09]).
+export type CmsPostWithStats = Awaited<ReturnType<typeof listPostsByStatForCms>>["items"][number];

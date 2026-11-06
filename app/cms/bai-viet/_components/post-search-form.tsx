@@ -4,7 +4,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
   LIST_PATH,
-  SORT_BY_VIEWS,
   SORT_PARAM,
   STATUS_PARAM,
   type PostListFilters,
@@ -15,7 +14,7 @@ export function PostSearchForm({ filters }: { filters: PostListFilters }) {
   return (
     <Form action={LIST_PATH} role="search" className="flex gap-2" key={filters.q}>
       {filters.status && <input type="hidden" name={STATUS_PARAM} value={filters.status} />}
-      {filters.byViews && <input type="hidden" name={SORT_PARAM} value={SORT_BY_VIEWS} />}
+      {filters.sort && <input type="hidden" name={SORT_PARAM} value={filters.sort} />}
       <label htmlFor="post-search" className="sr-only">
         Tìm Bài web theo tiêu đề
       </label>
