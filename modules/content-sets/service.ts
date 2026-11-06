@@ -42,6 +42,19 @@ export async function createContentSetRecord(
   });
 }
 
+// Đồng bộ Sản phẩm của bộ theo danh sách mới, giữ thứ tự (FR-16: bộ của Bài web theo Sản phẩm hiện tại của bài —
+// Bình luận kèm link lấy Link affiliate từ đây).
+export async function setContentSetProductsRecord(data: { contentSetId: string; productIds: string[] }, tx?: Tx) {
+  const write = async (t: Tx) => {
+    await t.contentSetProduct.deleteMany({ where: { contentSetId: data.contentSetId } });
+    await t.contentSetProduct.createMany({
+      data: data.productIds.map((productId, sortOrder) => ({ contentSetId: data.contentSetId, productId, sortOrder })),
+    });
+  };
+  if (tx) return write(tx);
+  await db.$transaction(write);
+}
+
 // Bài web đích của bộ (AD-19): ghi sau khi Duyệt `WEB_POST` tạo `Post` nháp.
 export async function setContentSetPostRecord(data: { contentSetId: string; postId: string }, tx?: Tx) {
   const { count } = await (tx ?? db).contentSet.updateMany({ where: { id: data.contentSetId }, data: { postId: data.postId } });

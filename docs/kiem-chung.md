@@ -90,6 +90,8 @@ npx tsx --conditions=react-server scripts/risk-eval/run.ts
 |---|---|---|---|---|---|
 | 2026-11-06 | `claude-cli` / `haiku` | 12/12 (100%) | 0/12 (0%) | 9,3 giây | Đạt |
 
+Lưu ý (review gộp Epic 5): dòng trên chấm bằng cách so khớp chuỗi con cũ; từ nay `scripts/risk-eval/score.ts` chấm qua `cleanRiskWarnings` và khớp nguyên câu (có test). Script đo một prompt kiểm riêng trên danh sách câu, chưa đo đúng đường chạy thật (AI tự đánh dấu trong nội dung vừa viết) — lần chạy thật kế tiếp ghi thêm dòng, xem `deferred-work.md`.
+
 **SM-3 (thời gian làm một Sản phẩm, AD-21).** SM-3 = `firstCopiedAt` sớm nhất của Bộ nội dung (trên `SocialPost` và `Suggestion`) − `Product.createdAt` của Sản phẩm đầu tiên trong bộ (`ContentSetProduct.sortOrder = 0`). Chạy trên DB (chỉ đọc):
 
 ```sql

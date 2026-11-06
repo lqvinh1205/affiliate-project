@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import { THREADS_POST_MAX } from "@/modules/content-sets/constants";
+import { threadsPostLength } from "@/modules/content-sets/schema";
 import { CopyButton } from "@/components/shared/copy-button.client";
 import { selectSentence } from "@/components/shared/select-sentence";
 import { Textarea } from "@/components/ui/textarea";
@@ -40,7 +41,8 @@ export function ThreadsPartsField({
   return (
     <ol className="space-y-space-sm" aria-label="Các bài trong chuỗi Threads">
       {value.map((text, i) => {
-        const over = text.length > THREADS_POST_MAX;
+        const length = threadsPostLength(text);
+        const over = length > THREADS_POST_MAX;
         const id = `${idPrefix}-${i}`;
         return (
           <li key={i} className="space-y-space-sm rounded-lg border border-outline-variant p-space-sm">
@@ -64,7 +66,7 @@ export function ThreadsPartsField({
                 aria-live="polite"
                 className={cn("text-label-meta", over ? "text-error" : "text-on-surface-variant")}
               >
-                {text.length}/{THREADS_POST_MAX}
+                {length}/{THREADS_POST_MAX}
                 {over && <span className="sr-only"> — vượt giới hạn</span>}
               </span>
               <CopyButton text={text} label={`Sao chép bài ${i + 1}`} {...copy} />

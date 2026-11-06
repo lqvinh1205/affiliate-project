@@ -2,8 +2,8 @@
 title: 'Lượt gộp Epic 5: Xưởng Bộ nội dung — Story 5.1–5.9'
 type: 'feature'
 created: '2026-11-06'
-status: 'review'
-review_loop_iteration: 0
+status: 'done'
+review_loop_iteration: 1
 baseline_revision: 'bcc2faf26c8af50dcd9f9a6728f6b1d789c15fc2'
 followup_review_recommended: true
 context:
@@ -176,11 +176,45 @@ Tính năng AI: Bài Threads (FR-14) và Bình luận kèm link (FR-17)
 21. **"Đã lên Website" = Sản phẩm có trong Bài web đã xuất bản;** Threads/Facebook = bài trong Bộ nội dung của Sản phẩm đã đánh dấu đã đăng. Query đặt ở `content-sets` (tầng cao nhất trong các bảng chạm — AD-2).
 22. **Bộ tạo từ Bài web có sẵn (FR-16):** nguồn = chữ của bài (sau `visibleText`) + hồ sơ đã Duyệt của Sản phẩm nếu có; Góc viết hiện "Theo Bài web …". Nút SocialFromPostDialog dựa trên Sản phẩm **đã lưu** của bài.
 23. **Lần gọi `claude -p` thật duy nhất của epic dùng cho bộ câu mẫu Cảnh báo rủi ro** (một lần `ask()` cho cả 24 câu, `haiku`) — vừa đo FR-23, vừa là lần đầu đi trọn adapter `ask` → `claude -p` → `structured_output`.
+24. **(Review gộp) Bình luận kèm link theo giới hạn nền tảng:** Threads ≤ 500 ký tự (mỗi trả lời Threads như một bài, FR-14), Facebook ≤ `LINK_COMMENT_MAX` 2000 (`linkCommentMax`). Áp ở `toLinkCommentPayload`, khi Duyệt, `saveLinkComment` và bộ đếm trên thẻ. Prompt `content-sets.link-comment` lên version 2 (thêm giới hạn vào lời nhắc).
+25. **(Review gộp) Link + câu công khai không vừa giới hạn:** rút tên Sản phẩm ở dòng "👉" còn 40 ký tự, rồi bỏ tên; vẫn quá thì thẻ Lỗi hiện câu riêng "… Rút gọn Link affiliate ở Sản phẩm rồi Tạo lại." — ngoại lệ duy nhất của quyết định 20, vì Tạo lại không thể tự sửa. Chưa chặn độ dài `affiliateUrl` khi lưu Sản phẩm (cần Vinh chọn số — `deferred-work.md`).
+26. **(Review gộp) "Link" trong thân bài và bình luận gồm cả tên miền trần:** `URL_PATTERN` (`content-sets/schema.ts`) bắt `http(s)://`, `www.` và `tên.miền` với đuôi trong danh sách cố định (`vn|com|net|org|ee|me|ly|co|io|info|link|shop|store|site|online|xyz|app|asia|biz|gl`); không bắt số thập phân, "v.v.", email. Câu như "Có bán trên Shopee.vn" mất chữ "Shopee.vn" — chấp nhận vì Threads/Facebook tự biến nó thành link.
+27. **(Review gộp) "Tạo bài mạng xã hội" từ Bài web đã thuộc bộ: đồng bộ Sản phẩm của bộ theo Sản phẩm hiện tại của bài** (thay vì chặn) — Bình luận kèm link mới khớp bài; bình luận đã Duyệt trước đó giữ nguyên tới khi Tạo lại.
+28. **(Review gộp) Ngân sách nguồn 12 000 ký tự chia theo khối:** Bài web có sẵn (nguồn chính) đứng đầu; các Sản phẩm chia đều một nửa ngân sách khi có Bài web (cả ngân sách khi không), phần thừa của khối ngắn chuyển cho khối sau, Bài web lấy phần còn lại. Khối bị cắt kết thúc bằng "…".
+29. **(Review gộp) Bản đã Duyệt sau Tạo lại hiện thành thẻ riêng "{phần} · bản đã duyệt (đang dùng)"** ngay dưới thẻ bản mới (Đang tạo / Chờ duyệt / Lỗi / Đã từ chối), sửa và sao chép được như trước. "x/y đã duyệt" vẫn đếm theo gợi ý hiện hành (bản mới cần duyệt lại).
+30. **(Review gộp, sửa quyết định 15) Form bài mạng xã hội vẫn dùng state có kiểm soát, nhưng lý do tắt "Duyệt"/"Lưu" lấy từ `safeParse` của đúng schema server** (`socialContentError` ở `content-sets/components/`): schema nội dung chuyển về `content-sets/schema.ts`, `prompts/` xuất lại cho `suggestions/actions.ts` (ngoại lệ AD-9 chỉ mở `prompts/`). Bộ đếm Threads và Bình luận đếm sau `trim()` như server. Không chuyển sang RHF: chuỗi Threads là mảng độ dài động, lợi ích nhỏ so với rủi ro sửa lại form.
+31. **(Review gộp) Bài web đã Duyệt nhưng bị xoá:** thẻ hiện "Bài web của bộ đã bị xoá. Bấm Tạo lại để AI viết Bài web mới cho bộ này." (Duyệt bản mới tạo `Post` mới). Không hiện "Thêm Bài web" vì bộ đã có gợi ý `WEB_POST`.
 
 ### 2026-11-06 — Kiểm chứng gộp (trước review gộp)
 
 - Lần gọi `claude -p` thật duy nhất: `scripts/risk-eval/run.ts` qua `ask()` → 9,3 giây, bắt 12/12 câu vi phạm, báo nhầm 0/12 — Đạt (ghi `docs/kiem-chung.md` §7). Adapter chạy trọn qua `structured_output` lần đầu.
 - `next start` cổng 3300 (`AI_PROVIDERS=fake`), dữ liệu thử chèn vào DB cục bộ rồi xoá: `/cms/phong-cach`, `/cms/bo-noi-dung/[id]` (5 thẻ: Bài web Chờ duyệt + RiskWarning, Threads Đã duyệt + "Đã đăng · …", Bình luận Threads Chờ duyệt, Facebook "Đang viết bài Facebook…", Bình luận Facebook Lỗi; "1/5 đã duyệt"; thanh nhảy), `/cms/san-pham/[id]` (panel "Tạo bộ nội dung", lý do "Chọn một Góc viết", "Đã lên: Threads", danh sách Bộ nội dung), `/cms/san-pham/[id]?bo=xyz`, `/cms/bai-viet/[id]` ("Cần duyệt bài AI trước khi xuất bản", "← Bộ nội dung", "Tạo bài mạng xã hội", RiskWarning), `/cms/san-pham`, `/cms/bai-viet/moi` đều 200; không đăng nhập 401. Log chỉ có lỗi `crypto.randomUUID()` ở `/cms/san-pham` đã ghi từ trước. Server đã tắt.
+
+### 2026-11-06 — Review gộp Epic 5: phân loại
+
+Người dùng (lệnh chạy): "duyệt 4 điểm và cách 1" — các Quyết định tự chọn vẫn để Vinh xem lại ở danh sách trên.
+
+| # | Phát hiện | Quyết định | Lý do / việc đã làm |
+|---|---|---|---|
+| 1 | Nguồn cắt ở 12 000 ký tự từ cuối, mất Sản phẩm sau và Bài web có sẵn (trung bình) | Sửa | `describeSource` chuyển sang `modules/suggestions/content-source.ts`, ngân sách theo khối, Bài web đứng đầu (quyết định 28). Test: bộ 3 hồ sơ đầy đủ cả 3 Sản phẩm; bộ từ Bài web giữ chữ bài. |
+| 2 | Bình luận kèm link luôn lỗi khi phần link + câu công khai > giới hạn (thấp) | Sửa + hoãn một phần | Rút tên, còn quá thì lỗi riêng chỉ cách sửa (quyết định 25). Test đơn vị + DB (thẻ Lỗi có câu riêng). Chặn độ dài `affiliateUrl` khi lưu → `deferred-work.md`. |
+| 3 | Bỏ link chỉ bắt `http(s)`, tên miền trần còn lại (thấp) | Sửa (gốc chung) | Một `URL_PATTERN` cho thân bài và Bình luận (quyết định 26). Test `stripUrls` và Bình luận bỏ `shope.ee/…`, `www.…`. |
+| 4 | `createSocialFromPost` vào bộ có sẵn dùng Sản phẩm cũ của bộ (thấp) | Sửa | `setContentSetProductsRecord` đồng bộ theo bài (quyết định 27). Test DB: đổi Sản phẩm của bài → bình luận mới có link Sản phẩm mới, không còn link cũ. |
+| 5 | Bài web đã Duyệt bị xoá → "Tải lại trang" sai (thấp) | Sửa | Thông báo riêng + Tạo lại (quyết định 31). Kiểm runtime trên cổng 3300. |
+| 6 | Chấm risk-eval khớp chuỗi con, mục rỗng khớp mọi câu; không đo đường chạy thật (thấp) | Sửa + hoãn một phần | `scripts/risk-eval/score.ts`: qua `cleanRiskWarnings`, khớp nguyên câu sau chuẩn hoá; test. Đo qua prompt nội dung thật cần gọi AI thật (hết lượt của epic) → `deferred-work.md`; ghi chú ở `docs/kiem-chung.md` §7. |
+| 7 | Bản đã Duyệt của Threads/Facebook/Bình luận biến mất sau Tạo lại (trung bình) | Sửa | Thẻ "bản đã duyệt (đang dùng)" (quyết định 29). Test DB: Tạo lại Threads đã Duyệt, bản mới lỗi → `SocialPost` giữ nguyên, query màn trả đích. Kiểm runtime: thẻ Lỗi + thẻ bản đã duyệt cùng hiện. |
+| 8 | Bình luận Threads không giới hạn 500 ký tự (thấp) | Sửa | Quyết định 24; bộ đếm ký tự trên ô Bình luận. Test đơn vị + DB (Duyệt và `saveLinkComment` > 500 bị chặn). |
+| 9 | Form mạng xã hội tự viết luật, không dùng cùng schema (AD-14) (thấp) | Sửa (gốc chung với #8) | `socialContentError` dùng `safeParse` của schema server cho form Duyệt và editor sau Duyệt (nút Lưu tắt kèm lý do); bộ đếm dùng `trim()` (quyết định 30). Test `socialContentError`. Không có môi trường test component → kiểm bằng tsc/lint/build + runtime. |
+| 10 | Assert `updateTag` của content-sets không kiểm được gì; thiếu test regenerate (thấp) | Sửa | `toEqual([...])` đúng số lần cho `saveSocialPost`, `saveLinkComment`, `recordCopy`, `markPosted`, `unmarkPosted`; thêm test Tạo lại phần đã Duyệt và phần đang tạo ("AI đang viết phần này…"). |
+| 11 | Trùng #6 | Sửa + hoãn một phần | Như #6. |
+
+### Auto Run Result
+
+- Sửa 11 (gồm 1 trùng), hoãn 2 phần (#2 giới hạn `affiliateUrl` khi lưu, #6/#11 đo qua prompt nội dung thật), bác 0.
+- `npm test` 280/280 (30 file); `npm run test:db` 154/154 (17 file); `npx tsc --noEmit`, `npm run lint`, `npm run build` sạch.
+- `next start` cổng 3300 (`AI_PROVIDERS=fake`): `/`, `/meo-vat`, `/sitemap.xml`, `/robots.txt` 200; `/cms`, `/cms/bo-noi-dung/x` không đăng nhập 401; có Basic Auth `/cms` 307, `/cms/phong-cach`, `/cms/san-pham`, `/cms/bai-viet` 200. Bộ thử (Threads đã Duyệt + Tạo lại lỗi, Bình luận đã Duyệt, Bài web đã Duyệt bị xoá) ở `/cms/bo-noi-dung/[id]` 200: thẻ "Bài Threads · bản đã duyệt (đang dùng)" hiện chuỗi cũ, thẻ Lỗi bản mới, "Bài web của bộ đã bị xoá…", bộ đếm "27/500" ở Bình luận Threads. Dữ liệu thử đã xoá; log chỉ có lỗi `crypto.randomUUID()` đã ghi từ trước. Server đã tắt.
+- Không gọi `claude -p` thật trong lượt sửa.
+- Cần Vinh: xem Quyết định tự chọn (nhất là 5, 20, 24–27, 29, 30); chọn giới hạn `affiliateUrl`; lần gọi thật kế tiếp chạy lại `scripts/risk-eval/run.ts` và tạo một Bộ nội dung thật để đo thời gian.
 
 ## Verification
 
@@ -191,5 +225,7 @@ Tính năng AI: Bài Threads (FR-14) và Bình luận kèm link (FR-17)
 **Manual checks (if no CLI):**
 - `npx tsx --conditions=react-server scripts/risk-eval/run.ts` (AI thật) — đã chạy, xem trên.
 - Tạo Bộ nội dung thật với `AI_PROVIDERS=claude-cli` trên điện thoại 360px: đo thời gian từng phần (Bài web dùng `sonnet`), copy, đánh dấu đã đăng (chưa chạy: hết lượt gọi thật của epic).
+
+**Kết quả sau review gộp (2026-11-06):** `npm test` 280/280; `npm run test:db` 154/154; tsc, lint, build sạch.
 
 **Kết quả (2026-11-06, trước review):** `npm test` 270/270 (28 file); `npm run test:db` 149/149 (17 file); `npx tsc --noEmit`, `npm run lint`, `npm run build` sạch; `grep "openai\|@/lib/\|runThreads\|PostThreads"` trong `app modules platform components` rỗng.

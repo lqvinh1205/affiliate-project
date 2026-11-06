@@ -4,6 +4,11 @@ import { UserError } from "@/platform/errors";
 import { cleanRiskWarnings, RISK_WARNING_RULES, riskWarningsOutput } from "@/platform/ai/rules";
 import type { StyleProfileValues } from "@/modules/style-profiles/constants";
 import { THREADS_PARTS_MAX, THREADS_POST_MAX } from "@/modules/content-sets/constants";
+import { stripUrls, threadsPayloadSchema } from "@/modules/content-sets/schema";
+
+// Schema nội dung ở `content-sets/schema.ts` (dùng chung với form client); xuất lại ở đây cho `suggestions/actions.ts`
+// (ngoại lệ AD-9 chỉ mở `prompts/` và `service.ts`).
+export { threadsApprovalSchema, threadsPayloadSchema } from "@/modules/content-sets/schema";
 
 // Bài Threads của Bộ nội dung (FR-14; spine AD-19): gợi ý `THREADS_POST`, Duyệt thì upsert `SocialPost` (THREADS).
 // Viết riêng cho Threads theo Hồ sơ phong cách Threads, không cần Bài web trước; thân bài không có link — Link
@@ -47,39 +52,6 @@ export const threadsPostPrompt: PromptDef<SocialPostInput, typeof threadsOutputS
 ${RISK_WARNING_RULES}`,
   user: socialUserPrompt,
 };
-
-// Bỏ mọi URL khỏi thân bài mạng xã hội (FR-14, FR-15: link chỉ ở Bình luận kèm link).
-export function stripUrls(text: string) {
-  return text
-    .replace(/https?:\/\/\S+/gi, "")
-    .replace(/[ \t]+\n/g, "\n")
-    .replace(/[ \t]{2,}/g, " ")
-    .trim();
-}
-
-// Payload gợi ý `THREADS_POST`: đọc/hiện được cả bài > 500 ký tự (bộ đếm đỏ, Duyệt tắt — UX-DR41); Duyệt kiểm bằng
-// `threadsApprovalSchema`.
-export const threadsPayloadSchema = z.object({
-  posts: z.array(z.string().max(THREADS_POST_MAX * 10)).min(1).max(THREADS_PARTS_MAX),
-});
-
-// Nội dung Duyệt / sửa sau Duyệt: số bài giữ nguyên (không thêm/xoá bài trong chuỗi), mỗi bài 1–500 ký tự.
-export const threadsApprovalSchema = z.object({
-  posts: z
-    .array(z.string().trim())
-    .min(1)
-    .max(THREADS_PARTS_MAX)
-    .superRefine((posts, ctx) => {
-      posts.forEach((p, i) => {
-        if (!p) ctx.addIssue({ code: "custom", path: [i], message: `Bài ${i + 1} đang trống` });
-        else if (p.length > THREADS_POST_MAX) {
-          ctx.addIssue({ code: "custom", path: [i], message: `Bài ${i + 1} vượt ${THREADS_POST_MAX} ký tự` });
-        }
-      });
-    }),
-});
-
-export type ThreadsPayload = z.infer<typeof threadsPayloadSchema>;
 
 // Kết quả AI → payload: bỏ URL, bỏ bài trống, tối đa `THREADS_PARTS_MAX` bài (bài dài giữ nguyên để Vinh thấy và
 // sửa); không còn bài nào → lỗi để gợi ý `FAILED`.

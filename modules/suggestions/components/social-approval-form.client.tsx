@@ -2,7 +2,12 @@
 
 import { useRef, useState, type ReactNode } from "react";
 import { toast } from "sonner";
-import { PLATFORM_LABEL, THREADS_POST_MAX, type SocialPlatform } from "@/modules/content-sets/constants";
+import { PLATFORM_LABEL, type SocialPlatform } from "@/modules/content-sets/constants";
+import {
+  linkCommentMax,
+  socialContentError,
+  type SocialContent,
+} from "@/modules/content-sets/components/social-content-error";
 import { SocialTextField } from "@/modules/content-sets/components/social-text-field.client";
 import { ThreadsPartsField } from "@/modules/content-sets/components/threads-parts-field.client";
 import type { RiskWarning } from "@/modules/posts/types";
@@ -14,19 +19,11 @@ import { SuggestionFooter } from "@/modules/suggestions/components/suggestion-fo
 import { callAction } from "@/components/shared/call-action";
 import { UnsavedChangesGuard } from "@/components/shared/unsaved-changes-guard.client";
 
-type Content = { kind: "THREADS_POST"; posts: string[] } | { kind: "FACEBOOK_POST"; body: string } | { kind: "LINK_COMMENT"; comment: string };
-
-// Lý do "Duyệt" tắt (UX-DR41, AD-19), theo thứ tự: Bình luận khi bài cùng nền tảng chưa Duyệt; chuỗi Threads có bài
-// trống hoặc > 500 ký tự ("Bài 3 vượt 500 ký tự"). Server kiểm lại bằng Zod của module chủ đích.
-function blockedReason(content: Content, platform: SocialPlatform, postApproved: boolean) {
+// Lý do "Duyệt" tắt (UX-DR41, AD-19), theo thứ tự: Bình luận khi bài cùng nền tảng chưa Duyệt; rồi lỗi đầu tiên của
+// nội dung theo đúng schema server kiểm (AD-14) — vd. "Bài 3 vượt 500 ký tự", "Bình luận Threads vượt 500 ký tự".
+function blockedReason(content: SocialContent, platform: SocialPlatform, postApproved: boolean) {
   if (content.kind === "LINK_COMMENT" && !postApproved) return `Duyệt bài ${PLATFORM_LABEL[platform]} trước`;
-  if (content.kind === "THREADS_POST") {
-    const empty = content.posts.findIndex((p) => !p.trim());
-    if (empty >= 0) return `Bài ${empty + 1} đang trống`;
-    const over = content.posts.findIndex((p) => p.trim().length > THREADS_POST_MAX);
-    if (over >= 0) return `Bài ${over + 1} vượt ${THREADS_POST_MAX} ký tự`;
-  }
-  return null;
+  return socialContentError(content, platform);
 }
 
 // Bài Threads / Bài Facebook / Bình luận kèm link *Chờ duyệt* (UX-DR41): RiskWarning trên thân (chạm mục bôi câu),
@@ -58,7 +55,7 @@ export function SocialApprovalForm({
   const recorded = useRef(copied);
   const dirty = JSON.stringify(parts) !== JSON.stringify(initial);
 
-  const content: Content =
+  const content: SocialContent =
     kind === "THREADS_POST"
       ? { kind, posts: parts }
       : kind === "FACEBOOK_POST"
@@ -102,6 +99,7 @@ export function SocialApprovalForm({
           value={parts[0] ?? ""}
           onChange={(v) => setParts([v])}
           countWords={kind === "FACEBOOK_POST"}
+          maxChars={kind === "LINK_COMMENT" ? linkCommentMax(platform) : undefined}
           copy={copy}
           highlight={highlight}
           onHighlightMissing={missing}

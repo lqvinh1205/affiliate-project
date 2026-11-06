@@ -1,9 +1,7 @@
 import "server-only";
 import type { Platform } from "@/generated/prisma/enums";
 import { db } from "@/platform/db";
-import { facebookPayloadSchema } from "@/modules/content-sets/prompts/facebook-post.prompt";
-import { linkCommentPayloadSchema } from "@/modules/content-sets/prompts/link-comment.prompt";
-import { threadsPayloadSchema } from "@/modules/content-sets/prompts/threads-post.prompt";
+import { facebookPayloadSchema, linkCommentPayloadSchema, threadsPayloadSchema } from "@/modules/content-sets/schema";
 
 const iso = (d: Date | null) => d?.toISOString() ?? null;
 

@@ -63,11 +63,52 @@ export function WebPostTarget({ post }: { post: NonNullable<ContentSetForCms["po
   );
 }
 
+// Đích đã Duyệt của phần (AD-19): bài Threads/Facebook là `SocialPost.parts`, Bình luận là `SocialPost.linkComment`.
+// Sửa được, không đổi trạng thái gợi ý (FR-22). Bài web: chỉ đọc ở thẻ, sửa ở Soạn Bài web.
+const hasApprovedTarget = (kind: Part["kind"], socialPost: SocialPostForCms | null) =>
+  kind === "LINK_COMMENT" ? !!socialPost?.linkComment : kind !== "WEB_POST" && !!socialPost;
+
+function ApprovedTarget({ kind, socialPost }: { kind: Part["kind"]; socialPost: SocialPostForCms | null }) {
+  if ((kind === "THREADS_POST" || kind === "FACEBOOK_POST") && socialPost) {
+    return <SocialPostEditor key={JSON.stringify(socialPost.parts)} post={socialPost} />;
+  }
+  if (kind === "LINK_COMMENT" && socialPost?.linkComment) {
+    return <LinkCommentEditor key={socialPost.linkComment} post={socialPost} />;
+  }
+  return null;
+}
+
+// Thẻ phần (theo gợi ý hiện hành) + — khi gợi ý hiện hành chưa Duyệt mà đích đã Duyệt vẫn còn (sau Tạo lại: bản mới
+// Đang tạo / Chờ duyệt / Lỗi / Đã từ chối) — thẻ "bản đã duyệt" để vẫn xem, sửa, sao chép bản đang dùng (Story 5.7:
+// "Bản đã duyệt vẫn giữ cho tới khi bạn Duyệt bản mới").
+export function ContentSetPartCard(props: {
+  part: Part;
+  platform: SocialPlatform | "WEBSITE";
+  headingId: string;
+  set: ContentSetForCms;
+  socialPost: SocialPostForCms | null;
+}) {
+  const { part, headingId, socialPost } = props;
+  if (part.view.status === "APPROVED" || !hasApprovedTarget(part.kind, socialPost)) return <CurrentPartCard {...props} />;
+  return (
+    <>
+      <CurrentPartCard {...props} />
+      <SuggestionCard
+        title={`${partTitle(part.kind, props.platform)} · bản đã duyệt (đang dùng)`}
+        status="APPROVED"
+        headingId={`${headingId}-approved`}
+      >
+        <ApprovedTarget kind={part.kind} socialPost={socialPost} />
+      </SuggestionCard>
+    </>
+  );
+}
+
 // SuggestionCard một phần của Bộ nội dung (UX-DR41, UX-DR75) theo trạng thái gợi ý hiện hành:
 // Đang tạo → GeneratingIndicator; Lỗi → Alert + Tạo lại (phần khác không ảnh hưởng); Đã từ chối → chỉ đầu thẻ + Tạo
 // lại; Chờ duyệt → RiskWarning + nội dung sửa được + Duyệt / Từ chối / Tạo lại; Đã duyệt → sửa **đích** bằng
 // component của `content-sets` (Bài web: chỉ đọc + "Mở bài web"), kèm Tạo lại (Story 5.7).
-export function ContentSetPartCard({
+function CurrentPartCard({
   part,
   platform,
   headingId,
@@ -149,10 +190,13 @@ export function ContentSetPartCard({
   if (kind === "WEB_POST" && set.post) {
     body = <WebPostTarget post={set.post} />;
     footer = <SuggestionFooter approve={<OpenPostLink postId={set.post.id} />} regenerate={regenerate("outline")} />;
-  } else if ((kind === "THREADS_POST" || kind === "FACEBOOK_POST") && socialPost) {
-    body = <SocialPostEditor key={JSON.stringify(socialPost.parts)} post={socialPost} />;
-  } else if (kind === "LINK_COMMENT" && socialPost?.linkComment) {
-    body = <LinkCommentEditor key={socialPost.linkComment} post={socialPost} />;
+  } else if (kind === "WEB_POST") {
+    // `ContentSet.postId` về null khi Bài web bị xoá (onDelete SetNull): Tạo lại rồi Duyệt sẽ tạo bài mới cho bộ.
+    body = (
+      <p className="text-body-sm text-on-surface-variant">Bài web của bộ đã bị xoá. Bấm Tạo lại để AI viết Bài web mới cho bộ này.</p>
+    );
+  } else if (hasApprovedTarget(kind, socialPost)) {
+    body = <ApprovedTarget kind={kind} socialPost={socialPost} />;
   }
   return (
     <SuggestionCard title={title} status="APPROVED" headingId={headingId} footer={footer}>

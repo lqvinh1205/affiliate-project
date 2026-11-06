@@ -49,3 +49,9 @@
 - source_spec: `_bmad-output/implementation-artifacts/spec-5-luot-gop-epic-5.md`
   summary: Giới hạn cứng tự đặt cho nội dung mạng xã hội và Bài web do AI viết (`WEB_POST_WORDS_MAX` 3000, `THREADS_PARTS_MAX` 10, `FACEBOOK_WORDS_MAX` 1000, `FACEBOOK_POST_MAX` 8000, `LINK_COMMENT_MAX` 2000) cần Vinh xác nhận.
   evidence: Quyết định tự chọn 5; chỉ `THREADS_POST_MAX` = 500 có trong PRD (FR-14).
+- source_spec: `_bmad-output/implementation-artifacts/spec-5-luot-gop-epic-5.md`
+  summary: Số đo Cảnh báo rủi ro (FR-23) chưa đo qua prompt nội dung thật: `scripts/risk-eval/run.ts` vẫn dùng prompt kiểm riêng trên danh sách câu, còn sản phẩm để AI tự đánh dấu trong nội dung nó vừa viết (Bài web / Threads / Facebook / Bình luận). Kết quả 12/12, 0/12 ngày 2026-11-06 còn chấm bằng cách so khớp chuỗi con cũ.
+  evidence: Review gộp Epic 5 (#6, #11). Đã sửa cách chấm (`scripts/risk-eval/score.ts`: qua `cleanRiskWarnings`, khớp nguyên câu sau chuẩn hoá; có test). Cần gọi AI thật (hết lượt của Epic 5): chạy lại script để có số theo cách chấm mới, và dựng bộ đo chèn câu mẫu vào nguồn rồi gọi `threadsPostPrompt`/`facebookPostPrompt` để đo trên đường chạy thật.
+- source_spec: `_bmad-output/implementation-artifacts/spec-5-luot-gop-epic-5.md`
+  summary: `Product.affiliateUrl` không giới hạn độ dài khi lưu; Link affiliate quá dài làm Bình luận kèm link Threads (≤ 500 ký tự) không tạo được.
+  evidence: Review gộp Epic 5 (#2). Đã xử lý ở Bình luận: rút tên Sản phẩm ở dòng link, còn quá thì thẻ Lỗi nói "Rút gọn Link affiliate ở Sản phẩm rồi Tạo lại." Chặn từ lúc lưu Sản phẩm (vd. tối đa 300 ký tự, gợi ý dùng `s.shopee.vn`) cần Vinh chọn con số — Story Epic 2 không nêu.

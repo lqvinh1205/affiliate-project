@@ -5,10 +5,11 @@ import { run } from "@/platform/auth/run";
 import { UserError, type Result } from "@/platform/errors";
 import { firstError } from "@/platform/validation/errors";
 import { getSocialPostForCms } from "@/modules/content-sets/cms-queries";
-import { facebookPayloadSchema } from "@/modules/content-sets/prompts/facebook-post.prompt";
-import { linkCommentPayloadSchema } from "@/modules/content-sets/prompts/link-comment.prompt";
-import { threadsApprovalSchema } from "@/modules/content-sets/prompts/threads-post.prompt";
+import type { SocialPlatform } from "@/modules/content-sets/constants";
 import {
+  facebookPayloadSchema,
+  linkCommentSchemaFor,
+  threadsApprovalSchema,
   markPostedInputSchema,
   recordCopyInputSchema,
   saveLinkCommentInputSchema,
@@ -56,7 +57,9 @@ export async function saveSocialPost(input: SaveSocialPostInput): Promise<Result
 export async function saveLinkComment(input: SaveLinkCommentInput): Promise<Result<{ id: string }>> {
   return run(async () => {
     const { id, content } = parse(saveLinkCommentInputSchema.safeParse(input));
-    const { comment } = parse(linkCommentPayloadSchema.safeParse(content));
+    const post = await getSocialPostForCms(id);
+    if (!post) throw new UserError("Không tìm thấy bài mạng xã hội. Tải lại trang.");
+    const { comment } = parse(linkCommentSchemaFor(post.platform as SocialPlatform).safeParse(content));
     const saved = await saveLinkCommentRecord({ id, linkComment: comment });
     updateTag(CONTENT_SETS_TAG);
     return saved;

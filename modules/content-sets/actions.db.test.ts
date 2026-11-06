@@ -58,7 +58,18 @@ describe("Sửa bài mạng xã hội đã Duyệt (FR-22)", () => {
       ok: false,
       error: "Bình luận chưa được duyệt. Tải lại trang.",
     });
-    expect(actionTest.updatedTags.every((t) => t === "content-sets")).toBe(true);
+    // 3 lần lưu thành công (Threads, Facebook, Bình luận), mỗi lần một `updateTag(content-sets)`; lần lỗi không ghi tag.
+    expect(actionTest.updatedTags).toEqual(["content-sets", "content-sets", "content-sets"]);
+  });
+
+  it("Bình luận Threads tối đa 500 ký tự (mỗi trả lời Threads như một bài — FR-14)", async () => {
+    const { threads } = await setWithPosts();
+    expect(await saveLinkComment({ id: threads.id, content: { comment: "x".repeat(501) } })).toEqual({
+      ok: false,
+      error: "Bình luận Threads vượt 500 ký tự",
+    });
+    expect((await saveLinkComment({ id: threads.id, content: { comment: "x".repeat(500) } })).ok).toBe(true);
+    expect(actionTest.updatedTags).toEqual(["content-sets"]);
   });
 });
 
@@ -70,6 +81,7 @@ describe("Copy và đánh dấu đã đăng (FR-19, FR-20, AD-21)", () => {
     expect(first).not.toBeNull();
     await recordCopy({ id: facebook.id });
     expect((await db.socialPost.findUniqueOrThrow({ where: { id: facebook.id } })).firstCopiedAt).toEqual(first);
+    expect(actionTest.updatedTags).toEqual(["content-sets", "content-sets"]);
   });
 
   it("đánh dấu đã đăng kèm link (kiểm URL), Sản phẩm hiện đã lên nền tảng nào; bỏ đánh dấu được", async () => {
@@ -79,6 +91,7 @@ describe("Copy và đánh dấu đã đăng (FR-19, FR-20, AD-21)", () => {
       error: "Link bài đăng phải bắt đầu bằng http:// hoặc https://",
     });
     expect((await markPosted({ id: facebook.id, postUrl: " " })).ok).toBe(true);
+    expect(actionTest.updatedTags).toEqual(["content-sets"]);
     expect(await db.socialPost.findUniqueOrThrow({ where: { id: facebook.id } })).toMatchObject({ postUrl: null });
     expect((await markPosted({ id: facebook.id, postUrl: "https://facebook.com/p/1" })).ok).toBe(true);
     const view = await getContentSetForCms(set.id);
@@ -87,7 +100,9 @@ describe("Copy và đánh dấu đã đăng (FR-19, FR-20, AD-21)", () => {
     expect((await listPostedPlatformsByProductForCms([productId])).get(productId)).toEqual(["FACEBOOK"]);
     expect((await listContentSetsForProductForCms(productId))[0]).toMatchObject({ id: set.id, title: "Gọn", posted: ["FACEBOOK"] });
 
+    actionTest.updatedTags = [];
     expect((await unmarkPosted({ id: facebook.id })).ok).toBe(true);
+    expect(actionTest.updatedTags).toEqual(["content-sets"]);
     expect(await db.socialPost.findUniqueOrThrow({ where: { id: facebook.id } })).toMatchObject({ postedAt: null, postUrl: null });
     expect((await listPostedPlatformsByProductForCms([productId])).get(productId)).toEqual([]);
     expect(await markPosted({ id: "khong-co", postUrl: "" })).toEqual({

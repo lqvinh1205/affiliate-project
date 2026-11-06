@@ -6,8 +6,9 @@ import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import type { Result } from "@/platform/errors";
 import { recordCopy, saveLinkComment, saveSocialPost } from "@/modules/content-sets/actions";
-import { PLATFORM_LABEL, THREADS_POST_MAX } from "@/modules/content-sets/constants";
+import { PLATFORM_LABEL, type SocialPlatform } from "@/modules/content-sets/constants";
 import type { SocialPostForCms } from "@/modules/content-sets/types";
+import { linkCommentMax, socialContentError } from "@/modules/content-sets/components/social-content-error";
 import { SocialTextField } from "@/modules/content-sets/components/social-text-field.client";
 import { ThreadsPartsField } from "@/modules/content-sets/components/threads-parts-field.client";
 import { callAction } from "@/components/shared/call-action";
@@ -24,13 +25,42 @@ function useRecordCopy(id: string, alreadyCopied: boolean) {
   };
 }
 
-function SaveButton({ dirty, pending, onSave, label }: { dirty: boolean; pending: boolean; onSave: () => void; label: string }) {
+// Nút Lưu hiện khi có thay đổi; `error` (lỗi theo schema server kiểm — AD-14) tắt nút và hiện lý do ngay dưới.
+function SaveButton({
+  dirty,
+  pending,
+  onSave,
+  label,
+  error,
+  id,
+}: {
+  dirty: boolean;
+  pending: boolean;
+  onSave: () => void;
+  label: string;
+  error: string | null;
+  id: string;
+}) {
   if (!dirty && !pending) return null;
   return (
-    <Button type="button" size="lg" className="w-full lg:w-auto" disabled={pending} onClick={onSave}>
-      {pending && <Loader2 className="animate-spin" aria-hidden />}
-      {pending ? "Đang lưu…" : label}
-    </Button>
+    <div className="space-y-space-sm">
+      {error && (
+        <p id={id} className="text-body-sm text-error">
+          {error}
+        </p>
+      )}
+      <Button
+        type="button"
+        size="lg"
+        className="w-full lg:w-auto"
+        disabled={pending || !!error}
+        aria-describedby={error ? id : undefined}
+        onClick={onSave}
+      >
+        {pending && <Loader2 className="animate-spin" aria-hidden />}
+        {pending ? "Đang lưu…" : label}
+      </Button>
+    </div>
   );
 }
 
@@ -55,7 +85,11 @@ export function SocialPostEditor({ post }: { post: SocialPostForCms }) {
   const [saved, setSaved] = useState(post.parts);
   const onCopied = useRecordCopy(post.id, !!post.firstCopiedAt);
   const dirty = JSON.stringify(parts) !== JSON.stringify(saved);
-  const over = parts.findIndex((p) => p.length > THREADS_POST_MAX);
+  const platform = post.platform as SocialPlatform;
+  const error = socialContentError(
+    platform === "THREADS" ? { kind: "THREADS_POST", posts: parts } : { kind: "FACEBOOK_POST", body: parts[0] ?? "" },
+    platform,
+  );
   const { pending, save } = useSave(
     () => saveSocialPost({ id: post.id, content: post.platform === "THREADS" ? { posts: parts } : { body: parts[0] ?? "" } }),
     () => setSaved(parts),
@@ -77,8 +111,7 @@ export function SocialPostEditor({ post }: { post: SocialPostForCms }) {
           copy={copy}
         />
       )}
-      {over >= 0 && <p className="text-body-sm text-error">Bài {over + 1} vượt {THREADS_POST_MAX} ký tự</p>}
-      <SaveButton dirty={dirty} pending={pending} onSave={save} label="Lưu thay đổi" />
+      <SaveButton dirty={dirty} pending={pending} onSave={save} label="Lưu thay đổi" error={error} id={`social-${post.id}-error`} />
     </div>
   );
 }
@@ -89,6 +122,8 @@ export function LinkCommentEditor({ post }: { post: SocialPostForCms }) {
   const [saved, setSaved] = useState(post.linkComment ?? "");
   const onCopied = useRecordCopy(post.id, !!post.firstCopiedAt);
   const dirty = comment !== saved;
+  const platform = post.platform as SocialPlatform;
+  const error = socialContentError({ kind: "LINK_COMMENT", comment }, platform);
   const { pending, save } = useSave(
     () => saveLinkComment({ id: post.id, content: { comment } }),
     () => setSaved(comment),
@@ -101,9 +136,10 @@ export function LinkCommentEditor({ post }: { post: SocialPostForCms }) {
         label="Bình luận kèm link"
         value={comment}
         onChange={setComment}
+        maxChars={linkCommentMax(platform)}
         copy={{ confirmUnapproved: false, onCopied }}
       />
-      <SaveButton dirty={dirty} pending={pending} onSave={save} label="Lưu bình luận" />
+      <SaveButton dirty={dirty} pending={pending} onSave={save} label="Lưu bình luận" error={error} id={`comment-${post.id}-error`} />
     </div>
   );
 }

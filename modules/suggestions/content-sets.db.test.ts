@@ -285,6 +285,64 @@ describe("Duyệt các phần của Bộ nội dung (AD-19)", () => {
   });
 });
 
+describe("Tạo lại phần đã Duyệt (Story 5.7)", () => {
+  it("Threads đã Duyệt: Tạo lại giữ SocialPost và query màn vẫn trả đích; bản mới lỗi thì đích vẫn còn", async () => {
+    const p = await product("Nồi", "https://s.shopee.vn/a");
+    const { id, parts } = await generated([p.id], ["THREADS"]);
+    await approveSuggestion({ id: parts.threads!.id });
+    await approveSuggestion({ id: parts.threadsComment!.id });
+    const before = await db.socialPost.findFirstOrThrow({ where: { contentSetId: id } });
+
+    fakeAi.reply(aiReply(["threads"]));
+    expect((await regenerateSuggestion({ id: parts.threads!.id, instruction: "ngắn hơn" })).ok).toBe(true);
+    await runAfterCallbacks();
+    const now = await getContentSetSuggestionsForCms(id);
+    expect(now.threads).toMatchObject({ status: "FAILED", errorMessage: PART_FAILED.THREADS_POST });
+    expect(now.threadsComment?.status).toBe("APPROVED");
+    expect(await db.socialPost.findFirstOrThrow({ where: { contentSetId: id } })).toMatchObject({
+      id: before.id,
+      parts: before.parts,
+      linkComment: before.linkComment,
+    });
+    // Màn Bộ nội dung đọc đích qua `getContentSetForCms` → thẻ "bản đã duyệt (đang dùng)".
+    expect((await getContentSetForCms(id))?.socialPosts).toEqual([
+      expect.objectContaining({ id: before.id, platform: "THREADS", parts: before.parts }),
+    ]);
+  });
+
+  it("phần đang tạo (chưa quá hạn) → UserError, không tạo gợi ý mới", async () => {
+    const p = await product("Nồi", "https://s.shopee.vn/a");
+    fakeAi.reply(aiReply());
+    const id = await created([p.id], ["FACEBOOK"]);
+    const busy = (await getContentSetSuggestionsForCms(id)).facebook!;
+    expect(busy.status).toBe("GENERATING");
+    expect(await regenerateSuggestion({ id: busy.id })).toEqual({ ok: false, error: "AI đang viết phần này. Chờ xong rồi thử lại." });
+    expect(await db.suggestion.count({ where: { contentSetId: id, kind: "FACEBOOK_POST" } })).toBe(1);
+  });
+});
+
+describe("Bình luận kèm link theo giới hạn nền tảng (FR-14, FR-17)", () => {
+  it("Link affiliate quá dài cho Bình luận Threads: thẻ Lỗi nói rõ cần rút gọn link (Tạo lại cũng không sửa được)", async () => {
+    const urls = ["a", "b", "c"].map((x) => `https://shopee.vn/product/${x}?${"t".repeat(200)}`);
+    const ps = [];
+    for (const [i, u] of urls.entries()) ps.push(await product(`Món ${i}`, u));
+    const { parts } = await generated(ps.map((x) => x.id), ["THREADS"]);
+    expect(parts.threadsComment?.status).toBe("FAILED");
+    expect(parts.threadsComment?.errorMessage).toContain("Rút gọn Link affiliate ở Sản phẩm rồi Tạo lại.");
+    expect(parts.threads?.status).toBe("PENDING");
+  });
+
+  it("Duyệt Bình luận Threads > 500 ký tự bị chặn", async () => {
+    const p = await product("Nồi", "https://s.shopee.vn/a");
+    const { parts } = await generated([p.id], ["THREADS"]);
+    await approveSuggestion({ id: parts.threads!.id });
+    expect(await approveSuggestion({ id: parts.threadsComment!.id, payload: { comment: "x".repeat(501) } })).toEqual({
+      ok: false,
+      error: "Bình luận Threads vượt 500 ký tự",
+    });
+  });
+});
+
 describe("Copy trước Duyệt (FR-19, FR-22, AD-21)", () => {
   it("ghi Suggestion.firstCopiedAt một lần; Duyệt bài rồi Bình luận chép mốc sang SocialPost nếu đích chưa có", async () => {
     const p = await product("Nồi", "https://s.shopee.vn/a");
@@ -346,8 +404,17 @@ describe("Thêm nền tảng và chuyển Bài web thành bài mạng xã hội 
     expect(threadsCall.system).toContain("4–7 bài");
     // Lần hai: dùng lại bộ của bài; nền tảng đã có → UserError.
     expect(await createSocialFromPost({ postId: post.id, platforms: ["THREADS"] })).toEqual({ ok: false, error: "Bộ đã có Bài Threads" });
+    // Bài đổi Sản phẩm ở Soạn Bài web: bộ theo Sản phẩm hiện tại của bài → Bình luận có link của Sản phẩm mới.
+    const q = await product("Chảo", "https://s.shopee.vn/q", false);
+    await db.postProduct.deleteMany({ where: { postId: post.id } });
+    await db.postProduct.create({ data: { postId: post.id, productId: q.id, sortOrder: 0 } });
     expect((await createSocialFromPost({ postId: post.id, platforms: ["FACEBOOK"] })).ok).toBe(true);
     expect(await db.contentSet.count()).toBe(1);
-    expect((await listPostedPlatformsByProductForCms([p.id])).get(p.id)).toEqual(["WEBSITE"]);
+    expect((await getContentSetForCms(res.contentSetId))?.products.map((x) => x.id)).toEqual([q.id]);
+    await runAfterCallbacks();
+    const comment = (await getContentSetSuggestionsForCms(res.contentSetId)).facebookComment;
+    expect(comment?.payload?.comment).toContain("https://s.shopee.vn/q");
+    expect(comment?.payload?.comment).not.toContain("https://s.shopee.vn/a");
+    expect((await listPostedPlatformsByProductForCms([q.id])).get(q.id)).toEqual(["WEBSITE"]);
   });
 });

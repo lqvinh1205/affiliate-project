@@ -4,7 +4,6 @@ import { updateTag } from "next/cache";
 import { after } from "next/server";
 import type { Platform, SuggestionKind } from "@/generated/prisma/enums";
 import { ask } from "@/platform/ai/ask";
-import { visibleText } from "@/platform/html/content";
 import { run } from "@/platform/auth/run";
 import { UserError, type Result } from "@/platform/errors";
 import { firstError } from "@/platform/validation/errors";
@@ -13,8 +12,10 @@ import { getContentSetForCms, getContentSetIdForPostForCms } from "@/modules/con
 import { PLATFORM_PART_LABEL, type SocialPlatform } from "@/modules/content-sets/constants";
 import { facebookPayloadSchema, facebookPostPrompt, toFacebookPayload } from "@/modules/content-sets/prompts/facebook-post.prompt";
 import {
+  LinkCommentTooLongError,
   linkCommentPayloadSchema,
   linkCommentPrompt,
+  linkCommentSchemaFor,
   toLinkCommentPayload,
 } from "@/modules/content-sets/prompts/link-comment.prompt";
 import {
@@ -27,6 +28,7 @@ import {
 import {
   createContentSetRecord,
   setContentSetPostRecord,
+  setContentSetProductsRecord,
   setLinkCommentRecord,
   upsertSocialPostRecord,
 } from "@/modules/content-sets/service";
@@ -49,6 +51,7 @@ import type { ResearchProfileData } from "@/modules/research/types";
 import { upsertResearchProfileRecord } from "@/modules/research/service";
 import { getStyleProfileForCms } from "@/modules/style-profiles/cms-queries";
 import { getSuggestionForCms } from "@/modules/suggestions/cms-queries";
+import { describeSource } from "@/modules/suggestions/content-source";
 import { RESEARCH_TAG } from "@/modules/research/tags";
 import {
   CONTENT_SET_KINDS,
@@ -220,7 +223,7 @@ async function applyApproval(s: ApprovingSuggestion, edited: unknown, tx: Tx): P
   const platform = s.platform as SocialPlatform;
   if (s.kind === "LINK_COMMENT") {
     const original = linkCommentPayloadSchema.parse(s.payload);
-    const data = approvalData(linkCommentPayloadSchema, original, edited);
+    const data = approvalData(linkCommentSchemaFor(platform), original, edited);
     await setLinkCommentRecord({ contentSetId, platform, linkComment: data.comment, firstCopiedAt: s.firstCopiedAt }, tx);
     return { edited: changed(data, original) };
   }
@@ -361,6 +364,8 @@ export async function createSocialFromPost(input: CreateSocialFromPostInput): Pr
     const productIds = post.postProducts.map((pp) => pp.product.id);
     if (productIds.length === 0) throw new UserError(NEEDS_PRODUCT);
     const contentSetId = await getContentSetIdForPostForCms(postId);
+    // Bộ đã có: Sản phẩm của bộ theo Sản phẩm hiện tại của bài, để Bình luận kèm link khớp bài (đã sửa ở Soạn Bài web).
+    if (contentSetId) await setContentSetProductsRecord({ contentSetId, productIds });
     const started = await startContentSetPartsRecord({
       contentSetId,
       createSet: async (tx) => (await createContentSetRecord({ productIds, postId }, tx)).id,
@@ -403,38 +408,6 @@ export async function recordSuggestionCopy(input: RecordSuggestionCopyInput): Pr
 }
 
 // ---------- Chạy AI trong `after()` ----------
-
-const SOURCE_MAX = 12_000;
-
-const lines = (label: string, items: string[]) => (items.length ? `- ${label}: ${items.join("; ")}` : null);
-
-// Dữ liệu nguồn cho prompt: Hồ sơ nghiên cứu đã Duyệt của từng Sản phẩm (thông tin, mô tả ảnh, khen/chê/phù hợp)
-// và — bộ tạo từ Bài web có sẵn (FR-16) — chữ của bài. Không có giá (thân bài không nêu giá — FR-13).
-function describeSource(
-  products: { name: string }[],
-  profiles: (ResearchProfileData | null)[],
-  post: { title: string; excerpt: string | null; content: string } | null,
-) {
-  const blocks = products.map((p, i) => {
-    const r = profiles[i];
-    const rows = [
-      `Sản phẩm ${i + 1}: ${p.name}`,
-      r ? lines("Thông tin", r.info.map((x) => x.text)) : "- (chưa có Hồ sơ nghiên cứu)",
-      r?.infoNote ? `- Ghi chú: ${r.infoNote}` : null,
-      r?.imageDescription ? `- Mô tả ảnh: ${r.imageDescription}` : null,
-      r?.reviewSummary ? lines("Được khen", r.reviewSummary.praise) : null,
-      r?.reviewSummary ? lines("Bị chê", r.reviewSummary.complaints) : null,
-      r?.reviewSummary ? lines("Hợp với", r.reviewSummary.fit) : null,
-    ];
-    return rows.filter(Boolean).join("\n");
-  });
-  if (post) {
-    blocks.push(
-      `Bài web có sẵn (nguồn chính):\nTiêu đề: ${post.title}\nTóm tắt: ${post.excerpt ?? ""}\nNội dung: ${visibleText(post.content)}`,
-    );
-  }
-  return blocks.join("\n\n").slice(0, SOURCE_MAX);
-}
 
 const choiceText = (name: string | null, text: string | null, edit: string | null) =>
   name ? `${name}${edit || text ? ` — ${edit || text}` : ""}` : null;
@@ -505,11 +478,13 @@ async function runPart(
         },
         style,
       });
-      result = toLinkCommentPayload(res.data, { products, disclosure: style.disclosure });
+      result = toLinkCommentPayload(res.data, { platform: part.platform as SocialPlatform, products, disclosure: style.disclosure });
     }
     await completeSuggestionRecord({ id: part.id, ...result });
   } catch (e) {
-    await failSuggestionsRecord({ ids: [part.id], message: PART_FAILED[kind] });
+    // Câu chung UX-DR96, trừ lỗi Tạo lại cũng không sửa được (link quá dài) — nói rõ cần sửa gì.
+    const message = e instanceof LinkCommentTooLongError ? e.message : PART_FAILED[kind];
+    await failSuggestionsRecord({ ids: [part.id], message });
     if (!(e instanceof UserError)) throw e;
   }
 }
