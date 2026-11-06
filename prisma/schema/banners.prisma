@@ -1,0 +1,21 @@
+// Banner khuyến mãi (FR-32). Chủ: module `banners` (spine AD-4); đứng riêng, không quan hệ với bảng khác.
+
+// Lịch tuỳ chọn: `startsAt`/`endsAt` là thời điểm tuyệt đối (CMS nhập theo giờ Việt Nam); null = không giới hạn phía đó.
+// Trạng thái (Tắt / Chờ lịch / Hết hạn / Đang hiện) chỉ tính bằng `bannerStatus` (modules/banners/status.ts — AD-7).
+/// CHECK `Banner_schedule_check` (viết tay trong migration `add_banner`): có cả hai mốc thì `endsAt` > `startsAt`.
+model Banner {
+  id          String    @id @default(uuid())
+  title       String    @db.VarChar(80) // BANNER_TITLE_MAX (modules/banners/constants.ts)
+  description String?   @db.VarChar(160) // BANNER_DESCRIPTION_MAX
+  /// URL ảnh: file upload (`/uploads/…`) hoặc host trong `platform/images.ts`.
+  image       String
+  /// Link đích: link Shopee chính chủ (FR-25, render qua `AffiliateLink`) hoặc đường dẫn trong site (`/…`).
+  linkUrl     String    @db.VarChar(500) // BANNER_LINK_MAX
+  enabled     Boolean   @default(true)
+  startsAt    DateTime?
+  endsAt      DateTime?
+  /// Thứ tự hiển thị tăng dần (lên/xuống ở `/cms/banner`); Banner mới đứng cuối.
+  sortOrder   Int       @default(0)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}

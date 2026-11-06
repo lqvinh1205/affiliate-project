@@ -56,5 +56,5 @@ export async function resetTestDb() {
   // AI giả lập (AD-16): xoá câu trả lời và cooldown của test trước.
   fakeAi.reset();
   resetAiCooldowns();
-  await db.$executeRawUnsafe(`TRUNCATE "PostViewDaily", "PostStat", "BioItem", "BioSettings", "SocialPost", "ContentSetProduct", "ContentSet", "StyleProfile", "ResearchProfile", "Suggestion", "PostSlugRedirect", "PostProduct", "Post", "Product", "CategorySlugRedirect", "Category" CASCADE`);
+  await db.$executeRawUnsafe(`TRUNCATE "Banner", "PostViewDaily", "PostStat", "BioItem", "BioSettings", "SocialPost", "ContentSetProduct", "ContentSet", "StyleProfile", "ResearchProfile", "Suggestion", "PostSlugRedirect", "PostProduct", "Post", "Product", "CategorySlugRedirect", "Category" CASCADE`);
 }

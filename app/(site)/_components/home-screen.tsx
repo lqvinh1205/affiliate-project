@@ -9,6 +9,8 @@ import { BioHighlights } from "@/modules/bio/components/bio-highlights";
 import { POPULAR_POSTS_LIMIT } from "@/modules/engagement/constants";
 import { getPopularPosts } from "@/modules/engagement/queries";
 import { PopularPostList } from "@/modules/engagement/components/popular-post-list";
+import { getLiveBanners } from "@/modules/banners/queries";
+import { BannerSection } from "@/modules/banners/components/banner-section";
 import type { PostCardData } from "@/modules/posts/types";
 import { EmptyState } from "@/components/shared/empty-state";
 import { SectionHeading } from "@/app/(site)/_components/section-heading";
@@ -31,14 +33,16 @@ function PopularSection({ posts, id, className }: { posts: PostCardData[]; id: s
   );
 }
 
-// Màn Trang chủ (UX-DR62): Bài nổi bật (PostCard *featured*, bài xuất bản mới nhất) → Gom link đồ xinh (≤ 8 món theo
-// thứ tự bio) → Xem nhiều (≤ 5 bài nhiều Lượt xem nhất 30 ngày, PostCard *rank*) → Mới cập nhật (bỏ bài nổi bật; cuối
-// khu link "Mẹo vặt", "Gom link") → Mẹo vặt hay (PostCard *row*, "Xem tất cả" → `/meo-vat`). Desktop: Bài nổi bật
-// (7 cột) + Xem nhiều (5 cột) cạnh nhau rồi tới Gom link đồ xinh — Xem nhiều dựng hai chỗ (mobile / desktop) để thứ
-// tự đọc và Tab đúng ở cả hai. Banner thuộc epic sau: chưa render, không chừa chỗ. Khu rỗng thì ẩn. Không JSON-LD
-// (AD-26).
+// Màn Trang chủ (UX-DR62): Banner (đang bật và trong lịch; 0 Banner → không render, Bài nổi bật lên đầu) → Bài nổi
+// bật (PostCard *featured*, bài xuất bản mới nhất) → Gom link đồ xinh (≤ 8 món theo thứ tự bio) → Xem nhiều (≤ 5 bài
+// nhiều Lượt xem nhất 30 ngày, PostCard *rank*) → Mới cập nhật (bỏ bài nổi bật; cuối khu link "Mẹo vặt", "Gom link")
+// → Mẹo vặt hay (PostCard *row*, "Xem tất cả" → `/meo-vat`). Desktop: Bài nổi bật (7 cột) + Xem nhiều (5 cột) cạnh
+// nhau rồi tới Gom link đồ xinh — Xem nhiều dựng hai chỗ (mobile / desktop) để thứ tự đọc và Tab đúng ở cả hai. Khu
+// rỗng thì ẩn. Không JSON-LD (AD-26). `getLiveBanners` revalidate 60 giây nên Trang chủ tạo lại tối đa mỗi phút
+// (Banner tới lịch / hết hạn tự đổi — AD-7).
 export async function HomeScreen() {
-  const [latest, meoVat, highlights, popular] = await Promise.all([
+  const [banners, latest, meoVat, highlights, popular] = await Promise.all([
+    getLiveBanners(),
     getLatestPosts(LATEST_COUNT + 1),
     getPostsByType("MEO_VAT", MEO_VAT_COUNT),
     getBioHighlights(BIO_HIGHLIGHTS_LIMIT),
@@ -49,6 +53,7 @@ export async function HomeScreen() {
   return (
     <div className="mx-auto max-w-container-max space-y-space-xl px-margin py-space-lg lg:px-margin-desktop lg:py-space-xl">
       <h1 className="sr-only">{SITE_NAME}</h1>
+      <BannerSection banners={banners} />
       {!featured ? (
         <>
           <EmptyState title="Chưa có bài viết nào" description="Mình đang viết những mẹo đầu tiên, bạn ghé lại sau nhé." />
@@ -58,7 +63,7 @@ export async function HomeScreen() {
         <>
           <div className="lg:grid lg:grid-cols-12 lg:gap-gutter-desktop">
             <section aria-label="Bài nổi bật" className={popular.length > 0 ? "lg:col-span-7" : "lg:col-span-12"}>
-              <PostCard post={featured} variant="featured" headingLevel="h2" preload />
+              <PostCard post={featured} variant="featured" headingLevel="h2" preload={banners.length === 0} />
             </section>
             {popular.length > 0 && (
               <PopularSection posts={popular} id="xem-nhieu-desktop" className="hidden lg:col-span-5 lg:block" />

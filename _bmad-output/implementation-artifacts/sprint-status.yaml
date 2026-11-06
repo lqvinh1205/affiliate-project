@@ -29,7 +29,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 # - Retrospective appends its action items to action_items; the status view surfaces open ones
 generated: 11-05-2026 11:30
-last_updated: 11-06-2026 13:45
+last_updated: 11-06-2026 14:10
 project: affiliate-project
 project_key: NOKEY
 tracking_system: file-system
@@ -102,9 +102,9 @@ development_status:
   8-4-khu-xem-nhiều-trên-trang-chủ-và-404: review
   epic-8-retrospective: optional
 
-  epic-9: backlog
-  9-1-quản-lý-banner-có-lịch-trong-cms: backlog
-  9-2-banner-trên-trang-chủ: backlog
+  epic-9: in-progress
+  9-1-quản-lý-banner-có-lịch-trong-cms: review
+  9-2-banner-trên-trang-chủ: review
   epic-9-retrospective: optional
 
   epic-10: backlog
