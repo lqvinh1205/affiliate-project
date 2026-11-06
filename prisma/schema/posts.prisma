@@ -20,6 +20,9 @@ model Post {
   slugRedirects  PostSlugRedirect[]
   /// Quan hệ ngược (AD-4): Bộ nội dung có Bài web này làm đích (`content-sets`).
   contentSet     ContentSet?
+  /// Quan hệ ngược (AD-4): số đếm của `engagement`.
+  stat           PostStat?
+  viewDays       PostViewDaily[]
 
   @@index([status, postType, publishedAt])
   @@index([categoryId])

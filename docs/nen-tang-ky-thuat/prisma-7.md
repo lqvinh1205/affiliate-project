@@ -418,7 +418,7 @@ Nguồn: `_bmad-output/planning-artifacts/prds/prd-affiliate-project-2026-11-03/
 
 ### [PR-32] Bảng phục vụ tương tác người đọc (FR-33, FR-35)
 
-**Dự kiến** (module `engagement`: `PostStat`, `PostViewDaily` — spine AD-23). Lượt xem và Lượt tim cần lưu theo bài nhưng **không** lưu định danh người đọc (NFR-7, xem [BM-16]). Đếm có thể ghi rất thường xuyên — không đặt chúng trong hàm `"use cache"` và không gọi `updateTag("posts")` mỗi lượt xem.
+**Đã có từ Epic 7** (module `engagement`: `PostStat`, `PostViewDaily` trong `prisma/schema/engagement.prisma` — spine AD-23). Lượt xem và Lượt tim cần lưu theo bài nhưng **không** lưu định danh người đọc (NFR-7, xem [BM-16]). Đếm có thể ghi rất thường xuyên — không đặt chúng trong hàm `"use cache"` và không gọi `updateTag("posts")` mỗi lượt xem.
 
 ## Checklist khi viết workflow / review
 

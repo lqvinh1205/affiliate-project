@@ -413,7 +413,7 @@ Các bước:
    import { getLikeCount, likePost } from "@/modules/engagement/actions";
    import { Button } from "@/components/ui/button";
    import { cn } from "@/components/ui/lib/utils";
-   import { formatCount } from "@/platform/format"; // AD-27; formatCount là đích, chưa có
+   import { formatCount } from "@/platform/format"; // AD-27
 
    export function LikeButton({ postId }: { postId: string }) {
      const [count, setCount] = useState<number | null>(null);

@@ -7,11 +7,13 @@ import { db } from "@/platform/db";
 // Trạng thái của khung test Server Action (`vitest.db.mocks.ts` mock `next/headers`, `next/cache` đọc/ghi ở đây):
 // - `authorization`: header Basic Auth mà `requireAdmin()` thấy; mặc định là tài khoản admin của
 //   `vitest.db.config.ts`, đặt `null` để thử gọi khi chưa đăng nhập;
+// - `requestHeaders`: header khác của request mà `headers()` thấy (vd `user-agent`, `x-forwarded-for`);
 // - `updatedTags`: mọi tag action đã `updateTag`, theo thứ tự gọi;
 // - `cacheTags`: mọi tag query `"use cache"` đã gắn bằng `cacheTag` (kiểm AD-7: query gắn tag mọi bảng nó đọc);
 // - `afterCallbacks`: việc action xếp bằng `after()` (chạy bằng `runAfterCallbacks`).
 export const actionTest = {
   authorization: null as string | null,
+  requestHeaders: {} as Record<string, string>,
   updatedTags: [] as string[],
   cacheTags: [] as string[],
   afterCallbacks: [] as (() => unknown)[],
@@ -47,11 +49,12 @@ export function adminAuthorization() {
 // Xoá sạch mọi bảng nghiệp vụ của DB test và đặt lại trạng thái khung test action (kể cả AI giả lập) trước từng test.
 export async function resetTestDb() {
   actionTest.authorization = adminAuthorization();
+  actionTest.requestHeaders = {};
   actionTest.updatedTags = [];
   actionTest.cacheTags = [];
   actionTest.afterCallbacks = [];
   // AI giả lập (AD-16): xoá câu trả lời và cooldown của test trước.
   fakeAi.reset();
   resetAiCooldowns();
-  await db.$executeRawUnsafe(`TRUNCATE "BioItem", "BioSettings", "SocialPost", "ContentSetProduct", "ContentSet", "StyleProfile", "ResearchProfile", "Suggestion", "PostSlugRedirect", "PostProduct", "Post", "Product", "CategorySlugRedirect", "Category" CASCADE`);
+  await db.$executeRawUnsafe(`TRUNCATE "PostViewDaily", "PostStat", "BioItem", "BioSettings", "SocialPost", "ContentSetProduct", "ContentSet", "StyleProfile", "ResearchProfile", "Suggestion", "PostSlugRedirect", "PostProduct", "Post", "Product", "CategorySlugRedirect", "Category" CASCADE`);
 }

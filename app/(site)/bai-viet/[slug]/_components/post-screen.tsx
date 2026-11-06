@@ -4,13 +4,15 @@ import { SITE_NAME, SITE_URL } from "@/platform/site";
 import { ARTICLE_RESERVED_IDS } from "@/modules/posts/constants";
 import { getRelatedPosts } from "@/modules/posts/queries";
 import type { PublicPost } from "@/modules/posts/types";
+import { PostViewTracker } from "@/modules/engagement/components/post-view-tracker.client";
 import { PostArticle } from "@/modules/posts/components/post-article";
 import { JsonLd } from "@/app/(site)/_components/json-ld";
 import { ArticleActionBar } from "@/app/(site)/bai-viet/[slug]/_components/article-action-bar.client";
 
 // Màn Bài web: nhận bài đã tra ở `page.tsx` (tra + `notFound()`/`permanentRedirect()` trước `<Suspense>` — AD-12).
 // Thân bài sanitize cả khi render (AD-22); mục lục, phút đọc tính trên HTML đã sanitize. JSON-LD `Article` +
-// `BreadcrumbList` theo Danh mục (AD-26). Mobile: ArticleActionBar thay BottomTabBar (UX-DR27).
+// `BreadcrumbList` theo Danh mục (AD-26). Mobile: ArticleActionBar thay BottomTabBar (UX-DR27). Lượt xem gửi phía
+// client sau khi trang hiện (FR-33, AD-7) — trang vẫn tĩnh.
 export async function PostScreen({ post }: { post: PublicPost }) {
   const { html, headings } = withHeadingIds(sanitizePostHtml(post.content), ARTICLE_RESERVED_IDS);
   const related = await getRelatedPosts(post.slug, post.categoryId);
@@ -49,6 +51,7 @@ export async function PostScreen({ post }: { post: PublicPost }) {
       />
       <PostArticle post={post} html={html} headings={headings} related={related} />
       <ArticleActionBar hasProducts={post.products.length > 0} />
+      <PostViewTracker postId={post.id} />
     </>
   );
 }

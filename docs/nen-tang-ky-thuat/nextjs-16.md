@@ -458,12 +458,12 @@ export function RenameButton({ id, title }: { id: string; title: string }) {
 
 ### [NX-35] Thêm lượt xem (dữ liệu theo request) mà không phá cache trang public
 
-Mục tiêu: trang `/bai-viet/[slug]` vẫn tĩnh hoàn toàn; số lượt xem được ghi và hiển thị sau khi trang tải. Đây là mẫu chính thức trong `docs/01-app/01-getting-started/07-mutating-data.md` mục "useEffect". Quy tắc nghiệp vụ ở spine AD-23 (đích, chưa có code).
+Mục tiêu: trang `/bai-viet/[slug]` vẫn tĩnh hoàn toàn; số lượt xem được ghi và hiển thị sau khi trang tải. Đây là mẫu chính thức trong `docs/01-app/01-getting-started/07-mutating-data.md` mục "useEffect". Quy tắc nghiệp vụ ở spine AD-23. **Code thật (Epic 7):** `modules/engagement/actions.ts` (`recordPostView`, nhận `postId`), `modules/engagement/components/post-view-tracker.client.tsx` (không hiện số — site không công khai Lượt xem, UX Q5), giới hạn tần suất `platform/rate-limit.ts`, bot `platform/bot.ts`; ví dụ dưới đây là bản rút gọn ban đầu, khi lệch thì theo code.
 
-1. **Lưu trữ**: bộ đếm ở bảng riêng của module `engagement` (`PostStat { postId, views, likes }`, `PostViewDaily` — spine AD-23, `prisma/schema/engagement.prisma` đích), **không** thêm cột vào `Post` — `Post.updatedAt` có `@updatedAt` (`prisma/schema/posts.prisma:18`) và đang được dùng cho `lastModified` của sitemap (`app/sitemap.ts:17`) và `dateModified` của JSON-LD/OpenGraph; cập nhật hàng `Post` ở mỗi lượt xem sẽ làm sai các giá trị này.
+1. **Lưu trữ**: bộ đếm ở bảng riêng của module `engagement` (`PostStat { postId, views, likes }`, `PostViewDaily` — spine AD-23, `prisma/schema/engagement.prisma`), **không** thêm cột vào `Post` — `Post.updatedAt` có `@updatedAt` (`prisma/schema/posts.prisma:18`) và đang được dùng cho `lastModified` của sitemap (`app/sitemap.ts:17`) và `dateModified` của JSON-LD/OpenGraph; cập nhật hàng `Post` ở mỗi lượt xem sẽ làm sai các giá trị này.
 2. **Server Action công khai** trong `modules/engagement/actions.ts` — ngoại lệ có tên của `[QD-20]` (spine AD-6): không `run()`/`requireAdmin()`; validate bằng `safeParse` của `modules/engagement/schema.ts`; **bắt buộc** giới hạn tần suất (bộ nhớ tiến trình, theo băm IP có thời hạn ngắn, không ghi DB hay log — AD-23); ghi qua `modules/engagement/service.ts`; chỉ tăng cho bài `PUBLISHED`; bỏ qua user-agent bot. **Không** gọi `updateTag`/`revalidatePath`/`refresh` ([NX-56]). Không `console.error` trong action công khai (log chỉ ở `run()` và `platform/ai`): lỗi bất ngờ trả `UNEXPECTED_ERROR`.
 3. **Chống trùng phía client**: `localStorage` của trình duyệt (không cookie); trình duyệt của Vinh tự đánh dấu khi vào `/cms` và không gửi lượt xem (AD-23).
-4. **Client Component** `modules/engagement/components/view-counter.client.tsx` gọi action trong `useEffect` + `startTransition`; render placeholder ban đầu (phần này nằm trong HTML tĩnh). Dùng `useRef` chống gửi lại khi route hiện lại từ `<Activity>` ([NX-59]). Hiển thị số qua `formatCount` của `@/platform/format` (AD-27; `formatCount` là đích, chưa có).
+4. **Client Component** `modules/engagement/components/view-counter.client.tsx` gọi action trong `useEffect` + `startTransition`; render placeholder ban đầu (phần này nằm trong HTML tĩnh). Dùng `useRef` chống gửi lại khi route hiện lại từ `<Activity>` ([NX-59]). Hiển thị số qua `formatCount` của `@/platform/format` (AD-27).
 5. Đặt `<ViewCounter slug={post.slug} />` trong Screen của trang bài (`_components/`), không trong `page.tsx` (AD-12).
 6. Kiểm tra: `npm run build` vẫn ra `○`/tĩnh cho `/bai-viet/[slug]`; lượt xem không làm đổi nội dung cache.
 
@@ -478,7 +478,7 @@ import { recordPostView } from "@/modules/engagement/service";
 export async function recordView(input: unknown): Promise<Result<{ views: number }>> {
   const parsed = recordViewInputSchema.safeParse(input);
   if (!parsed.success) return { ok: false, error: "Dữ liệu không hợp lệ" };
-  // Bắt buộc: giới hạn tần suất theo băm IP trong bộ nhớ tiến trình (AD-23); vị trí hàm chốt ở story FR-33,
+  // Bắt buộc: giới hạn tần suất theo băm IP trong bộ nhớ tiến trình (AD-23) — `platform/rate-limit.ts` (Epic 7),
   // không tự tạo file ngoài hợp đồng AD-5. Vượt giới hạn → { ok: false, error: "Thao tác quá nhanh, thử lại sau" }.
   try {
     const views = await recordPostView(parsed.data.slug); // chỉ bài PUBLISHED; null nếu không có

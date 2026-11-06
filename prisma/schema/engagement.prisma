@@ -1,0 +1,27 @@
+// Lượt xem, Lượt tim của người đọc (FR-33..FR-35, FR-38). Chủ: module `engagement` (spine AD-4, AD-23).
+// Bảng riêng, không thêm cột vào `Post`: ghi mỗi lượt xem không được đổi `Post.updatedAt` (sitemap, JSON-LD).
+// Không lưu định danh người đọc (NFR-7, [QD-18]).
+
+// Tổng của một Bài web, tạo lười bằng upsert ở lượt xem/tim đầu tiên: thiếu bản ghi = 0.
+model PostStat {
+  postId    String   @id
+  /// Xoá bài thì xoá số đếm của nó.
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  views     Int      @default(0)
+  likes     Int      @default(0) // Lượt tim — ghi ở Epic 8 (FR-35)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([views])
+}
+
+// Lượt xem theo ngày (giờ Asia/Ho_Chi_Minh) cho cửa sổ 30 ngày của "Xem nhiều" (FR-34, Epic 8).
+model PostViewDaily {
+  postId String
+  post   Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  day    DateTime @db.Date
+  views  Int      @default(0)
+
+  @@id([postId, day])
+  @@index([day])
+}

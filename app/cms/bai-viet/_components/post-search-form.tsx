@@ -2,13 +2,20 @@ import Form from "next/form";
 import { Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { LIST_PATH, STATUS_PARAM, type PostListFilters } from "@/app/cms/bai-viet/_components/post-list-params";
+import {
+  LIST_PATH,
+  SORT_BY_VIEWS,
+  SORT_PARAM,
+  STATUS_PARAM,
+  type PostListFilters,
+} from "@/app/cms/bai-viet/_components/post-list-params";
 
-// Tìm Bài web theo tiêu đề (`?q=`), giữ bộ lọc trạng thái.
+// Tìm Bài web theo tiêu đề (`?q=`), giữ bộ lọc trạng thái và cách sắp xếp.
 export function PostSearchForm({ filters }: { filters: PostListFilters }) {
   return (
     <Form action={LIST_PATH} role="search" className="flex gap-2" key={filters.q}>
       {filters.status && <input type="hidden" name={STATUS_PARAM} value={filters.status} />}
+      {filters.byViews && <input type="hidden" name={SORT_PARAM} value={SORT_BY_VIEWS} />}
       <label htmlFor="post-search" className="sr-only">
         Tìm Bài web theo tiêu đề
       </label>

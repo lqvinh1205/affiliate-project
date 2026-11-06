@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { OwnerBrowserMark } from "@/modules/engagement/components/owner-browser-mark.client";
 import { CmsShell } from "@/app/cms/_components/cms-shell.client";
 
 export const metadata: Metadata = {
@@ -9,6 +10,12 @@ export const metadata: Metadata = {
 // Gọi AI có thể mất 20–40 giây; AD-18 đặt trần 120 giây cho route kích hoạt AI.
 export const maxDuration = 120;
 
+// `OwnerBrowserMark`: trình duyệt đã vào CMS không gửi Lượt xem trên site (FR-33, AD-23).
 export default function CmsLayout({ children }: LayoutProps<"/cms">) {
-  return <CmsShell>{children}</CmsShell>;
+  return (
+    <>
+      <OwnerBrowserMark />
+      <CmsShell>{children}</CmsShell>
+    </>
+  );
 }

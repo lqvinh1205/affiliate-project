@@ -14,7 +14,8 @@ import { POSTS_TAG } from "@/modules/posts/tags";
 // Query public của Bài web (spine AD-7): `"use cache"` + `cacheLife` + `cacheTag` của mọi module có bảng
 // được đọc. Chỉ Bài web đã xuất bản; Sản phẩm chỉ qua `visibleProductWhere` + `publicProductSelect`.
 
-const published = { status: "PUBLISHED" } as const;
+// Điều kiện "Bài web đã xuất bản" — module tầng cao hơn đọc bảng `Post` dùng lại, không viết lại (AD-2).
+export const publishedPostWhere = { status: "PUBLISHED" } as const;
 const newestFirst = [{ publishedAt: "desc" }, { id: "desc" }] as const;
 
 // Ảnh đại diện fallback = ảnh Sản phẩm đang hiện đầu tiên của bài.
@@ -55,7 +56,7 @@ export async function getLatestPosts(limit: number) {
   "use cache";
   cacheLife("days");
   cacheTag(POSTS_TAG, PRODUCTS_TAG);
-  const rows = await db.post.findMany({ where: published, orderBy: [...newestFirst], take: limit, select: cardSelect });
+  const rows = await db.post.findMany({ where: publishedPostWhere, orderBy: [...newestFirst], take: limit, select: cardSelect });
   return rows.map(toCard);
 }
 
@@ -64,7 +65,7 @@ export async function getPostsByType(postType: PostType, limit?: number) {
   cacheLife("days");
   cacheTag(POSTS_TAG, PRODUCTS_TAG);
   const rows = await db.post.findMany({
-    where: { ...published, postType },
+    where: { ...publishedPostWhere, postType },
     orderBy: [...newestFirst],
     take: limit,
     select: cardSelect,
@@ -80,7 +81,7 @@ export async function getRelatedPosts(slug: string, categoryId: string | null) {
   cacheTag(POSTS_TAG, PRODUCTS_TAG);
   if (!categoryId) return [];
   const rows = await db.post.findMany({
-    where: { ...published, categoryId, slug: { not: slug } },
+    where: { ...publishedPostWhere, categoryId, slug: { not: slug } },
     orderBy: [...newestFirst],
     take: RELATED_POSTS_LIMIT,
     select: cardSelect,
@@ -94,7 +95,7 @@ export async function getPostBySlug(slug: string) {
   cacheLife("days");
   cacheTag(POSTS_TAG, PRODUCTS_TAG, CATEGORIES_TAG);
   const post = await db.post.findFirst({
-    where: { ...published, slug },
+    where: { ...publishedPostWhere, slug },
     include: {
       category: { select: { name: true, slug: true } },
       postProducts: {
@@ -133,7 +134,7 @@ export async function getPublishedSlugs() {
   cacheLife("days");
   cacheTag(POSTS_TAG);
   return db.post.findMany({
-    where: published,
+    where: publishedPostWhere,
     orderBy: [...newestFirst],
     select: { slug: true, postType: true, updatedAt: true },
   });
@@ -147,7 +148,7 @@ export async function listCategoriesWithPostCounts() {
   cacheTag(POSTS_TAG, CATEGORIES_TAG);
   const rows = await db.category.findMany({
     orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }, { id: "asc" }],
-    select: { name: true, slug: true, updatedAt: true, _count: { select: { posts: { where: published } } } },
+    select: { name: true, slug: true, updatedAt: true, _count: { select: { posts: { where: publishedPostWhere } } } },
   });
   return rows.map(({ _count, ...c }) => ({ ...c, posts: _count.posts, pages: pageCount(_count.posts) }));
 }
@@ -160,7 +161,7 @@ export async function listNavCategories() {
 
 // Một trang Bài web đã xuất bản của Danh mục / Loại bài; `page` từ 1, trang vượt quá trả `items` rỗng.
 async function listPublishedPage(where: { categoryId: string } | { postType: PostType }, page: number) {
-  const filter = { ...published, ...where };
+  const filter = { ...publishedPostWhere, ...where };
   const [rows, total] = await Promise.all([
     db.post.findMany({
       where: filter,

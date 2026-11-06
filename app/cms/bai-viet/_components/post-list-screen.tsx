@@ -1,23 +1,27 @@
 import Link from "next/link";
 import { Plus } from "lucide-react";
-import { formatShortDate } from "@/platform/format";
+import { formatCount, formatShortDate } from "@/platform/format";
 import { CMS_POST_PAGE_SIZE, POST_STATUS_FILTERS } from "@/modules/posts/constants";
 import { listPostsForCms } from "@/modules/posts/cms-queries";
-import type { CmsPostListItem } from "@/modules/posts/types";
 import { PostStatusBadge } from "@/modules/posts/components/post-status-badge";
 import { PostTypeBadge } from "@/modules/posts/components/post-type-badge";
+import { getPostViewsForCms, listPostsByViewsForCms } from "@/modules/engagement/cms-queries";
+import type { CmsPostWithViews } from "@/modules/engagement/types";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/components/ui/lib/utils";
 import {
   first,
   LIST_PATH,
   pageParam,
+  SORT_BY_VIEWS,
+  SORT_PARAM,
   STATUS_PARAM,
   statusParam,
   type PostListFilters,
 } from "@/app/cms/bai-viet/_components/post-list-params";
 import { PostListPagination } from "@/app/cms/bai-viet/_components/post-list-pagination";
 import { PostSearchForm } from "@/app/cms/bai-viet/_components/post-search-form";
+import { PostSortTabs } from "@/app/cms/bai-viet/_components/post-sort-tabs";
 import { PostStatusTabs } from "@/app/cms/bai-viet/_components/post-status-tabs";
 
 function CreateLink() {
@@ -31,26 +35,37 @@ function CreateLink() {
   );
 }
 
-// Meta một dòng: "Sửa dd/mm/yyyy · Danh mục · N Sản phẩm".
-function meta(p: CmsPostListItem) {
+// Meta một dòng: "Sửa dd/mm/yyyy · Danh mục · N Sản phẩm · N lượt xem".
+function meta(p: CmsPostWithViews) {
   return [
     `Sửa ${formatShortDate(p.updatedAt)}`,
     p.category?.name ?? "Chưa có Danh mục",
     `${p._count.postProducts} Sản phẩm`,
+    `${formatCount(p.views)}\u00a0lượt\u00a0xem`,
   ].join(" · ");
 }
 
-// Danh sách Bài web (UX-DR39, UX-DR71): DataList (mobile Card, desktop Table), lọc Nháp / Đã xuất bản và tìm theo
-// tiêu đề trên URL (`?trang-thai=`, `?q=`, `?trang=`), đọc qua `cms-queries` (AD-12). Xuất bản / chuyển về nháp /
-// xoá ở màn sửa bài.
+// Một trang danh sách kèm Lượt xem (FR-38). Sắp theo Lượt xem: query của `engagement` (AD-2); mặc định: danh sách
+// của `posts` rồi ghép Lượt xem của các bài trên trang.
+async function loadPage(filters: PostListFilters, page: number) {
+  const query = { status: filters.status ? POST_STATUS_FILTERS[filters.status] : null, q: filters.q, page };
+  if (filters.byViews) return listPostsByViewsForCms(query);
+  const list = await listPostsForCms(query);
+  const views = await getPostViewsForCms(list.items.map((p) => p.id));
+  return { ...list, items: list.items.map((p) => ({ ...p, views: views[p.id] ?? 0 })) };
+}
+
+// Danh sách Bài web (UX-DR39, UX-DR71): DataList (mobile Card, desktop Table), lọc Nháp / Đã xuất bản, tìm theo
+// tiêu đề và sắp xếp (sửa gần nhất / Lượt xem) trên URL (`?trang-thai=`, `?q=`, `?sap-xep=`, `?trang=`), đọc qua
+// `cms-queries` (AD-12). Xuất bản / chuyển về nháp / xoá ở màn sửa bài.
 export async function PostListScreen({ searchParams }: Pick<PageProps<"/cms/bai-viet">, "searchParams">) {
   const params = await searchParams;
-  const filters: PostListFilters = { status: statusParam(first(params[STATUS_PARAM])), q: first(params.q).trim() };
-  const { items, total, page } = await listPostsForCms({
-    status: filters.status ? POST_STATUS_FILTERS[filters.status] : null,
-    q: filters.q,
-    page: pageParam(first(params.trang)),
-  });
+  const filters: PostListFilters = {
+    status: statusParam(first(params[STATUS_PARAM])),
+    q: first(params.q).trim(),
+    byViews: first(params[SORT_PARAM]) === SORT_BY_VIEWS,
+  };
+  const { items, total, page } = await loadPage(filters, pageParam(first(params.trang)));
   const pages = Math.ceil(total / CMS_POST_PAGE_SIZE);
   const filtered = Boolean(filters.status || filters.q);
 
@@ -70,6 +85,7 @@ export async function PostListScreen({ searchParams }: Pick<PageProps<"/cms/bai-
           </div>
           <PostStatusTabs filters={filters} />
           <PostSearchForm filters={filters} />
+          <PostSortTabs filters={filters} />
           {items.length === 0 ? (
             <div className="space-y-space-md rounded-xl border p-space-lg text-center">
               <p className="text-on-surface-variant">Không có kết quả với bộ lọc này</p>
@@ -104,6 +120,7 @@ export async function PostListScreen({ searchParams }: Pick<PageProps<"/cms/bai-
                     <th scope="col" className="py-2 pr-4 font-medium">Danh mục</th>
                     <th scope="col" className="py-2 pr-4 font-medium">Sản phẩm</th>
                     <th scope="col" className="py-2 pr-4 font-medium">Sửa lần cuối</th>
+                    <th scope="col" className="py-2 pr-4 text-right font-medium">Lượt xem</th>
                     <th scope="col" className="py-2 font-medium">Trạng thái</th>
                   </tr>
                 </thead>
@@ -121,6 +138,7 @@ export async function PostListScreen({ searchParams }: Pick<PageProps<"/cms/bai-
                       <td className="py-2 pr-4 text-on-surface-variant">{p.category?.name ?? "—"}</td>
                       <td className="py-2 pr-4 text-on-surface-variant">{p._count.postProducts}</td>
                       <td className="py-2 pr-4 text-on-surface-variant">{formatShortDate(p.updatedAt)}</td>
+                      <td className="py-2 pr-4 text-right tabular-nums">{formatCount(p.views)}</td>
                       <td className="py-2">
                         <PostStatusBadge status={p.status} />
                       </td>
