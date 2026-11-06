@@ -1,6 +1,6 @@
 import "server-only";
 import { Prisma } from "@/generated/prisma/client";
-import type { SuggestionKind } from "@/generated/prisma/enums";
+import type { Platform, SuggestionKind } from "@/generated/prisma/enums";
 import { db } from "@/platform/db";
 import { UserError } from "@/platform/errors";
 import { CATEGORY_NOT_PICKED, GENERATING_STALE, SUGGESTION_ERROR_MAX } from "@/modules/suggestions/constants";
@@ -115,14 +115,31 @@ export async function failSuggestionsRecord(data: { ids: string[]; message: stri
 // Duyệt (AD-9, AD-19): một transaction gồm `apply` (upsert vào đích qua `service.ts` của module chủ đích, cùng `tx`)
 // và chuyển `APPROVED`. Lần Duyệt thứ hai (kể cả chạy chồng) thấy gợi ý không còn `PENDING` → `UserError`, transaction
 // huỷ nên đích không bị ghi hai lần. `payload` giữ nguyên bản AI (bất biến); bản đã sửa nằm ở đích.
+export type ApprovingSuggestion = {
+  kind: SuggestionKind;
+  payload: unknown;
+  productId: string | null;
+  contentSetId: string | null;
+  platform: Platform | null;
+  firstCopiedAt: Date | null;
+};
+
 export async function approveSuggestionRecord(
   id: string,
-  apply: (s: { kind: SuggestionKind; payload: unknown; productId: string | null }, tx: Tx) => Promise<{ edited: boolean }>,
+  apply: (s: ApprovingSuggestion, tx: Tx) => Promise<{ edited: boolean }>,
 ) {
   return db.$transaction(async (tx) => {
     const s = await tx.suggestion.findUnique({
       where: { id },
-      select: { kind: true, status: true, payload: true, productId: true },
+      select: {
+        kind: true,
+        status: true,
+        payload: true,
+        productId: true,
+        contentSetId: true,
+        platform: true,
+        firstCopiedAt: true,
+      },
     });
     if (!s) throw new UserError(NOT_FOUND);
     if (s.status !== "PENDING") throw new UserError(NOT_PENDING);
@@ -132,7 +149,7 @@ export async function approveSuggestionRecord(
       data: { status: "APPROVED", editedBeforeApproval: edited },
     });
     if (count !== 1) throw new UserError(NOT_PENDING);
-    return { id, kind: s.kind, productId: s.productId };
+    return { id, kind: s.kind, productId: s.productId, contentSetId: s.contentSetId };
   });
 }
 
@@ -145,4 +162,80 @@ export async function rejectSuggestionRecord(data: { id: string }) {
   if (count === 1) return { id: data.id };
   const exists = await db.suggestion.count({ where: { id: data.id } });
   throw new UserError(exists ? NOT_PENDING : NOT_FOUND);
+}
+
+// ---------- Bộ nội dung (Epic 5) ----------
+
+const PART_BUSY = "AI đang viết phần này. Chờ xong rồi thử lại.";
+const PART_REPLACED = "Phần này vừa được tạo lại ở nơi khác. Tải lại trang.";
+
+export type ContentSetPartSpec = { kind: SuggestionKind; platform: Platform; promptId: string; promptVersion: number };
+
+// Bắt đầu các phần của Bộ nội dung (FR-12, FR-16, FR-21; AD-18, AD-19) trong một transaction:
+// - `createSet` (bộ mới) tạo `ContentSet` qua `content-sets/service.ts` cùng `tx`;
+// - với mỗi phần (khoá đích `kind` + bộ + `platform`): `mode: "add"` từ chối khi bộ đã có phần đó; `"regenerate"`
+//   chuyển bản hiện hành (mọi trạng thái, kể cả đã Duyệt — Story 5.7) sang `SUPERSEDED`; bản đang tạo chưa quá hạn
+//   (`staleBefore`) → `UserError`; `expectLatestId` chặn Tạo lại từ màn cũ;
+// - chèn gợi ý mới ở `GENERATING`, mang `parentSuggestionId` là bản hiện hành trước đó.
+// Partial unique index chặn hai lần bấm cùng lúc (P2002 → `UserError`).
+export async function startContentSetPartsRecord(data: {
+  contentSetId: string | null;
+  createSet?: (tx: Tx) => Promise<string>;
+  parts: ContentSetPartSpec[];
+  mode: "add" | "regenerate";
+  expectLatestId?: string;
+  existsMessage?: (part: ContentSetPartSpec) => string;
+  staleBefore: Date;
+}) {
+  try {
+    return await db.$transaction(async (tx) => {
+      const contentSetId = data.contentSetId ?? (await data.createSet!(tx));
+      const created: { id: string; kind: SuggestionKind; platform: Platform }[] = [];
+      for (const part of data.parts) {
+        const key = { contentSetId, kind: part.kind, platform: part.platform };
+        const latest = await tx.suggestion.findFirst({
+          where: { ...key, status: { not: "SUPERSEDED" } },
+          orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+          select: { id: true, status: true, createdAt: true },
+        });
+        if (latest && data.mode === "add") throw new UserError(data.existsMessage?.(part) ?? PART_REPLACED);
+        if (data.expectLatestId && latest?.id !== data.expectLatestId) throw new UserError(PART_REPLACED);
+        if (latest?.status === "GENERATING" && latest.createdAt >= data.staleBefore) throw new UserError(PART_BUSY);
+        if (latest) await tx.suggestion.update({ where: { id: latest.id }, data: { status: "SUPERSEDED" } });
+        const s = await tx.suggestion.create({
+          data: {
+            ...key,
+            promptId: part.promptId,
+            promptVersion: part.promptVersion,
+            parentSuggestionId: latest?.id ?? null,
+          },
+          select: { id: true },
+        });
+        created.push({ id: s.id, kind: part.kind, platform: part.platform });
+      }
+      return { contentSetId, parts: created };
+    });
+  } catch (e) {
+    if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2002") throw new UserError(PART_BUSY);
+    throw e;
+  }
+}
+
+// AI xong một phần (gọi trong `after()`): `PENDING` kèm `payload` và Cảnh báo rủi ro (FR-23). Chỉ ghi gợi ý còn
+// `GENERATING` (bản đã bị thay thì bỏ).
+export async function completeSuggestionRecord(data: { id: string; payload: unknown; riskWarnings: unknown }) {
+  await db.suggestion.updateMany({
+    where: { id: data.id, status: "GENERATING" },
+    data: { status: "PENDING", payload: json(data.payload), riskWarnings: json(data.riskWarnings) },
+  });
+}
+
+// Sao chép gợi ý chưa Duyệt (AD-21): chỉ ghi lần đầu; Duyệt chép mốc này sang `SocialPost.firstCopiedAt`.
+export async function recordSuggestionCopyRecord(data: { id: string }) {
+  const { count } = await db.suggestion.updateMany({
+    where: { id: data.id, firstCopiedAt: null },
+    data: { firstCopiedAt: new Date() },
+  });
+  if (count === 0 && (await db.suggestion.count({ where: { id: data.id } })) === 0) throw new UserError(NOT_FOUND);
+  return { id: data.id };
 }

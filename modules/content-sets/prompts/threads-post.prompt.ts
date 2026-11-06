@@ -1,26 +1,90 @@
 import { z } from "zod";
 import type { PromptDef } from "@/platform/ai/ask";
+import { UserError } from "@/platform/errors";
+import { cleanRiskWarnings, RISK_WARNING_RULES, riskWarningsOutput } from "@/platform/ai/rules";
+import type { StyleProfileValues } from "@/modules/style-profiles/constants";
+import { THREADS_PARTS_MAX, THREADS_POST_MAX } from "@/modules/content-sets/constants";
 
-// Chuỗi Threads từ một Bài web (action `content-sets.runThreads`). Chuyển nguyên từ `toThreads` của `lib/ai.ts` cũ
-// (Story 4.1); bài cuối còn chứa link website — trái FR-14 ([NO-10]), Epic 5 thay bằng gợi ý `THREADS_POST`
-// + `LINK_COMMENT` theo Hồ sơ phong cách.
+// Bài Threads của Bộ nội dung (FR-14; spine AD-19): gợi ý `THREADS_POST`, Duyệt thì upsert `SocialPost` (THREADS).
+// Viết riêng cho Threads theo Hồ sơ phong cách Threads, không cần Bài web trước; thân bài không có link — Link
+// affiliate nằm ở Bình luận kèm link (gợi ý `LINK_COMMENT` riêng). Thay `toThreads` của `lib/ai.ts` cũ ([NO-10]).
 
-export type ThreadsPostInput = { title: string; content: string; url: string };
-
-const threadsSchema = z.object({ posts: z.array(z.string()) });
-
-export const threadsPostPrompt: PromptDef<ThreadsPostInput, typeof threadsSchema> = {
-  id: "content-sets.threads-post",
-  version: 1,
-  profile: "fast",
-  output: threadsSchema,
-  system: () => `Bạn là chuyên gia viết chuỗi bài Threads/Facebook kéo người đọc về website.
-- Chia thành 4–7 bài trong chuỗi, mỗi bài dưới 250 ký tự, câu ngắn, có emoji làm điểm nhấn vừa phải.
-- Bài 1 là "hook" gây tò mò. Các bài giữa đưa giá trị thật (mẹo/điểm hay), không tiết lộ hết.
-- Bài cuối là lời kêu gọi đọc chi tiết, chứa nguyên văn đường link được cung cấp.
-- Giọng gần gũi Gen-Z, không giật tít sai sự thật.`,
-  user: (input) => `Tiêu đề: ${input.title}
-Link bài viết: ${input.url}
-Nội dung (HTML):
-${input.content}`,
+export type SocialPostInput = {
+  source: string;
+  productNames: string[];
+  angle: string | null;
+  audience: string | null;
+  instruction: string | null;
 };
+
+const threadsOutputSchema = z.object({ posts: z.array(z.string()), riskWarnings: riskWarningsOutput });
+
+export type ThreadsOutput = z.infer<typeof threadsOutputSchema>;
+
+// Dòng mô tả chung cho prompt bài mạng xã hội (Threads, Facebook).
+export function socialUserPrompt(input: SocialPostInput) {
+  return `Sản phẩm: ${input.productNames.join("; ")}
+Góc viết: ${input.angle ?? "(tự chọn góc phù hợp nhất với dữ liệu)"}
+Người đọc mục tiêu: ${input.audience ?? "(người đọc chung của trang)"}
+
+Dữ liệu nguồn (chỉ dùng thông tin có ở đây, không bịa thêm):
+${input.source}
+${input.instruction ? `\nChỉ dẫn khi viết lại: ${input.instruction}` : ""}`;
+}
+
+export const threadsPostPrompt: PromptDef<SocialPostInput, typeof threadsOutputSchema, StyleProfileValues> = {
+  id: "content-sets.threads-post",
+  version: 2,
+  profile: "fast",
+  output: threadsOutputSchema,
+  system: (style) => `Bạn viết bài Threads (chuỗi bài ngắn) cho trang "Mẹo Vặt Cuộc Sống" theo Hồ sơ phong cách Threads:
+- Giọng văn: ${style.voice}
+- Chuỗi ${style.partsMin ?? 4}–${style.partsMax ?? 7} bài; mỗi bài khoảng ${style.lengthMin}–${style.lengthMax} ký tự, tuyệt đối không quá ${THREADS_POST_MAX} ký tự.
+- Emoji: ${style.emoji}
+- Điều cấm: ${style.forbidden}
+- Nội quy và quy chuẩn: ${style.rules}
+- "posts" là các bài theo thứ tự đăng; không chèn link hay đường dẫn nào (link đặt ở bình luận riêng).
+${RISK_WARNING_RULES}`,
+  user: socialUserPrompt,
+};
+
+// Bỏ mọi URL khỏi thân bài mạng xã hội (FR-14, FR-15: link chỉ ở Bình luận kèm link).
+export function stripUrls(text: string) {
+  return text
+    .replace(/https?:\/\/\S+/gi, "")
+    .replace(/[ \t]+\n/g, "\n")
+    .replace(/[ \t]{2,}/g, " ")
+    .trim();
+}
+
+// Payload gợi ý `THREADS_POST`: đọc/hiện được cả bài > 500 ký tự (bộ đếm đỏ, Duyệt tắt — UX-DR41); Duyệt kiểm bằng
+// `threadsApprovalSchema`.
+export const threadsPayloadSchema = z.object({
+  posts: z.array(z.string().max(THREADS_POST_MAX * 10)).min(1).max(THREADS_PARTS_MAX),
+});
+
+// Nội dung Duyệt / sửa sau Duyệt: số bài giữ nguyên (không thêm/xoá bài trong chuỗi), mỗi bài 1–500 ký tự.
+export const threadsApprovalSchema = z.object({
+  posts: z
+    .array(z.string().trim())
+    .min(1)
+    .max(THREADS_PARTS_MAX)
+    .superRefine((posts, ctx) => {
+      posts.forEach((p, i) => {
+        if (!p) ctx.addIssue({ code: "custom", path: [i], message: `Bài ${i + 1} đang trống` });
+        else if (p.length > THREADS_POST_MAX) {
+          ctx.addIssue({ code: "custom", path: [i], message: `Bài ${i + 1} vượt ${THREADS_POST_MAX} ký tự` });
+        }
+      });
+    }),
+});
+
+export type ThreadsPayload = z.infer<typeof threadsPayloadSchema>;
+
+// Kết quả AI → payload: bỏ URL, bỏ bài trống, tối đa `THREADS_PARTS_MAX` bài (bài dài giữ nguyên để Vinh thấy và
+// sửa); không còn bài nào → lỗi để gợi ý `FAILED`.
+export function toThreadsPayload(out: ThreadsOutput) {
+  const posts = out.posts.map(stripUrls).filter(Boolean).slice(0, THREADS_PARTS_MAX);
+  if (posts.length === 0) throw new UserError("AI không trả bài Threads nào");
+  return { payload: threadsPayloadSchema.parse({ posts }), riskWarnings: cleanRiskWarnings(out.riskWarnings) };
+}

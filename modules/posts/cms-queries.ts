@@ -3,6 +3,7 @@ import type { Status } from "@/generated/prisma/enums";
 import { db } from "@/platform/db";
 import { publicProductSelect } from "@/modules/products/queries";
 import { CMS_POST_PAGE_SIZE } from "@/modules/posts/constants";
+import { webPostPayloadSchema } from "@/modules/posts/prompts/web-post.prompt";
 
 // Danh mục theo thứ tự hiển thị kèm số Bài web và Sản phẩm đang dùng; đặt ở `posts` vì chạm bảng
 // của `posts`, `products`, `categories` (spine AD-2).
@@ -77,4 +78,11 @@ export async function getPostForCms(id: string) {
       },
     },
   });
+}
+
+// Đọc payload Json của gợi ý `WEB_POST` (AD-15: đọc ra phải parse). Đặt ở đây để `suggestions/cms-queries.ts` dùng
+// được Zod của miền chủ đích mà không import `prompts/` (AD-2). Sai schema → null.
+export function parseWebPostPayload(payload: unknown) {
+  const r = webPostPayloadSchema.safeParse(payload);
+  return r.success ? r.data : null;
 }

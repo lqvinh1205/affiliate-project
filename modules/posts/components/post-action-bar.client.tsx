@@ -6,6 +6,7 @@ import { useState, useTransition } from "react";
 import { Eye, Loader2, Send, Trash2, Undo2 } from "lucide-react";
 import { toast } from "sonner";
 import type { Status } from "@/generated/prisma/enums";
+import type { PublishLock } from "@/modules/posts/types";
 import { deletePost, setPostStatus } from "@/modules/posts/actions";
 import { PostStatusBadge } from "@/modules/posts/components/post-status-badge";
 import { callAction } from "@/components/shared/call-action";
@@ -14,6 +15,8 @@ import { Button } from "@/components/ui/button";
 
 // Thanh thao tác của trình soạn bài: StatusBadge, "Xem trên site", Xem trước, Xuất bản / Chuyển về nháp, Xoá.
 // Chuyển về nháp và Xoá qua ConfirmDialog (UX-DR58); xuất bản khi form còn thay đổi chưa lưu thì `canPublish` chặn.
+// `publishLock` (FR-22, UX-DR72): bài còn gợi ý AI chưa Duyệt → "Xuất bản" tắt (`aria-disabled` để đọc được lý do) +
+// dòng lý do và link về Bộ nội dung.
 export function PostActionBar({
   id,
   title,
@@ -22,6 +25,7 @@ export function PostActionBar({
   onStatusChange,
   canPublish,
   onPreview,
+  publishLock = null,
 }: {
   id: string;
   // Tiêu đề hiện tại trong form (hộp xác nhận nêu đúng bài đang sửa).
@@ -31,6 +35,7 @@ export function PostActionBar({
   onStatusChange: (status: Status) => void;
   canPublish: () => boolean;
   onPreview: () => void;
+  publishLock?: PublishLock | null;
 }) {
   const router = useRouter();
   const [confirm, setConfirm] = useState<"delete" | "unpublish" | null>(null);
@@ -91,7 +96,15 @@ export function PostActionBar({
             <Undo2 aria-hidden /> Chuyển về nháp
           </Button>
         ) : (
-          <Button type="button" size="lg" disabled={!!busy} onClick={() => canPublish() && changeStatus("PUBLISHED")}>
+          <Button
+            type="button"
+            size="lg"
+            disabled={!!busy}
+            aria-disabled={publishLock ? true : undefined}
+            aria-describedby={publishLock ? "publish-lock-reason" : undefined}
+            className={publishLock ? "opacity-50" : undefined}
+            onClick={() => !publishLock && canPublish() && changeStatus("PUBLISHED")}
+          >
             {busy === "status" ? <Loader2 className="animate-spin" aria-hidden /> : <Send aria-hidden />}
             {busy === "status" ? "Đang xuất bản…" : "Xuất bản"}
           </Button>
@@ -108,6 +121,14 @@ export function PostActionBar({
         </Button>
       </div>
 
+      {publishLock && status !== "PUBLISHED" && (
+        <p id="publish-lock-reason" className="w-full text-body-sm text-on-surface-variant">
+          {publishLock.reason}.{" "}
+          <Link href={publishLock.href} className="inline-flex min-h-touch-target items-center text-primary hover:underline">
+            Về Bộ nội dung
+          </Link>
+        </p>
+      )}
       <ConfirmDialog
         open={confirm === "delete"}
         onOpenChange={(open) => !open && setConfirm(null)}

@@ -16,3 +16,7 @@ export const RESEARCH_CATEGORY_REASON_MAX = 300;
 
 // Nhãn ba mục tóm tắt đánh giá (FR-8).
 export const REVIEW_SUMMARY_LABELS = { praise: "Khen", complaints: "Chê", fit: "Phù hợp" } as const;
+
+// Ô "Sửa lại (tuỳ chọn)" dưới Góc viết / Người đọc đang chọn (UX-DR46): bằng `RESEARCH_REASON_MAX` — Bộ nội dung
+// lưu bản sửa vào cột `VarChar(500)` (`CONTENT_SET_CHOICE_TEXT_MAX`).
+export const CONTENT_CHOICE_EDIT_MAX = RESEARCH_REASON_MAX;

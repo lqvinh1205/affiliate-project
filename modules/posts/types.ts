@@ -16,3 +16,12 @@ export type ArticlePost = Pick<
   PublicPost,
   "title" | "postType" | "publishedAt" | "readingMinutes" | "featuredImage" | "tags" | "category" | "products"
 >;
+
+// Cảnh báo rủi ro của nội dung AI (FR-23): câu trích nguyên văn + lý do. Màn soạn Bài web nhận qua props (AD-19:
+// `posts` không import `suggestions`; Screen lấy từ `suggestions/cms-queries` rồi truyền xuống).
+export type RiskWarning = { sentence: string; reason: string };
+
+// Khoá nút Xuất bản khi Bài web còn gợi ý AI Đang tạo / Chờ duyệt (FR-22, UX-DR72) — chỉ ở giao diện.
+export type PublishLock = { reason: string; href: string };
+
+export type { WebPostPayload } from "@/modules/posts/prompts/web-post.prompt";

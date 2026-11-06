@@ -1,6 +1,6 @@
 "use client";
 
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useState, useTransition, type KeyboardEvent } from "react";
 import { ArrowDown, ArrowUp, Loader2, Plus, Search, X } from "lucide-react";
 import { PRODUCT_PICKER_PARAM } from "@/modules/products/constants";
@@ -20,9 +20,11 @@ function Thumb({ product }: { product: PickerProduct }) {
 
 const ICON_BUTTON = "size-touch-target! shrink-0";
 
-// ProductPicker (UX-DR48): chọn Sản phẩm **có sẵn** trong Kho cho Bài web — không tạo/sửa/xoá Sản phẩm (FR-4).
-// Ô tìm theo tên đưa từ khoá lên URL `?sp=`; Screen trả `results` (chỉ Sản phẩm đang hiện). Mỗi dòng đã chọn: ảnh
-// 40px, tên, nút lên/xuống/gỡ (vùng bấm 44px); không kéo-thả. Gỡ chỉ bỏ khỏi bài.
+// ProductPicker (UX-DR48): chọn Sản phẩm **có sẵn** trong Kho cho Bài web hoặc Bộ nội dung — không tạo/sửa/xoá Sản
+// phẩm (FR-4). Ô tìm theo tên đưa từ khoá lên URL `?sp=` (giữ các tham số khác của màn); Screen trả `results` (chỉ Sản
+// phẩm đang hiện). Mỗi dòng đã chọn: ảnh 40px, tên, nút lên/xuống/gỡ (vùng bấm 44px); không kéo-thả. Gỡ chỉ bỏ khỏi
+// bài/bộ. `showValue={false}`: nơi dùng tự hiện danh sách đã chọn (CreateContentSetPanel) — `value` chỉ để loại khỏi
+// kết quả tìm.
 export function ProductPicker({
   id,
   value,
@@ -30,6 +32,9 @@ export function ProductPicker({
   results,
   query,
   invalid,
+  showValue = true,
+  noun = "bài",
+  addLabel = "Thêm Sản phẩm từ Kho",
 }: {
   id: string;
   value: PickerProduct[];
@@ -37,15 +42,22 @@ export function ProductPicker({
   results: PickerProduct[];
   query: string;
   invalid?: boolean;
+  showValue?: boolean;
+  noun?: "bài" | "bộ";
+  addLabel?: string;
 }) {
   const router = useRouter();
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const [text, setText] = useState(query);
   const [pending, startTransition] = useTransition();
 
   const search = () => {
+    const params = new URLSearchParams(searchParams.toString());
     const q = text.trim();
-    const url = q ? `${pathname}?${new URLSearchParams({ [PRODUCT_PICKER_PARAM]: q })}` : pathname;
+    if (q) params.set(PRODUCT_PICKER_PARAM, q);
+    else params.delete(PRODUCT_PICKER_PARAM);
+    const url = params.size > 0 ? `${pathname}?${params}` : pathname;
     startTransition(() => router.replace(url, { scroll: false }));
   };
   // Ô tìm nằm trong form bài: Enter tìm, không gửi form.
@@ -65,7 +77,7 @@ export function ProductPicker({
 
   return (
     <div className="space-y-space-md">
-      {value.length === 0 ? (
+      {!showValue ? null : value.length === 0 ? (
         <p className="text-body-sm text-on-surface-variant">Bài chưa gắn Sản phẩm nào.</p>
       ) : (
         <ol aria-label="Sản phẩm trong bài, theo thứ tự hiện" className="divide-y rounded-xl border">
@@ -115,7 +127,7 @@ export function ProductPicker({
 
       <div className="space-y-space-sm rounded-xl bg-surface-container-low p-space-sm">
         <label htmlFor={id} className="text-label-md">
-          Thêm Sản phẩm từ Kho
+          {addLabel}
         </label>
         <div className="flex gap-2">
           <Input
@@ -151,7 +163,7 @@ export function ProductPicker({
                   type="button"
                   variant="outline"
                   size="lg"
-                  aria-label={`Thêm "${p.name}" vào bài`}
+                  aria-label={`Thêm "${p.name}" vào ${noun}`}
                   onClick={() => onChange([...value, p])}
                 >
                   <Plus aria-hidden /> Thêm

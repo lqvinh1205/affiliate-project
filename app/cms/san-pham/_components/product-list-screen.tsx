@@ -1,7 +1,10 @@
 import Form from "next/form";
 import Link from "next/link";
 import { ChevronLeft, ChevronRight, Plus, Search } from "lucide-react";
+import type { Platform } from "@/generated/prisma/enums";
 import { formatShortDate } from "@/platform/format";
+import { listPostedPlatformsByProductForCms } from "@/modules/content-sets/cms-queries";
+import { PLATFORM_LABEL } from "@/modules/content-sets/constants";
 import { PRODUCT_PAGE_SIZE } from "@/modules/products/constants";
 import { listProductsForCms } from "@/modules/products/cms-queries";
 import { ProductStatusBadge } from "@/modules/products/components/product-status-badge";
@@ -34,6 +37,11 @@ function CreateLink() {
       <Plus aria-hidden /> Tạo Sản phẩm
     </Link>
   );
+}
+
+// Sản phẩm đã lên nền tảng nào (FR-20): "Đã lên: Website · Threads".
+function postedLine(platforms: Platform[] | undefined) {
+  return platforms && platforms.length > 0 ? `Đã lên: ${platforms.map((x) => PLATFORM_LABEL[x]).join(" · ")}` : "Chưa lên nền tảng nào";
 }
 
 // Meta một dòng: "Giá tham khảo ~89.000đ · cập nhật dd/mm/yyyy · Danh mục".
@@ -96,6 +104,8 @@ export async function ProductListScreen({ searchParams }: Pick<PageProps<"/cms/s
   const params = await searchParams;
   const q = first(params.q).trim();
   const { items, total, page } = await listProductsForCms({ q, page: pageParam(first(params.trang)) });
+  // Hai module khác tầng (`products`, `content-sets`): Screen gọi từng query rồi ghép (AD-2).
+  const posted = await listPostedPlatformsByProductForCms(items.map((p) => p.id));
   const pages = Math.ceil(total / PRODUCT_PAGE_SIZE);
 
   return (
@@ -131,6 +141,7 @@ export async function ProductListScreen({ searchParams }: Pick<PageProps<"/cms/s
                         <ProductStatusBadge hidden={p.hidden} />
                       </span>
                       <span className="block text-body-sm text-on-surface-variant">{meta(p)}</span>
+                      <span className="block text-body-sm text-on-surface-variant">{postedLine(posted.get(p.id))}</span>
                     </Link>
                     <ProductVisibilityButton id={p.id} name={p.name} hidden={p.hidden} usageLink />
                   </li>
@@ -143,6 +154,7 @@ export async function ProductListScreen({ searchParams }: Pick<PageProps<"/cms/s
                     <th scope="col" className="py-2 pr-4 font-medium">Tên</th>
                     <th scope="col" className="py-2 pr-4 font-medium">Giá tham khảo</th>
                     <th scope="col" className="py-2 pr-4 font-medium">Danh mục</th>
+                    <th scope="col" className="py-2 pr-4 font-medium">Đã lên</th>
                     <th scope="col" className="py-2 pr-4 font-medium">Trạng thái</th>
                     <th scope="col" className="py-2 font-medium"><span className="sr-only">Thao tác</span></th>
                   </tr>
@@ -168,6 +180,9 @@ export async function ProductListScreen({ searchParams }: Pick<PageProps<"/cms/s
                         )}
                       </td>
                       <td className="py-2 pr-4 text-on-surface-variant">{p.category?.name ?? "—"}</td>
+                      <td className="py-2 pr-4 text-on-surface-variant">
+                        {posted.get(p.id)?.map((x) => PLATFORM_LABEL[x]).join(" · ") || "—"}
+                      </td>
                       <td className="py-2 pr-4">
                         <ProductStatusBadge hidden={p.hidden} />
                       </td>

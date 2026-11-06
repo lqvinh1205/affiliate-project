@@ -1,23 +1,25 @@
 model Post {
-  id             String        @id @default(uuid())
+  id             String             @id @default(uuid())
   title          String
-  slug           String        @unique
-  content        String        @db.Text // HTML đã sanitize
-  excerpt        String?       @db.VarChar(500)
+  slug           String             @unique
+  content        String             @db.Text // HTML đã sanitize
+  excerpt        String?            @db.VarChar(500)
   featuredImage  String? // null → dùng ảnh sản phẩm đầu tiên hoặc placeholder
   postType       PostType // Loại bài (kiểu viết), không phải Danh mục
   categoryId     String?
-  category       Category?     @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  category       Category?          @relation(fields: [categoryId], references: [id], onDelete: Restrict)
   tags           String[]
   seoTitle       String?
   seoDescription String?
   seoKeywords    String[]
-  status         Status        @default(DRAFT)
+  status         Status             @default(DRAFT)
   publishedAt    DateTime?
-  createdAt      DateTime      @default(now())
-  updatedAt      DateTime      @updatedAt
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
   postProducts   PostProduct[]
   slugRedirects  PostSlugRedirect[]
+  /// Quan hệ ngược (AD-4): Bộ nội dung có Bài web này làm đích (`content-sets`).
+  contentSet     ContentSet?
 
   @@index([status, postType, publishedAt])
   @@index([categoryId])

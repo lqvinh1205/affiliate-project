@@ -37,3 +37,15 @@
 - source_spec: `_bmad-output/implementation-artifacts/spec-4-luot-gop-epic-4.md`
   summary: (có từ trước) `next start` log lỗi "unstable value `crypto.randomUUID()` while prerendering" ở `/cms/san-pham`.
   evidence: Thấy khi kiểm Epic 4 trên cổng 3300; trang vẫn trả 200; màn danh sách không đổi ở Epic 4.
+- source_spec: `_bmad-output/implementation-artifacts/spec-5-luot-gop-epic-5.md`
+  summary: RiskWarning chỉ bôi chọn và cuộn tới câu khi chạm; chưa vẽ gạch chân lượn `tertiary` cho mọi câu bị cảnh báo trong ô chữ / PostEditor (UX-DR43).
+  evidence: Quyết định tự chọn 19. `<textarea>` không tô được một đoạn chữ; cần lớp phủ (textarea) hoặc decoration Tiptap (PostEditor) — làm khi Vinh muốn đủ UX-DR43.
+- source_spec: `_bmad-output/implementation-artifacts/spec-5-luot-gop-epic-5.md`
+  summary: Chưa tạo Bộ nội dung thật với `claude -p`: chưa đo Bài web (`sonnet`, 600–900 từ + Cảnh báo rủi ro) có xong trong hạn 90 giây của `ask` không.
+  evidence: Lần gọi thật duy nhất của epic dùng cho bộ câu mẫu Cảnh báo rủi ro (9,3 giây, `haiku`). Kiểm tay: Chi tiết Sản phẩm có hồ sơ đã Duyệt → "Tạo bộ nội dung" 3 nền tảng với `AI_PROVIDERS=claude-cli`, ghi thời gian từng thẻ; quá hạn thì tăng `AI_TIMEOUT_MS` (≤ 110 000) hoặc đổi `CLAUDE_CLI_MODEL_QUALITY`.
+- source_spec: `_bmad-output/implementation-artifacts/spec-5-luot-gop-epic-5.md`
+  summary: Khối `bmad:context` của `AGENTS.md` chưa nhắc `modules/style-profiles`, `modules/content-sets`, màn `/cms/bo-noi-dung/[id]`, `/cms/phong-cach`; docs `nen-tang-ky-thuat/{kiem-tra-va-bao-mat,nextjs-16,prisma-7,giao-dien}.md` còn nhắc `createPost` nhánh AI và `runThreads` đã gỡ.
+  evidence: QD-03 cấm sửa tay khối `bmad:context` — làm mới qua `bmad-project-context`. Epic 5 đã sửa `kien-truc-codebase.md`, `lop-ai.md`, `no-ky-thuat.md`, `chuyen-code-cu.md`, `kiem-chung.md`.
+- source_spec: `_bmad-output/implementation-artifacts/spec-5-luot-gop-epic-5.md`
+  summary: Giới hạn cứng tự đặt cho nội dung mạng xã hội và Bài web do AI viết (`WEB_POST_WORDS_MAX` 3000, `THREADS_PARTS_MAX` 10, `FACEBOOK_WORDS_MAX` 1000, `FACEBOOK_POST_MAX` 8000, `LINK_COMMENT_MAX` 2000) cần Vinh xác nhận.
+  evidence: Quyết định tự chọn 5; chỉ `THREADS_POST_MAX` = 500 có trong PRD (FR-14).

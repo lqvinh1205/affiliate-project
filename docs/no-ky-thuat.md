@@ -13,7 +13,7 @@ Không còn mục mở. [NO-01]–[NO-05] đã sửa ở Story 1.2, có unit tes
 [NO-09] (Sản phẩm bị xoá và tạo lại mỗi lần lưu bài) đã sửa ở Story 2.3: Kho Sản phẩm độc lập, trình soạn bài không ghi `Product`/`PostProduct`.
 
 - **[NO-08]** `prisma/seed.ts` chạy `deleteMany()` toàn bộ bài trước khi seed — phá huỷ dữ liệu. Xem `[PR-14]`.
-- **[NO-10]** Chuỗi Threads (`modules/content-sets/prompts/threads-post.prompt.ts`, action `content-sets.runThreads`) đặt link website ở bài cuối chuỗi, trái PRD FR-14 (link affiliate nằm ở Bình luận kèm link). Epic 5 thay bằng gợi ý `THREADS_POST` + `LINK_COMMENT`.
+- **[NO-10]** (đã sửa — Epic 5) Chuỗi Threads cũ đặt link website ở bài cuối chuỗi, trái FR-14. `runThreads` và tab Threads của trình soạn đã gỡ; thay bằng gợi ý `THREADS_POST` + `LINK_COMMENT` trong Bộ nội dung (thân bài không có link, Link affiliate ở Bình luận kèm link).
 - **[NO-14]** (đã bỏ) Không còn là nợ: spine AD-6 quy định không có endpoint công khai dưới `/api`, nên matcher chặn `/api/:path*` là đúng. Xem `[NX-57]`.
 
 ## Thấp — nhất quán và dọn dẹp

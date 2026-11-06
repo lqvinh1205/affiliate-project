@@ -1,11 +1,41 @@
 import { z } from "zod";
-import { POST_CONTENT_MAX, POST_SLUG_MAX, POST_TITLE_MAX } from "@/modules/posts/constants";
+import { SOCIAL_POST_URL_MAX } from "@/modules/content-sets/constants";
 
-// Chuỗi Threads từ Bài web đang soạn (`runThreads`, tạm tới Epic 5): giá trị form lúc bấm.
-export const threadsInputSchema = z.object({
-  title: z.string().trim().min(1, "Nhập tiêu đề trước").max(POST_TITLE_MAX, `Tối đa ${POST_TITLE_MAX} ký tự`),
-  content: z.string().max(POST_CONTENT_MAX, "Nội dung quá dài"),
-  slug: z.string().trim().max(POST_SLUG_MAX),
+const socialPostId = z.string().min(1, "Thiếu bài mạng xã hội");
+
+// Sửa Bài Threads / Facebook đã Duyệt (FR-22: sửa đích không cần Duyệt lại). Nội dung theo nền tảng của bài —
+// service parse bằng Zod payload của nền tảng (`threadsApprovalSchema` / `facebookPayloadSchema`).
+export const saveSocialPostInputSchema = z.object({ id: socialPostId, content: z.unknown() });
+
+// Sửa Bình luận kèm link đã Duyệt; nội dung parse bằng `linkCommentPayloadSchema`.
+export const saveLinkCommentInputSchema = z.object({ id: socialPostId, content: z.unknown() });
+
+// Sao chép bài đã Duyệt (FR-19, AD-21): ghi `SocialPost.firstCopiedAt` lần đầu.
+export const recordCopyInputSchema = z.object({ id: socialPostId });
+
+function isHttpUrl(s: string) {
+  try {
+    return /^https?:$/.test(new URL(s).protocol);
+  } catch {
+    return false;
+  }
+}
+
+// Đánh dấu đã đăng (FR-20, UX-DR56): link bài đăng tuỳ chọn, phải là URL http(s).
+export const markPostedInputSchema = z.object({
+  id: socialPostId,
+  postUrl: z
+    .string()
+    .trim()
+    .max(SOCIAL_POST_URL_MAX, `Tối đa ${SOCIAL_POST_URL_MAX} ký tự`)
+    .refine((s) => !s || isHttpUrl(s), "Link bài đăng phải bắt đầu bằng http:// hoặc https://")
+    .transform((s) => s || null),
 });
 
-export type ThreadsInput = z.input<typeof threadsInputSchema>;
+export const unmarkPostedInputSchema = z.object({ id: socialPostId });
+
+export type SaveSocialPostInput = z.input<typeof saveSocialPostInputSchema>;
+export type SaveLinkCommentInput = z.input<typeof saveLinkCommentInputSchema>;
+export type RecordCopyInput = z.input<typeof recordCopyInputSchema>;
+export type MarkPostedFormValues = z.input<typeof markPostedInputSchema>;
+export type UnmarkPostedInput = z.input<typeof unmarkPostedInputSchema>;

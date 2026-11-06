@@ -8,6 +8,7 @@ import { sanitizePostHtml } from "@/platform/html/sanitize";
 import { slugify } from "@/platform/slug";
 import { visibleProductWhere } from "@/modules/products/queries";
 import { POST_SLUG_MAX } from "@/modules/posts/constants";
+import type { WebPostPayload } from "@/modules/posts/prompts/web-post.prompt";
 import type {
   deletePostInputSchema,
   postDraftInputSchema,
@@ -20,6 +21,7 @@ const SLUG_TAKEN = "Đường dẫn đã được bài khác dùng. Chọn đư�
 const CATEGORY_GONE = "Danh mục đã chọn không còn tồn tại. Tải lại trang rồi chọn lại.";
 const PRODUCT_UNAVAILABLE = "Có Sản phẩm vừa bị ẩn hoặc không còn trong Kho. Gỡ nó khỏi bài rồi lưu lại.";
 const EMPTY_CONTENT = "Bài chưa có nội dung, chưa thể xuất bản";
+const AI_TARGET_PUBLISHED = "Bài đã xuất bản — sửa tay ở Soạn Bài web";
 const PUBLISHED_EMPTY = "Bài đang xuất bản không được để trống thân bài. Viết nội dung hoặc chuyển bài về nháp trước.";
 
 type Tx = Prisma.TransactionClient;
@@ -159,5 +161,49 @@ export async function deletePostRecord(data: z.infer<typeof deletePostInputSchem
   } catch (e) {
     if (prismaCode(e) === "P2025") return; // đã bị xoá: coi như xong
     throw e;
+  }
+}
+
+// Duyệt gợi ý `WEB_POST` (gọi từ `modules/suggestions/actions.ts`, AD-9, AD-19), trong transaction của Duyệt:
+// - `postId` null → tạo `Post` nháp (slug từ tiêu đề) gắn Sản phẩm của Bộ nội dung theo thứ tự;
+// - có `postId` → chỉ ghi vào bài còn `DRAFT` (bài đã xuất bản → `UserError`, Vinh sửa tay); slug và Sản phẩm của
+//   bài giữ nguyên.
+// HTML qua `sanitizePostHtml` (AD-22). Danh mục, Loại bài gợi ý được tự điền (FR-11), Vinh đổi được ở Soạn Bài web.
+export async function applyWebPostSuggestionRecord(
+  data: { postId: string | null; payload: WebPostPayload; productIds: string[] },
+  tx?: Tx,
+) {
+  const { title, excerpt, content, tags, seoTitle, seoDescription, seoKeywords, postType, categoryId } = data.payload;
+  const fields = {
+    title,
+    excerpt: excerpt || null,
+    content: sanitizePostHtml(content),
+    tags,
+    seoTitle: seoTitle || null,
+    seoDescription: seoDescription || null,
+    seoKeywords,
+    postType,
+    categoryId,
+  };
+  try {
+    return await inTransaction(tx, async (c) => {
+      if (data.postId) {
+        const current = await c.post.findUnique({ where: { id: data.postId }, select: { status: true } });
+        if (!current) throw new UserError(NOT_FOUND);
+        if (current.status !== "DRAFT") throw new UserError(AI_TARGET_PUBLISHED);
+        return c.post.update({ where: { id: data.postId }, data: fields, select: { id: true } });
+      }
+      const slug = await freePostSlug(c, title);
+      return c.post.create({
+        data: {
+          ...fields,
+          slug,
+          postProducts: { create: data.productIds.map((productId, sortOrder) => ({ productId, sortOrder })) },
+        },
+        select: { id: true },
+      });
+    });
+  } catch (e) {
+    mapWriteError(e);
   }
 }

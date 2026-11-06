@@ -78,30 +78,15 @@ const postFields = {
 // Sửa Bài web (form `/cms/bai-viet/[id]`, action `savePost`). HTML thân bài sanitize ở service (AD-22).
 export const postInputSchema = z.object({ id: postId, ...postFields, productIds });
 
-// Bản nháp mới (AI viết hoặc bản trống — action `createPostDraft`): cùng luật trường, chưa có id và Sản phẩm.
+// Bản nháp mới (action `createPostDraft`): cùng luật trường, chưa có id và Sản phẩm.
 export const postDraftInputSchema = z.object(postFields);
 
-// Mảng chữ (thẻ, từ khoá do AI trả) → giá trị ô "cách nhau bằng dấu phẩy" đã chuẩn hoá: bỏ dấu phẩy trong mục,
-// cắt mục quá dài, giữ tối đa `POST_TAGS_MAX` mục — bản nháp AI không bị từ chối vì lệch giới hạn.
-export function toCommaListValue(items: string[]) {
-  return items
-    .map((x) => x.replace(/,/g, " ").replace(/\s+/g, " ").trim().slice(0, POST_TAG_MAX).trim())
-    .filter(Boolean)
-    .slice(0, POST_TAGS_MAX)
-    .join(", ");
-}
-
-// Tạo bài mới (`/cms/bai-viet/moi`): AI viết theo chủ đề hoặc bản nháp trống (chủ đề làm tiêu đề).
-export const newPostInputSchema = z
-  .object({
-    postType: z.enum(PostType, "Chọn Loại bài"),
-    categoryId,
-    topic: z.string().trim().max(POST_TITLE_MAX, `Tối đa ${POST_TITLE_MAX} ký tự`),
-    useAi: z.boolean(),
-  })
-  .superRefine((v, ctx) => {
-    if (v.useAi && !v.topic) ctx.addIssue({ code: "custom", path: ["topic"], message: "Nhập chủ đề để AI viết bài" });
-  });
+// Tạo bài mới bằng tay (`/cms/bai-viet/moi`): bản nháp trống, chủ đề làm tiêu đề.
+export const newPostInputSchema = z.object({
+  postType: z.enum(PostType, "Chọn Loại bài"),
+  categoryId,
+  topic: z.string().trim().max(POST_TITLE_MAX, `Tối đa ${POST_TITLE_MAX} ký tự`),
+});
 
 // Chấm SEO (`checkPostSeo`): giá trị form lúc bấm, chưa lưu. Chỉ giới hạn độ dài để không gửi khối chữ vô hạn cho AI.
 export const seoCheckInputSchema = z.object({

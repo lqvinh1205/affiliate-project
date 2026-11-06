@@ -58,3 +58,8 @@ export const RELATED_POSTS_TITLE_ID = "bai-lien-quan";
 
 // Id đã dùng trên trang bài: h2 thân bài không được trùng (`withHeadingIds`).
 export const ARTICLE_RESERVED_IDS = [PRODUCTS_SECTION_ID, PRODUCTS_TITLE_ID, RELATED_POSTS_TITLE_ID, MAIN_CONTENT_ID];
+
+// Giới hạn cứng khi AI viết Bài web (AD-25): Hồ sơ phong cách Website không đặt mục tiêu vượt các số này
+// (`modules/style-profiles/constants.ts` chép lại — test `modules/content-sets/style-limits.test.ts`).
+export const WEB_POST_WORDS_MAX = 3000;
+export const WEB_POST_SECTIONS_MAX = 10;

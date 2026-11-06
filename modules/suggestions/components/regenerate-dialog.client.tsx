@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { useId, useState, useTransition } from "react";
 import { Loader2, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
-import { researchProduct } from "@/modules/suggestions/actions";
+import { regenerateSuggestion, researchProduct } from "@/modules/suggestions/actions";
 import { REGENERATE_CHIPS, SUGGESTION_INSTRUCTION_MAX } from "@/modules/suggestions/constants";
 import { callAction } from "@/components/shared/call-action";
 import { Button } from "@/components/ui/button";
@@ -21,13 +21,17 @@ import {
 import { Field, FieldLabel } from "@/components/ui/field";
 import { Textarea } from "@/components/ui/textarea";
 
-// RegenerateDialog (UX-DR57, FR-21): chỉ dẫn ngắn tuỳ chọn + chip mẫu. Xác nhận → gợi ý đang chờ thành SUPERSEDED,
-// thẻ chuyển Đang tạo. Tạo lại hồ sơ chạy lại lần nghiên cứu chung, thay cả Danh mục gợi ý đang chờ (AD-19).
+// RegenerateDialog (UX-DR57, FR-21): chỉ dẫn ngắn tuỳ chọn + chip mẫu. Xác nhận → gợi ý hiện hành thành SUPERSEDED,
+// thẻ chuyển Đang tạo. Hai đích:
+// - `productId`: Tạo lại Hồ sơ nghiên cứu — chạy lại lần nghiên cứu chung, thay cả Danh mục gợi ý đang chờ (AD-19);
+// - `part`: Tạo lại một phần của Bộ nội dung (Story 5.7, kể cả phần đã Duyệt) — các phần khác giữ nguyên.
 export function RegenerateDialog({
   productId,
+  part,
   variant = "ghost",
 }: {
-  productId: string;
+  productId?: string;
+  part?: { suggestionId: string; title: string; approved: boolean };
   variant?: "ghost" | "outline" | "default";
 }) {
   const router = useRouter();
@@ -41,7 +45,11 @@ export function RegenerateDialog({
 
   const confirm = () =>
     startTransition(async () => {
-      const res = await callAction(() => researchProduct({ productId, instruction }));
+      const res = await callAction(() =>
+        part
+          ? regenerateSuggestion({ id: part.suggestionId, instruction })
+          : researchProduct({ productId: productId ?? "", instruction }),
+      );
       if (!res.ok) return void toast.error(res.error);
       setOpen(false);
       setInstruction("");
@@ -56,9 +64,13 @@ export function RegenerateDialog({
       </DialogTrigger>
       <DialogContent showCloseButton={false}>
         <DialogHeader>
-          <DialogTitle>Tạo lại Hồ sơ nghiên cứu</DialogTitle>
+          <DialogTitle>Tạo lại {part ? part.title : "Hồ sơ nghiên cứu"}</DialogTitle>
           <DialogDescription>
-            AI nghiên cứu lại từ đầu. Hồ sơ và Danh mục gợi ý đang chờ duyệt sẽ được thay bằng bản mới.
+            {!part
+              ? "AI nghiên cứu lại từ đầu. Hồ sơ và Danh mục gợi ý đang chờ duyệt sẽ được thay bằng bản mới."
+              : part.approved
+                ? "AI viết bản mới để bạn duyệt lại. Bản đã duyệt vẫn giữ cho tới khi bạn Duyệt bản mới; các phần khác không đổi."
+                : "AI viết bản mới thay bản này. Các phần khác của Bộ nội dung giữ nguyên."}
           </DialogDescription>
         </DialogHeader>
         <Field>

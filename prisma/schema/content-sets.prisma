@@ -1,0 +1,75 @@
+// Nền tảng đăng nội dung (spine AD-25): khai báo một lần ở đây, dùng cho Hồ sơ phong cách (`style-profiles`),
+// Bài mạng xã hội và Gợi ý AI của Bộ nội dung. Nhãn tiếng Việt ở `modules/content-sets/constants.ts`.
+enum Platform {
+  WEBSITE
+  THREADS
+  FACEBOOK
+}
+
+// Bộ nội dung (FR-12, FR-16): một lần tạo nội dung cho nhiều nền tảng từ (các) Sản phẩm đã có hồ sơ Duyệt.
+// Chủ: module `content-sets`. Góc viết, Người đọc là bản chụp lựa chọn lúc tạo (chọn theo `id` ổn định của hồ sơ —
+// AD-19) kèm bản sửa tuỳ chọn; sửa hồ sơ sau đó không đổi bộ. Bộ tạo từ Bài web có sẵn (FR-16) không có hai lựa chọn này.
+// `Inspiration` (Epic 10) thêm cột `inspirationId` cùng story tạo bảng đó.
+model ContentSet {
+  id             String              @id @default(uuid())
+  /// Đích của gợi ý `WEB_POST` (AD-19): ghi khi Duyệt lần đầu, hoặc lúc tạo bộ từ Bài web có sẵn (FR-16).
+  /// Xoá Bài web thì bộ giữ lại, chỉ mất liên kết.
+  postId         String?             @unique
+  post           Post?               @relation(fields: [postId], references: [id], onDelete: SetNull)
+  angleId        String?             @db.VarChar(40) // CONTENT_SET_CHOICE_ID_MAX (modules/content-sets/constants.ts)
+  angleName      String?             @db.VarChar(120) // CONTENT_SET_CHOICE_NAME_MAX
+  angleHook      String?             @db.VarChar(500) // CONTENT_SET_CHOICE_TEXT_MAX
+  angleEdit      String?             @db.VarChar(500) // CONTENT_SET_CHOICE_TEXT_MAX — "Sửa lại (tuỳ chọn)"
+  audienceId     String?             @db.VarChar(40)
+  audienceName   String?             @db.VarChar(120)
+  audienceReason String?             @db.VarChar(500)
+  audienceEdit   String?             @db.VarChar(500)
+  /// Thời điểm tạo bộ (FR-12, SM-3).
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
+  products       ContentSetProduct[]
+  socialPosts    SocialPost[]
+  /// Quan hệ ngược (AD-4): bảng của `suggestions`.
+  suggestions    Suggestion[]
+}
+
+// Sản phẩm trong Bộ nội dung, theo thứ tự (Sản phẩm đầu tiên dùng cho SM-3). Bài Gom link có 2–3 Sản phẩm (FR-12).
+model ContentSetProduct {
+  id           String     @id @default(uuid())
+  contentSetId String
+  contentSet   ContentSet @relation(fields: [contentSetId], references: [id], onDelete: Cascade)
+  /// Sản phẩm dùng chung: không xoá theo bộ, Sản phẩm còn trong bộ thì không xoá cứng (AD-15).
+  productId    String
+  product      Product    @relation(fields: [productId], references: [id], onDelete: Restrict)
+  sortOrder    Int
+
+  @@unique([contentSetId, productId])
+  @@index([productId])
+}
+
+// Bài mạng xã hội đã Duyệt của Bộ nội dung (FR-14, FR-15, FR-17, FR-20; spine AD-19, AD-21): đích của gợi ý
+// `THREADS_POST`/`FACEBOOK_POST` (upsert theo `contentSetId` + `platform`) và `LINK_COMMENT` (cột `linkComment`).
+// Không có bài WEBSITE ở đây (Bài web là `Post`) — CHECK "SocialPost_social_platform" viết tay trong migration
+// `add_social_post`.
+model SocialPost {
+  id             String        @id @default(uuid())
+  contentSetId   String
+  contentSet     ContentSet    @relation(fields: [contentSetId], references: [id], onDelete: Cascade)
+  platform       Platform
+  /// Threads: các bài trong chuỗi theo thứ tự (mỗi bài ≤ THREADS_POST_MAX); Facebook: đúng một phần.
+  parts          String[]
+  /// Bình luận kèm link (FR-17): null cho tới khi gợi ý `LINK_COMMENT` được Duyệt.
+  linkComment    String?       @db.VarChar(2000) // LINK_COMMENT_MAX (modules/content-sets/constants.ts)
+  /// Hồ sơ phong cách lúc Duyệt; null khi hồ sơ chưa từng được lưu (đang dùng giá trị khởi tạo).
+  styleProfileId String?
+  styleProfile   StyleProfile? @relation(fields: [styleProfileId], references: [id], onDelete: SetNull)
+  /// Lần sao chép đầu (AD-21, SM-3): chép từ `Suggestion.firstCopiedAt` khi Duyệt, hoặc ghi qua `recordCopy`.
+  firstCopiedAt  DateTime?
+  /// Đánh dấu đã đăng (FR-20, SM-2) qua `markPosted`; bỏ đánh dấu thì cả hai về null.
+  postedAt       DateTime?
+  postUrl        String?       @db.VarChar(500) // SOCIAL_POST_URL_MAX
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  @@unique([contentSetId, platform])
+}

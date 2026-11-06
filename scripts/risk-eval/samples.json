@@ -1,0 +1,29 @@
+{
+  "_comment": "Bộ câu mẫu đo Cảnh báo rủi ro (FR-23, AD-16). risky=true: câu phải bị cảnh báo; type theo 5 loại của RISK_WARNING_RULES (platform/ai/rules.ts).",
+  "samples": [
+    { "text": "Kem này trị mụn dứt điểm chỉ sau 3 ngày.", "risky": true, "type": "y tế/mỹ phẩm" },
+    { "text": "Nước lau sàn diệt 99,9% vi khuẩn, bảo vệ cả nhà khỏi bệnh.", "risky": true, "type": "y tế" },
+    { "text": "Uống trà này mỗi sáng giúp giảm 5kg trong một tuần.", "risky": true, "type": "thực phẩm" },
+    { "text": "Cam kết 100% hài lòng, dùng là mê.", "risky": true, "type": "tuyệt đối" },
+    { "text": "Chắc chắn bền suốt đời, không bao giờ hỏng.", "risky": true, "type": "tuyệt đối" },
+    { "text": "Hàng của hãng khác toàn đồ dỏm, mua cái này mới đáng tiền.", "risky": true, "type": "hạ thấp đối thủ" },
+    { "text": "Xịn hơn hẳn hộp Lock&Lock, loại kia dùng chán lắm.", "risky": true, "type": "hạ thấp đối thủ" },
+    { "text": "Giá chỉ 99k, rẻ nhất Shopee luôn.", "risky": true, "type": "giá" },
+    { "text": "Đang sale còn 149.000đ, nhanh tay kẻo hết.", "risky": true, "type": "giá" },
+    { "text": "Like và share bài này để nhận ngay một chiếc nồi miễn phí.", "risky": true, "type": "nội quy" },
+    { "text": "Follow trang và tag 3 người bạn để được tặng quà.", "risky": true, "type": "nội quy" },
+    { "text": "Serum này làm trắng da vĩnh viễn, an toàn tuyệt đối cho bà bầu.", "risky": true, "type": "mỹ phẩm/tuyệt đối" },
+    { "text": "Mình hay lót giấy nến dưới đáy nồi cho dễ rửa.", "risky": false },
+    { "text": "Nồi có dung tích 5 lít, đủ cho gia đình 3–4 người.", "risky": false },
+    { "text": "Chảo hơi nặng tay nên mình thường dùng hai tay khi đổ đồ ăn.", "risky": false },
+    { "text": "Kệ gỗ lắp trong khoảng mười lăm phút, có kèm sẵn ốc vít.", "risky": false },
+    { "text": "Ai bếp nhỏ thì nên đo chỗ đặt trước khi mua.", "risky": false },
+    { "text": "Mùi tinh dầu khá nhẹ, mình thấy dễ chịu.", "risky": false },
+    { "text": "Hộp đựng có nắp khoá, mang đi làm không lo đổ.", "risky": false },
+    { "text": "Sau hai tháng dùng, lớp chống dính vẫn còn tốt.", "risky": false },
+    { "text": "Bạn nào da nhạy cảm thì nên thử trước ở vùng da nhỏ.", "risky": false },
+    { "text": "Mình chia đồ ăn thành từng phần để tiện hâm nóng.", "risky": false },
+    { "text": "Máy chạy khá êm, buổi tối dùng không ồn lắm.", "risky": false },
+    { "text": "Link mua mình để ở bình luận nhé.", "risky": false }
+  ]
+}

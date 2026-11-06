@@ -29,7 +29,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 # - Retrospective appends its action items to action_items; the status view surfaces open ones
 generated: 11-05-2026 11:30
-last_updated: 11-06-2026 09:40
+last_updated: 11-06-2026 10:30
 project: affiliate-project
 project_key: NOKEY
 tracking_system: file-system
@@ -72,16 +72,16 @@ development_status:
   4-5-danh-mục-gợi-ý-cho-sản-phẩm: review
   epic-4-retrospective: optional
 
-  epic-5: backlog
-  5-1-hồ-sơ-phong-cách-cho-từng-nền-tảng: backlog
-  5-2-tạo-bộ-nội-dung-và-bài-web-từ-hồ-sơ-đã-duyệt: backlog
-  5-3-bài-threads-và-bình-luận-kèm-link: backlog
-  5-4-bài-facebook-và-bình-luận-kèm-link: backlog
-  5-5-copy-một-chạm-và-đánh-dấu-đã-đăng: backlog
-  5-6-cảnh-báo-rủi-ro-trong-nội-dung-ai: backlog
-  5-7-tạo-lại-phần-đã-duyệt-và-khoá-xuất-bản: backlog
-  5-8-bộ-nội-dung-nhiều-sản-phẩm-bài-gom-link: backlog
-  5-9-chuyển-bài-web-có-sẵn-thành-bài-mạng-xã-hội: backlog
+  epic-5: in-progress
+  5-1-hồ-sơ-phong-cách-cho-từng-nền-tảng: review
+  5-2-tạo-bộ-nội-dung-và-bài-web-từ-hồ-sơ-đã-duyệt: review
+  5-3-bài-threads-và-bình-luận-kèm-link: review
+  5-4-bài-facebook-và-bình-luận-kèm-link: review
+  5-5-copy-một-chạm-và-đánh-dấu-đã-đăng: review
+  5-6-cảnh-báo-rủi-ro-trong-nội-dung-ai: review
+  5-7-tạo-lại-phần-đã-duyệt-và-khoá-xuất-bản: review
+  5-8-bộ-nội-dung-nhiều-sản-phẩm-bài-gom-link: review
+  5-9-chuyển-bài-web-có-sẵn-thành-bài-mạng-xã-hội: review
   epic-5-retrospective: optional
 
   epic-6: backlog

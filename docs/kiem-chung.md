@@ -76,6 +76,38 @@ WHERE content ~* '<(table|thead|tbody|tr|th|td|figure|figcaption|hr|u|h4|h5|h6|h
 
 Có dòng → mở từng bài trong `/cms/bai-viet/<id>`, xem trước, sửa lại bằng định dạng cho phép rồi lưu (hoặc chấp nhận mất định dạng). Lưu bài qua trình soạn cũng sanitize lại nội dung.
 
+## 7. Bộ nội dung: Cảnh báo rủi ro và số đo SM-3 (Epic 5)
+
+**Cảnh báo rủi ro (FR-23, AD-16).** Bộ câu mẫu `scripts/risk-eval/samples.json` (12 câu vi phạm thuộc 5 loại của `RISK_WARNING_RULES` + 12 câu bình thường). Chạy tay, gọi AI thật (ngoài suite Vitest):
+
+```bash
+npx tsx --conditions=react-server scripts/risk-eval/run.ts
+```
+
+Đạt khi bắt ≥ 90% câu vi phạm và báo nhầm ≤ 20% câu bình thường. Sửa `RISK_WARNING_RULES` hoặc đổi model thì chạy lại và ghi thêm dòng.
+
+| Ngày | Nhà / model | Bắt câu vi phạm | Báo nhầm | Thời gian | Kết quả |
+|---|---|---|---|---|---|
+| 2026-11-06 | `claude-cli` / `haiku` | 12/12 (100%) | 0/12 (0%) | 9,3 giây | Đạt |
+
+**SM-3 (thời gian làm một Sản phẩm, AD-21).** SM-3 = `firstCopiedAt` sớm nhất của Bộ nội dung (trên `SocialPost` và `Suggestion`) − `Product.createdAt` của Sản phẩm đầu tiên trong bộ (`ContentSetProduct.sortOrder = 0`). Chạy trên DB (chỉ đọc):
+
+```sql
+SELECT cs.id,
+       p."createdAt" AS product_created,
+       LEAST(MIN(sp."firstCopiedAt"), MIN(s."firstCopiedAt")) AS first_copied,
+       LEAST(MIN(sp."firstCopiedAt"), MIN(s."firstCopiedAt")) - p."createdAt" AS sm3
+FROM "ContentSet" cs
+JOIN "ContentSetProduct" csp ON csp."contentSetId" = cs.id AND csp."sortOrder" = 0
+JOIN "Product" p ON p.id = csp."productId"
+LEFT JOIN "SocialPost" sp ON sp."contentSetId" = cs.id
+LEFT JOIN "Suggestion" s ON s."contentSetId" = cs.id
+GROUP BY cs.id, p."createdAt"
+ORDER BY cs."createdAt" DESC;
+```
+
+SM-2 (nhịp đăng) đếm `SocialPost.postedAt` theo ngày.
+
 ## Checklist báo cáo
 
 - [ ] Đã chạy `npm test` — kết quả.

@@ -1,9 +1,11 @@
 "use client";
 
+import { useEffect } from "react";
 import { EditorContent, useEditor, useEditorState, type Editor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import { Bold, Heading2, Heading3, Italic, List, ListOrdered, Pilcrow, Quote, type LucideIcon } from "lucide-react";
 import { sanitizePostHtml } from "@/platform/html/sanitize";
+import { sentencePattern } from "@/components/shared/select-sentence";
 import { cn } from "@/components/ui/lib/utils";
 
 // Chỉ bật đúng các định dạng của allowlist `sanitizePostHtml` (UX-DR50, AD-22): H2, H3, đoạn, danh sách, trích dẫn
@@ -77,9 +79,33 @@ function Toolbar({ editor }: { editor: Editor }) {
   );
 }
 
+// Vị trí (ProseMirror) của câu trong thân bài: ghép chữ của mọi nút text (khối mới chèn một khoảng trắng), tìm câu
+// bỏ khác biệt khoảng trắng. Không thấy → null.
+function findSentence(editor: Editor, sentence: string) {
+  let text = "";
+  const map: number[] = [];
+  editor.state.doc.descendants((node, pos) => {
+    if (node.isText && node.text) {
+      for (let i = 0; i < node.text.length; i++) {
+        text += node.text[i];
+        map.push(pos + i);
+      }
+    } else if (node.isBlock && text && !text.endsWith(" ")) {
+      text += " ";
+      map.push(-1);
+    }
+  });
+  const m = sentencePattern(sentence)?.exec(text);
+  if (!m) return null;
+  const from = map[m.index];
+  const to = map[m.index + m[0].length - 1];
+  return from >= 0 && to >= 0 ? { from, to: to + 1 } : null;
+}
+
 // PostEditor — ô soạn thân bài (UX-DR50): Tiptap tối giản, thanh công cụ dính trên ô soạn, vùng soạn cùng kiểu chữ
 // trang public (`article-body`). Dán từ nơi khác: lọc qua `sanitizePostHtml` ngay khi dán; server lọc lại khi lưu.
-// Chỉ đọc `value` lúc mount (form RHF — AD-12); thân rỗng trả "".
+// Chỉ đọc `value` lúc mount (form RHF — AD-12); thân rỗng trả "". `highlight` (RiskWarning — UX-DR43): mỗi lần đổi
+// `key`, tìm câu, bôi chọn và cuộn tới; không thấy thì gọi `onHighlightMissing`.
 export function PostBodyEditor({
   id,
   labelledBy,
@@ -88,6 +114,8 @@ export function PostBodyEditor({
   onChange,
   onBlur,
   invalid,
+  highlight,
+  onHighlightMissing,
 }: {
   id: string;
   labelledBy: string;
@@ -96,6 +124,8 @@ export function PostBodyEditor({
   onChange: (html: string) => void;
   onBlur?: () => void;
   invalid?: boolean;
+  highlight?: { sentence: string; key: number } | null;
+  onHighlightMissing?: () => void;
 }) {
   const editor = useEditor({
     extensions: EXTENSIONS,
@@ -116,6 +146,15 @@ export function PostBodyEditor({
     onUpdate: ({ editor: e }) => onChange(e.isEmpty ? "" : e.getHTML()),
     onBlur: () => onBlur?.(),
   });
+
+  useEffect(() => {
+    if (!editor || !highlight) return;
+    const range = findSentence(editor, highlight.sentence);
+    if (!range) return void onHighlightMissing?.();
+    editor.chain().focus().setTextSelection(range).scrollIntoView().run();
+    // Chỉ chạy lại khi có lần chạm mới (`key`), không theo mỗi lần render.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [editor, highlight?.key]);
 
   return (
     <div

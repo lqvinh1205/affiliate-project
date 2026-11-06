@@ -20,11 +20,11 @@ import {
   POST_TITLE_TARGET,
 } from "@/modules/posts/constants";
 import { postInputSchema, type PostFormValues } from "@/modules/posts/schema";
-import type { ArticlePost } from "@/modules/posts/types";
+import type { ArticlePost, PublishLock, RiskWarning } from "@/modules/posts/types";
 import { PostActionBar } from "@/modules/posts/components/post-action-bar.client";
 import { PostBodyEditor } from "@/modules/posts/components/post-body-editor.client";
+import { RiskWarningList } from "@/modules/posts/components/risk-warning-list.client";
 import { PostSeoCheck, type SeoCheckAction } from "@/modules/posts/components/post-seo-check.client";
-import { PostThreads, type ThreadsAction } from "@/modules/posts/components/post-threads.client";
 import { PostTypePicker } from "@/modules/posts/components/post-type-picker.client";
 import { PreviewSheet } from "@/modules/posts/components/preview-sheet.client";
 import { CmsForm } from "@/components/shared/cms-form.client";
@@ -33,8 +33,8 @@ import { Field, FieldDescription, FieldError, FieldLabel } from "@/components/ui
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 
-// Action AI cũ (`app/cms/actions.ts`, tới Epic 4) do Screen truyền vào — module không import `app/` (AD-2).
-export type PostAiActions = { seoCheck: SeoCheckAction; threads: ThreadsAction };
+// Action AI của màn soạn (chấm SEO — `posts.checkPostSeo`) do Screen truyền vào.
+export type PostAiActions = { seoCheck: SeoCheckAction };
 
 type PreviewPost = Omit<ArticlePost, "readingMinutes">;
 
@@ -53,6 +53,8 @@ function Counter({ value, max, min }: { value: string; max: number; min?: number
 // Trình soạn Bài web (`/cms/bai-viet/[id]`, UX-DR50, UX-DR59, UX-DR60): tiêu đề, Loại bài, Danh mục, đường dẫn,
 // tóm tắt, ảnh đại diện, thân bài (PostEditor), Sản phẩm (ProductPicker), thẻ, SEO; Xem trước (PreviewSheet, cả thay
 // đổi chưa lưu); Xuất bản / Chuyển về nháp / Xoá (ConfirmDialog). Chỉ đọc `defaultValues` lúc mount (AD-12).
+// Bài của Bộ nội dung (AD-19, Story 5.7): `publishLock` khoá nút Xuất bản khi gợi ý AI còn Đang tạo / Chờ duyệt (chỉ
+// ở giao diện); `riskWarnings` của gợi ý hiện trên thân bài, chạm mục thì bôi câu trong PostEditor (UX-DR43).
 export function PostForm({
   defaultValues,
   status: initialStatus,
@@ -62,6 +64,8 @@ export function PostForm({
   productResults,
   productQuery,
   ai,
+  publishLock = null,
+  riskWarnings = [],
 }: {
   defaultValues: PostFormValues;
   status: Status;
@@ -71,6 +75,8 @@ export function PostForm({
   productResults: PickerProduct[];
   productQuery: string;
   ai: PostAiActions;
+  publishLock?: PublishLock | null;
+  riskWarnings?: RiskWarning[];
 }) {
   const router = useRouter();
   const form = useForm({ resolver: zodResolver(postInputSchema), defaultValues });
@@ -79,6 +85,7 @@ export function PostForm({
   const [picked, setPicked] = useState(products);
   const [uploading, setUploading] = useState(0);
   const [preview, setPreview] = useState<{ post: PreviewPost; content: string } | null>(null);
+  const [highlight, setHighlight] = useState<{ sentence: string; key: number } | null>(null);
   const title = useWatch({ control: form.control, name: "title" });
 
   const canPublish = () => {
@@ -120,6 +127,7 @@ export function PostForm({
         onStatusChange={setStatus}
         canPublish={canPublish}
         onPreview={openPreview}
+        publishLock={publishLock}
       />
 
       <CmsForm
@@ -248,6 +256,10 @@ export function PostForm({
           render={({ field, fieldState }) => (
             <Field data-invalid={fieldState.invalid}>
               <FieldLabel id="post-content-label">Thân bài</FieldLabel>
+              <RiskWarningList
+                warnings={riskWarnings}
+                onSelect={(w) => setHighlight({ sentence: w.sentence, key: Date.now() })}
+              />
               <PostBodyEditor
                 id="post-content"
                 labelledBy="post-content-label"
@@ -256,6 +268,8 @@ export function PostForm({
                 onChange={field.onChange}
                 onBlur={field.onBlur}
                 invalid={fieldState.invalid}
+                highlight={highlight}
+                onHighlightMissing={() => toast.info("Không còn thấy câu này trong thân bài — có thể bạn đã sửa.")}
               />
               <FieldDescription id="post-content-hint">
                 Không chèn link, ảnh hay giá vào thân bài: Sản phẩm hiện riêng bên dưới bài. Nội dung dán từ nơi khác
@@ -372,16 +386,6 @@ export function PostForm({
           </div>
         </details>
 
-        <details className="rounded-xl border p-space-md">
-          <summary className="min-h-touch-target cursor-pointer content-center text-headline-sm">Chuỗi Threads (AI)</summary>
-          <div className="mt-space-md">
-            <PostThreads
-              threads={ai.threads}
-              published={status === "PUBLISHED"}
-              getInput={() => ({ title: form.getValues("title"), content: form.getValues("content"), slug: savedSlug })}
-            />
-          </div>
-        </details>
       </CmsForm>
 
       <PreviewSheet
