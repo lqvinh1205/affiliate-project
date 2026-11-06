@@ -6,7 +6,7 @@ import { toast } from "sonner";
 import { formatCount } from "@/platform/format";
 import { getPostLikes, setPostLike } from "@/modules/engagement/actions";
 import { LIKED_POST_KEY_PREFIX } from "@/modules/engagement/constants";
-import { likeLabel, nextLikeCount } from "@/modules/engagement/like-state";
+import { likeLabel, nextLikeCount, revertedLikeCount } from "@/modules/engagement/like-state";
 
 type PostLikeState = { liked: boolean; count: number | null; popKey: number; toggle: () => void };
 
@@ -59,12 +59,14 @@ export function PostLikeProvider({ postId, children }: { postId: string; childre
   const [count, setCount] = useState<number | null>(null);
   const [popKey, setPopKey] = useState(0);
   const pending = useRef(false);
+  // Đã có số từ một lần thả/bỏ tim: số của lần tải đầu (có thể về sau, đã cũ) không được ghi đè.
+  const fresh = useRef(false);
 
   useEffect(() => {
     let active = true;
     void getPostLikes({ postId })
       .then((res) => {
-        if (active && res.ok) setCount(res.likes);
+        if (active && res.ok && !fresh.current) setCount(res.likes);
       })
       .catch(() => {}); // mất mạng: giữ "—"
     return () => {
@@ -76,16 +78,18 @@ export function PostLikeProvider({ postId, children }: { postId: string; childre
     if (pending.current) return;
     pending.current = true;
     const next = !liked;
+    const before = count;
     setOptimistic(next);
     setCount((c) => nextLikeCount(c, next));
     if (next) setPopKey((k) => k + 1);
     const revert = () => {
-      setCount((c) => nextLikeCount(c, !next));
+      setCount((c) => revertedLikeCount(before, c));
       toast("Chưa thả tim được, thử lại sau nhé");
     };
     void setPostLike({ postId, liked: next })
       .then((res) => {
         if (!res.ok) return revert();
+        fresh.current = true;
         setCount(res.likes);
         writeLiked(key, next);
       })

@@ -5,7 +5,7 @@ import { db } from "@/platform/db";
 import { UserError } from "@/platform/errors";
 import { visibleText } from "@/platform/html/content";
 import { sanitizePostHtml } from "@/platform/html/sanitize";
-import { toSearchText } from "@/platform/search-text";
+import { postSearchText } from "@/platform/search-text";
 import { slugify } from "@/platform/slug";
 import { visibleProductWhere } from "@/modules/products/queries";
 import { POST_SLUG_MAX, SEARCH_RESULTS_LIMIT } from "@/modules/posts/constants";
@@ -30,11 +30,6 @@ type Tx = Prisma.TransactionClient;
 
 function prismaCode(e: unknown) {
   return e instanceof Prisma.PrismaClientKnownRequestError ? e.code : null;
-}
-
-// Cột tìm kiếm không dấu (FR-36): tiêu đề, tóm tắt, thẻ, chữ thân bài (HTML đã sanitize) — ghi ở mọi lần ghi bài.
-function searchTextOf(p: { title: string; excerpt: string | null; tags: string[]; content: string }) {
-  return toSearchText(p.title, p.excerpt, ...p.tags, visibleText(p.content));
 }
 
 function inTransaction<T>(tx: Tx | undefined, fn: (tx: Tx) => Promise<T>) {
@@ -107,7 +102,7 @@ export async function savePostRecord(data: PostInput, tx?: Tx) {
 
       const saved = await c.post.update({
         where: { id },
-        data: { ...fields, slug, content: html, searchText: searchTextOf({ ...fields, content: html }) },
+        data: { ...fields, slug, content: html, searchText: postSearchText({ ...fields, content: html }) },
         select: { id: true, slug: true },
       });
       await c.postProduct.deleteMany({ where: { postId: id } });
@@ -153,7 +148,7 @@ export async function createPostDraftRecord(data: z.infer<typeof postDraftInputS
       else if (await slugOwnedByOther(c, slug)) throw new UserError(SLUG_TAKEN);
       const html = sanitizePostHtml(content);
       return c.post.create({
-        data: { ...fields, slug, content: html, searchText: searchTextOf({ ...fields, content: html }) },
+        data: { ...fields, slug, content: html, searchText: postSearchText({ ...fields, content: html }) },
         select: { id: true, slug: true },
       });
     });
@@ -193,7 +188,7 @@ export async function applyWebPostSuggestionRecord(
     postType,
     categoryId,
   };
-  const searchText = searchTextOf(fields);
+  const searchText = postSearchText(fields);
   try {
     return await inTransaction(tx, async (c) => {
       if (data.postId) {

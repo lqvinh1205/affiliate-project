@@ -4,7 +4,9 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useSearchParams } from "next/navigation";
 import { formatCount } from "@/platform/format";
 import { searchPosts } from "@/modules/posts/actions";
-import { SEARCH_QUERY_MIN } from "@/modules/posts/constants";
+import { INVALID_INPUT_ERROR } from "@/platform/errors";
+import { SEARCH_QUERY_MAX } from "@/modules/posts/constants";
+import { searchQueryTerms } from "@/modules/posts/search-query";
 import type { SearchPostItem } from "@/modules/posts/types";
 import { PostCard } from "@/modules/posts/components/post-card";
 import { SearchBox } from "@/modules/posts/components/search-box.client";
@@ -48,7 +50,7 @@ function ResultSkeleton() {
 
 // Tìm kiếm không dấu (FR-36, UX-DR31, UX-DR32, UX-DR67): kết quả lấy phía client qua action công khai chỉ đọc
 // `searchPosts` (AD-6, AD-7). Gõ ≥ 2 ký tự → tìm sau 300 ms ngừng gõ; 1 ký tự giữ nguyên trạng thái trước; xoá hết
-// → về trạng thái chưa gõ. Đang tìm: 3 Skeleton dòng (hoặc kết quả cũ mờ đi). Có kết quả: "Tìm thấy N bài viết cho
+// → về trạng thái chưa gõ. Luật "đủ để tìm" là `searchQueryTerms`, dùng chung với server. Đang tìm: 3 Skeleton dòng (hoặc kết quả cũ mờ đi). Có kết quả: "Tìm thấy N bài viết cho
 // "…"" (`aria-live`) + SearchResultItem (PostCard *row*, tô từ khớp). Không kết quả: EmptyState + gợi ý gõ ngắn hơn +
 // Xem nhiều. Lỗi / bị giới hạn tần suất: câu báo + "Thử lại". Chỉ câu trả lời của lần tìm mới nhất được hiện.
 export function PostSearch({ initialQuery, idle, noResults }: PostSearchProps) {
@@ -68,9 +70,15 @@ export function PostSearch({ initialQuery, idle, noResults }: PostSearchProps) {
       setView(next);
     };
     searchPosts({ q })
-      .then((res) =>
-        done(res.ok ? { kind: "results", query: q, total: res.total, terms: res.terms, items: res.items } : { kind: "error", query: q }),
-      )
+      .then((res) => {
+        if (res.ok) return done({ kind: "results", query: q, total: res.total, terms: res.terms, items: res.items });
+        // Server từ chối từ khoá (luật đã kiểm ở client nên hiếm): giữ trạng thái trước, không hiện "Thử lại" vô ích.
+        if (res.error === INVALID_INPUT_ERROR) {
+          if (id === latest.current) setLoading(false);
+          return;
+        }
+        done({ kind: "error", query: q });
+      })
       .catch(() => done({ kind: "error", query: q }));
   };
 
@@ -84,13 +92,13 @@ export function PostSearch({ initialQuery, idle, noResults }: PostSearchProps) {
       setView({ kind: "idle" });
       return;
     }
-    if (q.length < SEARCH_QUERY_MIN) return;
+    if (!searchQueryTerms(q)) return; // chưa đủ để tìm (1 ký tự, chỉ ký hiệu…): giữ trạng thái trước
     timer.current = window.setTimeout(() => run(q), TYPING_DELAY_MS);
   };
 
   const onSubmit = () => {
     const q = query.trim();
-    if (q.length >= SEARCH_QUERY_MIN) run(q);
+    if (searchQueryTerms(q)) run(q);
   };
 
   // Có từ khoá trên URL (đến từ trang 404): tìm một lần khi hiện.
@@ -98,7 +106,7 @@ export function PostSearch({ initialQuery, idle, noResults }: PostSearchProps) {
   useEffect(() => {
     const q = initial.current;
     initial.current = "";
-    if (q.length >= SEARCH_QUERY_MIN) run(q);
+    if (searchQueryTerms(q)) run(q);
     return () => window.clearTimeout(timer.current);
   }, []);
 
@@ -107,7 +115,7 @@ export function PostSearch({ initialQuery, idle, noResults }: PostSearchProps) {
 
   return (
     <div className="space-y-space-md">
-      <SearchBox value={query} onValueChange={onValueChange} onSubmit={onSubmit} autoFocus />
+      <SearchBox value={query} onValueChange={onValueChange} onSubmit={onSubmit} maxLength={SEARCH_QUERY_MAX} autoFocus />
       <p aria-live="polite" className={status ? "text-label-md text-on-surface-variant" : "sr-only"}>
         {status}
       </p>

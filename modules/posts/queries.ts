@@ -98,6 +98,8 @@ export async function getPostBySlug(slug: string) {
   cacheTag(POSTS_TAG, PRODUCTS_TAG, CATEGORIES_TAG);
   const post = await db.post.findFirst({
     where: { ...publishedPostWhere, slug },
+    // Cột tìm kiếm (bản gấp của cả thân bài) không dùng ở trang bài: không đọc, không nằm trong cache.
+    omit: { searchText: true },
     include: {
       category: { select: { name: true, slug: true } },
       postProducts: {

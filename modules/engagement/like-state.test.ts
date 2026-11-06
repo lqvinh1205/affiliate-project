@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { likeLabel, nextLikeCount } from "@/modules/engagement/like-state";
+import { likeLabel, nextLikeCount, revertedLikeCount } from "@/modules/engagement/like-state";
 
 describe("nextLikeCount", () => {
   it("thả tim +1, bỏ tim −1, không âm", () => {
@@ -21,5 +21,18 @@ describe("likeLabel", () => {
 
   it("chưa có số: chỉ hành động", () => {
     expect(likeLabel(false, null)).toBe("Thả tim bài viết");
+  });
+});
+
+describe("revertedLikeCount", () => {
+  it("về đúng số trước lúc chạm, kể cả khi bỏ tim bị kẹp ở 0", () => {
+    // Bỏ tim lúc server đếm 0: optimistic vẫn 0; lỗi → hoàn về 0, không thành 1.
+    expect(revertedLikeCount(0, nextLikeCount(0, false))).toBe(0);
+    expect(revertedLikeCount(341, 342)).toBe(341);
+  });
+
+  it("chạm lúc chưa có số: giữ số server vừa tải về trong lúc chờ", () => {
+    expect(revertedLikeCount(null, 4)).toBe(4);
+    expect(revertedLikeCount(null, null)).toBeNull();
   });
 });

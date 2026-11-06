@@ -1,6 +1,8 @@
 // Tìm kiếm không dấu (FR-36, spine "Tìm kiếm không dấu"): cùng một cách gấp chữ cho cột `Post.searchText` lúc ghi,
 // cho từ khoá lúc tìm và cho highlight phía client. Hàm thuần, dùng được ở server và trình duyệt.
 
+import { visibleText } from "@/platform/html/content";
+
 // Gấp một ký tự: bỏ dấu tiếng Việt, đ → d, chữ thường; dấu rời (chữ tổ hợp NFD) thành rỗng; ký tự không phải
 // chữ/số thành khoảng trắng.
 function foldChar(c: string) {
@@ -15,6 +17,13 @@ function foldChar(c: string) {
 // "Nồi chiên  KHÔNG-dầu!" → "noi chien khong dau".
 export function toSearchText(...parts: (string | null | undefined)[]) {
   return Array.from(parts.filter(Boolean).join(" "), foldChar).join("").replace(/\s+/g, " ").trim();
+}
+
+// Cột `Post.searchText` của một Bài web: tiêu đề, tóm tắt, thẻ, chữ thân bài (HTML đã sanitize). Thực thể HTML
+// (`&amp;`, `&quot;`, `&#39;`…) do sanitize-html viết ra là dấu câu, bỏ đi — không để "amp", "quot" thành từ tìm được.
+// `posts/service.ts` và `prisma/seed.ts` cùng gọi; migration backfill viết lại cùng luật bằng SQL.
+export function postSearchText(p: { title: string; excerpt: string | null; tags: string[]; content: string }) {
+  return toSearchText(p.title, p.excerpt, ...p.tags, visibleText(p.content).replace(/&[a-z0-9#]+;/gi, " "));
 }
 
 // Từ khoá người đọc gõ → các từ đã gấp, không trùng (bài phải chứa đủ mọi từ).

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { highlightParts, searchTerms, toSearchText } from "@/platform/search-text";
+import { highlightParts, postSearchText, searchTerms, toSearchText } from "@/platform/search-text";
 
 describe("toSearchText", () => {
   it("bỏ dấu, đ → d, chữ thường, ký tự lạ thành khoảng trắng", () => {
@@ -46,5 +46,14 @@ describe("highlightParts", () => {
   it("không có từ khớp → một đoạn không đánh dấu", () => {
     expect(highlightParts("Mẹo vặt", ["xyz"])).toEqual([{ text: "Mẹo vặt", match: false }]);
     expect(highlightParts("", ["a"])).toEqual([]);
+  });
+});
+
+describe("postSearchText", () => {
+  it("bỏ thẻ và thực thể HTML trong thân bài, không để amp/quot/lt/gt thành từ", () => {
+    const content = "<p>Mẹo &quot;hay&quot; &amp; rẻ &lt;3 &#39;bếp&#39;&nbsp;nhỏ</p>";
+    expect(postSearchText({ title: "Nồi chiên", excerpt: null, tags: ["Bếp"], content })).toBe(
+      "noi chien bep meo hay re 3 bep nho",
+    );
   });
 });

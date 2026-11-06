@@ -64,3 +64,6 @@
 - source_spec: `_bmad-output/implementation-artifacts/spec-8-luot-gop-epic-8.md`
   summary: Tìm kiếm xếp bài khớp theo mới xuất bản trước, không theo mức liên quan (tiêu đề khớp không được ưu tiên hơn thân bài); không có tìm theo cụm từ.
   evidence: Quyết định tự chọn 8 của Epic 8. Khi số bài lớn (vài trăm bài trở lên) cân nhắc `pg_trgm`/full-text Postgres (thay đổi kiến trúc — sửa spine trước).
+- source_spec: `_bmad-output/implementation-artifacts/spec-8-luot-gop-epic-8.md`
+  summary: Tìm kiếm công khai (`searchPostsRecord`, không cache) đọc cả `content` và chạy `sanitizePostHtml` để tính phút đọc cho tối đa 20 kết quả mỗi lần gõ; bài dài (tới 200 000 ký tự) làm mỗi lần tìm nặng.
+  evidence: Review gộp Epic 8 #3. Đang chặn bởi trần 20 kết quả + 60 lần/phút/nguồn. Sửa gốc: lưu phút đọc thành cột `Post.readingMinutes` khi ghi bài (service + seed + backfill), `postCardSelect` bỏ `content` — mọi PostCard (Trang chủ, Danh mục, Xem nhiều) cùng nhẹ đi.

@@ -68,6 +68,13 @@ describe("Post.searchText ghi khi lưu bài", () => {
     );
   });
 
+  it("thực thể HTML sanitize-html viết ra (&amp; &quot; &lt;) không thành từ tìm được", async () => {
+    const created = await createPostDraft({ ...form, excerpt: "", tags: "", title: "Mẹo", content: '<p>Mẹo "hay" & rẻ <3</p>' });
+    expect(created.ok).toBe(true);
+    if (!created.ok) return;
+    expect((await db.post.findUniqueOrThrow({ where: { id: created.id } })).searchText).toBe("meo meo hay re 3");
+  });
+
   it("Duyệt gợi ý Bài web (tạo mới và ghi vào bài nháp) cũng ghi searchText", async () => {
     const payload = {
       title: "Đồ xinh cho bếp",

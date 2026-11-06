@@ -2,7 +2,7 @@
 title: 'Lượt gộp Epic 8: Người đọc tương tác — Story 8.1–8.4'
 type: 'feature'
 created: '2026-11-06'
-status: 'in-review'
+status: 'done'
 review_loop_iteration: 0
 baseline_revision: 'dd3109f8fbd30fea5865e5d76062e45a374a1ff2'
 followup_review_recommended: true
@@ -167,6 +167,33 @@ Phân loại: **an toàn** (thêm cột có mặc định + backfill); không xo
 20. **`INVALID_INPUT_ERROR`, `RATE_LIMITED_ERROR` chuyển sang `platform/errors.ts`** (dùng chung `engagement` và `posts.searchPosts`; `posts` không import được `engagement`).
 21. **Thứ tự sắp xếp CMS**: tab thứ ba "Lượt tim nhiều nhất" (`?sap-xep=luot-tim`); query Lượt xem/Lượt tim gộp thành `listPostsByStatForCms({ by })` (cùng luật ghép hai đoạn của Epic 7). Không thêm index `PostStat.likes` (ít bài; thêm khi cần).
 
+22. **(Review gộp) Luật "từ khoá đủ để tìm" là một hàm thuần `searchQueryTerms` (`modules/posts/search-query.ts`)** dùng chung cho `searchPostsInputSchema` và `PostSearch`; SearchBox (trang Tìm kiếm và 404) có `maxLength` = 100. Từ khoá gấp xong < 2 ký tự ("C++", "a!", "🍳") được coi như 1 ký tự: giữ trạng thái trước, không gửi, không báo lỗi (UX-DR31). Nếu server vẫn trả `INVALID_INPUT_ERROR` thì client giữ trạng thái trước (không hiện "Thử lại"). `?q=` dài hơn 100 ký tự từ URL: không tìm, hiện trạng thái chưa gõ.
+23. **(Review gộp) Hoàn tim lỗi = về đúng số trước lúc chạm** (`revertedLikeCount`); chạm lúc chưa có số thì giữ số server vừa tải về. Đã có câu trả lời của `setPostLike` thì bỏ kết quả lần tải số đầu về muộn.
+24. **(Review gộp) `searchText` bỏ thực thể HTML** (`&amp;`, `&quot;`, `&#39;`…) — chúng chỉ là dấu câu nên bỏ thay vì giải mã (kết quả gấp như nhau). Hàm chung `postSearchText` ở `platform/search-text.ts` cho `posts/service.ts` và `prisma/seed.ts` (trước đây seed chép lại luật). Backfill lại bằng migration mới `20261106150000_post_search_text_strip_entities` (không sửa migration `…140000` đã chạy ở DB cục bộ — đổi checksum).
+25. **(Review gộp) Hoãn việc làm nhẹ truy vấn tìm kiếm** (đọc cả `content` + sanitize để tính phút đọc cho ≤ 20 kết quả): đã có trần 20 kết quả và 60 lần/phút/nguồn; sửa đúng gốc cần lưu phút đọc thành cột khi ghi bài (đổi schema, dùng cho mọi PostCard) — ghi `deferred-work.md`. Không tính phút đọc từ `searchText` vì sẽ lệch với PostCard ở Trang chủ (gấp tách "nồi-chiên" thành 2 từ, có thêm tiêu đề/thẻ).
+
+### 2026-11-06 — Review gộp Epic 8: phân loại
+
+| # | Phát hiện | Quyết định | Lý do / việc đã làm |
+|---|---|---|---|
+| 1 | Client gửi từ khoá server luôn từ chối ("C++", "a!", > 100 ký tự) rồi hiện "Thử lại" vô ích (trung bình) | Sửa | Đúng: client chỉ kiểm độ dài thô. Luật chung `searchQueryTerms` cho server và client, `maxLength` cho SearchBox, `INVALID_INPUT_ERROR` giữ trạng thái trước (quyết định 22). Test đơn vị: "C++", "c#", "??", "%_", "a!", "a.", "đ!", "🍳", "%_%", 101 ký tự → null; schema từ chối cùng các từ khoá đó. |
+| 2 | Chạm tim lúc số chưa tải xong → hoàn lỗi trừ nhầm; số tải về muộn ghi đè số mới (thấp) | Sửa | Đúng. Lưu số trước lúc chạm, hoàn về số đó (`revertedLikeCount`); cờ `fresh` bỏ kết quả lần tải đầu sau khi đã có câu trả lời `setPostLike` (quyết định 23). Test đơn vị `revertedLikeCount`. |
+| 3 | Tìm kiếm công khai không cache đọc + sanitize cả thân bài cho ≤ 20 kết quả mỗi lần (thấp) | Hoãn | Đúng nhưng đã có trần 20 kết quả + 60 lần/phút/nguồn; sửa gốc là lưu phút đọc thành cột (đổi schema, chạm mọi PostCard) — ngoài phạm vi sửa sau review. Ghi `deferred-work.md` (quyết định 25). |
+| 4 | `searchText` chứa tên thực thể HTML ("amp", "quot", "lt", "gt") → khớp sai (thấp) | Sửa | Đúng: `visibleText` không giải mã thực thể. `postSearchText` bỏ `&…;` trước khi gấp; seed dùng chung hàm; migration mới backfill lại (quyết định 24). Test đơn vị `postSearchText` + test DB lưu `Mẹo "hay" & rẻ <3` → `meo meo hay re 3`. DB cục bộ: 0 bài còn từ amp/quot/lt/gt/nbsp. |
+| 5 | `getPostBySlug` dùng `include` nên đọc và cache cả cột `searchText` (thấp) | Sửa | Đúng (lệch bảng ảnh hưởng của spec). Thêm `omit: { searchText: true }`; HTML trang bài không chứa `searchText` (kiểm bằng curl). |
+| 6 | Trùng #1 (kèm emoji, "%_%", UX-DR31) (trung bình) | Sửa (gộp với #1) | Cùng gốc; các ví dụ của #6 nằm trong test `searchQueryTerms`. |
+| 7 | Hoàn sau bỏ tim lỗi có thể hiện số cao hơn 1 (kẹp ở 0 không đối xứng) (thấp) | Sửa (gộp với #2) | Cùng gốc: hoàn về số trước lúc chạm; test `revertedLikeCount(0, nextLikeCount(0, false)) = 0`. |
+| 8 | Trùng #4 (cả SQL backfill) (thấp) | Sửa (gộp với #4) | Migration `20261106150000_post_search_text_strip_entities` bỏ `&[a-zA-Z0-9#]+;` sau khi bỏ thẻ. |
+
+### Auto Run Result
+
+- Sửa 7 (6, 7, 8 gộp vào 1, 2, 4), hoãn 1 (#3 — `deferred-work.md`), bác 0.
+- `npm test` 348/348 (40 file); `npm run test:db` 206/206 (24 file); `npx tsc --noEmit`, `npm run lint`, `npm run build` sạch (`/tim-kiem` `○`, revalidate 1d).
+- `npx prisma migrate dev` áp migration `20261106150000_post_search_text_strip_entities` vào DB cục bộ (cổng 54329).
+- `next start` cổng 3300: `/`, `/tim-kiem`, `/tim-kiem?q=noi`, `/meo-vat`, `/gom-link`, `/sitemap.xml`, `/robots.txt`, `/bai-viet/meo-tay-vet-o-vang-noi-chien-khong-dau` 200; `/khong-co-trang` 404; `/cms` không đăng nhập 401. Server đã tắt; không đụng cổng 3100/3200.
+- Không gọi `claude -p` thật (epic không có tính năng AI).
+- Cần Vinh: xem Quyết định tự chọn (nhất là 1, 2, 3, 8, 14, 22, 25); thử trên điện thoại thật: thả tim lúc mạng chậm, gõ "C++"/emoji ở `/tim-kiem`; chạy `npx prisma migrate deploy` khi triển khai.
+
 ## Verification
 
 **Commands:**
@@ -175,5 +202,7 @@ Phân loại: **an toàn** (thêm cột có mặc định + backfill); không xo
 
 **Manual checks (if no CLI):**
 - `npm start` cổng 3300+ (không dùng 3100, 3200), trình duyệt điện thoại thật: thả tim / bỏ tim, chia sẻ gốc và sao chép link (clipboard thật), `/tim-kiem` gõ không dấu, Trang chủ có Xem nhiều sau khi có lượt xem (danh sách làm mới theo ngày).
+
+**Kết quả sau review gộp (2026-11-06):** `npm test` 348/348; `npm run test:db` 206/206; tsc, lint, build sạch.
 
 **Kết quả (mốc trước review gộp, 2026-11-06):** `npm test` 342/342 (39 file); `npm run test:db` 205/205 (24 file); `npx tsc --noEmit`, `npm run lint`, `npm run build` sạch (`/`, `/bai-viet/[slug]`, `/tim-kiem` `○`/`◐`, revalidate 1d). Không gọi `claude -p` (epic không có tính năng AI).

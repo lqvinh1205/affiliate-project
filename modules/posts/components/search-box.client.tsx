@@ -11,11 +11,13 @@ export function SearchBox({
   onValueChange,
   onSubmit,
   autoFocus = false,
+  maxLength,
 }: {
   value: string;
   onValueChange: (value: string) => void;
   onSubmit: () => void;
   autoFocus?: boolean;
+  maxLength?: number;
 }) {
   const input = useRef<HTMLInputElement>(null);
 
@@ -47,6 +49,7 @@ export function SearchBox({
         enterKeyHint="search"
         autoComplete="off"
         value={value}
+        maxLength={maxLength}
         onChange={(e) => onValueChange(e.target.value)}
         placeholder="Tìm mẹo, ví dụ: nồi chiên"
         className="h-14 w-full rounded-xl border border-outline-variant bg-surface-container-lowest pr-12 pl-12 text-body-regular outline-none placeholder:text-on-surface-variant focus:border-primary focus:shadow-[0_0_0_0.5px_var(--primary)] [&::-webkit-search-cancel-button]:hidden"
