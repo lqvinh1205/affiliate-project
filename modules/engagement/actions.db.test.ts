@@ -83,4 +83,18 @@ describe("recordPostView (action công khai — AD-6 ngoại lệ số 1)", () =
     asReader();
     expect(await recordPostView({ postId: p.id })).toEqual({ ok: true, counted: true });
   });
+
+  it("đổi mục đầu x-forwarded-for (client giả) không thoát giới hạn", async () => {
+    const draft = await post("DRAFT");
+    const p = await post("PUBLISHED", "bai-2");
+    asReader();
+    const realIp = actionTest.requestHeaders["x-forwarded-for"];
+    for (let i = 0; i < VIEW_RATE_LIMIT.limit; i++) {
+      actionTest.requestHeaders["x-forwarded-for"] = `10.9.${i}.1, ${realIp}`;
+      expect((await recordPostView({ postId: draft.id })).ok).toBe(true);
+    }
+    actionTest.requestHeaders["x-forwarded-for"] = `10.9.255.1, ${realIp}`;
+    expect(await recordPostView({ postId: p.id })).toEqual({ ok: false, error: RATE_LIMITED_ERROR });
+    expect(await db.postStat.count()).toBe(0);
+  });
 });

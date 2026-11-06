@@ -55,3 +55,6 @@
 - source_spec: `_bmad-output/implementation-artifacts/spec-5-luot-gop-epic-5.md`
   summary: `Product.affiliateUrl` không giới hạn độ dài khi lưu; Link affiliate quá dài làm Bình luận kèm link Threads (≤ 500 ký tự) không tạo được.
   evidence: Review gộp Epic 5 (#2). Đã xử lý ở Bình luận: rút tên Sản phẩm ở dòng link, còn quá thì thẻ Lỗi nói "Rút gọn Link affiliate ở Sản phẩm rồi Tạo lại." Chặn từ lúc lưu Sản phẩm (vd. tối đa 300 ký tự, gợi ý dùng `s.shopee.vn`) cần Vinh chọn con số — Story Epic 2 không nêu.
+- source_spec: `_bmad-output/implementation-artifacts/spec-7-luot-gop-epic-7.md`
+  summary: `clientKey` (`platform/rate-limit.ts`) giả định đúng một tầng reverse proxy nối IP vào cuối `x-forwarded-for`. Đặt sau CDN (Cloudflare) + nginx thì mục cuối là IP của CDN → mọi người đọc chung một khoá, giới hạn 60/phút chặn nhầm; chạy `next start` lộ thẳng ra mạng (không proxy) thì client tự đặt cả header nên vẫn giả được.
+  evidence: Review gộp Epic 7 (#1, #4). Chốt khi làm hạ tầng production (Deferred "Hạ tầng production" của spine): cấu hình proxy ghi đè `X-Forwarded-For` bằng `$remote_addr` hoặc thêm cấu hình số tầng proxy tin cậy (chỉ khi có CDN).

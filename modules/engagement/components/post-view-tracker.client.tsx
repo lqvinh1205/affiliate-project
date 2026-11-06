@@ -3,6 +3,7 @@
 import { useEffect, useRef } from "react";
 import { recordPostView } from "@/modules/engagement/actions";
 import { OWNER_BROWSER_KEY, VIEWED_POST_KEY_PREFIX } from "@/modules/engagement/constants";
+import { shouldMarkViewed, shouldSendView } from "@/modules/engagement/view-dedupe";
 
 function readFlag(key: string) {
   try {
@@ -23,13 +24,11 @@ export function PostViewTracker({ postId }: { postId: string }) {
     const key = VIEWED_POST_KEY_PREFIX + postId;
     const send = () => {
       if (sent.current) return; // route hiện lại từ `<Activity>` chạy lại effect ([NX-59])
-      const owner = readFlag(OWNER_BROWSER_KEY);
-      const seen = readFlag(key);
-      if (owner !== null || seen !== null) return;
+      if (!shouldSendView(readFlag(OWNER_BROWSER_KEY), readFlag(key))) return;
       sent.current = true;
       void recordPostView({ postId })
         .then((res) => {
-          if (res.ok) localStorage.setItem(key, "1");
+          if (shouldMarkViewed(res)) localStorage.setItem(key, "1");
         })
         .catch(() => {}); // mất mạng: bỏ qua, lần mở sau gửi lại
     };

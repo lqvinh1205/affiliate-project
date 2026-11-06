@@ -2,7 +2,7 @@
 title: 'Lượt gộp Epic 7: Đo Lượt xem — Story 7.1–7.2'
 type: 'feature'
 created: '2026-11-06'
-status: 'review'
+status: 'done'
 review_loop_iteration: 0
 baseline_revision: '5f6499109d1855c842e4c118a6256697d57787f2'
 followup_review_recommended: true
@@ -125,7 +125,7 @@ Phân loại: **an toàn** (thêm bảng, index); không xoá/đổi tên cột,
 ### Quyết định tự chọn (cần Vinh xem lại)
 
 1. **Mức giới hạn tần suất Lượt xem: 60 lần/phút mỗi nguồn (băm IP)** (`VIEW_RATE_LIMIT`, Deferred của spine giao story chốt). Lý do: người đọc thật gửi tối đa một lần mỗi bài nhờ `localStorage`; nhiều người đọc Việt Nam dùng chung IP (NAT mạng di động, wifi quán) nên để rộng hơn mức thả tim của Epic 8 (≤ 30/phút) mà vẫn chặn script dội. Cửa sổ cố định 1 phút, đếm trong bộ nhớ tiến trình (spine giả định một tiến trình).
-2. **Khoá IP:** SHA-256 của IP đầu trong `x-forwarded-for` (hoặc `x-real-ip`) trộn muối ngẫu nhiên tạo mỗi lần khởi động, cắt 22 ký tự; không có header IP thì dùng chung khoá "unknown". Khi đưa lên máy thật, reverse proxy phải đặt `x-forwarded-for` (ghi chú cho story triển khai).
+2. **Khoá IP:** SHA-256 của IP trong `x-forwarded-for` trộn muối ngẫu nhiên tạo mỗi lần khởi động, cắt 22 ký tự; không có header IP thì dùng chung khoá "unknown". Khi đưa lên máy thật, reverse proxy phải đặt `x-forwarded-for` (ghi chú cho story triển khai). (Review gộp sửa: lấy mục **cuối**, không đọc `x-real-ip` — xem quyết định 15.)
 3. **Action nhận `postId` (uuid), không nhận slug** (ví dụ [NX-35] dùng slug): id không đổi khi đổi slug (FR-27), nên chống trùng `localStorage` và số đếm không tách đôi sau đổi slug. Khoá `localStorage`: `luot-xem:<postId>`, đánh dấu chủ: `trinh-duyet-cms`.
 4. **Bỏ qua bot ở server** (`platform/bot.ts`, regex user-agent phổ biến + thiếu user-agent) trả `counted: false`, client vẫn đánh dấu; không coi trình duyệt trong app Zalo/Facebook/Threads là bot (người đọc thật từ MXH).
 5. **Giới hạn tần suất / mất mạng → client không đánh dấu** để lần mở sau gửi lại; bài nháp / không có → `counted: false`, client đánh dấu (không gửi lại vô ích).
@@ -138,6 +138,29 @@ Phân loại: **an toàn** (thêm bảng, index); không xoá/đổi tên cột,
 12. **Hàm chung ở `platform/`:** `rate-limit.ts` (Epic 8 thả tim và `posts.searchPosts` dùng lại), `bot.ts`; `formatCount`, `vietnamDay` ở `platform/format.ts` (AD-27).
 13. **`posts` xuất thêm** `publishedPostWhere` (`queries.ts`) và `cmsPostListWhere`/`cmsPostListSelect`/`cmsPostListOrder`/`clampCmsPostPage` (`cms-queries.ts`) để `engagement` không viết lại điều kiện (AD-2 "Đọc chéo bảng").
 14. **Migration đặt tên `20261106130000_add_post_stats`** (đổi mốc giờ của thư mục do Prisma sinh) để xếp sau `20261106120000_bio_pinned_at_untie_product_created_at` (mốc viết tay của Epic 6).
+15. **(Review gộp) IP cho khoá giới hạn = mục cuối của `x-forwarded-for`, không cấu hình số tầng proxy.** Lý do: Next chỉ điền header khi thiếu (`??=` IP socket), nginx `$proxy_add_x_forwarded_for` nối IP thật vào cuối → mục cuối đúng với cả hai cách chạy một tầng; mục đầu và `x-real-ip` client tự đặt được. Spine chưa chốt hạ tầng (Deferred "Hạ tầng production"), nên không thêm biến môi trường "số tầng proxy tin cậy" khi chưa có CDN — ghi vào `deferred-work.md` (CDN + nginx thì mục cuối là IP CDN).
+16. **(Review gộp) Trần bộ đếm `MAX_KEYS` = 10 000 khoá, đầy thì bỏ khoá cũ nhất** (Map giữ thứ tự chèn, khoá mở cửa sổ mới được chèn lại), dọn khoá hết hạn tối đa một lần mỗi cửa sổ. Chọn bỏ khoá cũ thay vì từ chối khi đầy: từ chối sẽ chặn cả người đọc thật khi bị dội; bỏ khoá cũ chỉ làm một nguồn đã im lâu nhất được đếm lại.
+17. **(Review gộp) Nhận diện bot:** `bot` chỉ khớp khi theo sau là `/`, `;`, `)`, `-` hoặc hết chuỗi (đuôi tên crawler); Pinterest chỉ khớp `Pinterestbot`/`Pinterest/0.` — trình duyệt trong app Pinterest và máy Cubot được đếm. Không chuyển sang danh sách token cố định (dễ sót crawler mới tên `…bot/`).
+18. **(Review gộp) Luật gửi/đánh dấu của `PostViewTracker` tách sang `modules/engagement/view-dedupe.ts`** (hàm thuần `shouldSendView`, `shouldMarkViewed`, tiền lệ `bio/browse.ts`) để test đơn vị trong môi trường node; không thêm jsdom/Testing Library (spine/UX/PRD không nêu thư viện này). Guard `sent` chống gửi lại khi `<Activity>` hiện lại vẫn chỉ kiểm tay.
+
+### 2026-11-06 — Review gộp Epic 7: phân loại
+
+| # | Phát hiện | Quyết định | Lý do / việc đã làm |
+|---|---|---|---|
+| 1 | Khoá giới hạn lấy mục đầu `x-forwarded-for` do client đặt → dội Lượt xem không giới hạn (trung bình) | Sửa | Đúng: `base-server.js` chỉ `??=` IP socket. `clientKey` lấy mục cuối, bỏ `x-real-ip` (quyết định 15). Test đơn vị: mục đầu giả khác nhau → cùng khoá, `x-real-ip` bị bỏ qua; test DB: 60 lần với mục đầu đổi mỗi lần → lần 61 vẫn `RATE_LIMITED_ERROR`. Phần CDN nhiều tầng hoãn (`deferred-work.md`). |
+| 2 | Map bộ đếm không có trần khi khoá còn hiệu lực; ≥ 10 000 khoá thì mọi lần gọi quét cả Map (trung bình) | Sửa | Trần `MAX_KEYS`, đầy bỏ khoá cũ nhất (O(1)); dọn khoá hết hạn theo mốc `nextPruneAt` một lần mỗi cửa sổ (quyết định 16). Test: đầy bỏ đúng khoá cũ nhất, khoá còn lại giữ số đếm; khoá mở cửa sổ mới tính là mới nhất. |
+| 3 | Regex bot khớp người đọc thật (trình duyệt trong app Pinterest, máy Cubot) (thấp) | Sửa | Thu hẹp `bot` và `pinterest` (quyết định 17). Test thêm người đọc: Cubot P50, `[Pinterest/Android]`, `[Pinterest/iOS]`; bot: Pinterestbot, `Pinterest/0.2`, TelegramBot, Slackbot-LinkExpanding. |
+| 4 | Trùng #1 (cùng lỗi `x-forwarded-for`, kèm hệ quả quét O(n) của #2) (trung bình) | Sửa (gộp với #1, #2) | Cùng gốc; một lần sửa ở `platform/rate-limit.ts` dùng chung cho thả tim / tìm kiếm Epic 8. |
+| 5 | Trùng #3 (regex bot) (thấp) | Sửa (gộp với #3) | Như #3; các UA trong phát hiện đã thành ca âm ở `platform/bot.test.ts`. |
+| 6 | Luật chống trùng / bỏ qua trình duyệt CMS phía client không có test (thấp) | Sửa | Tách hàm thuần + `view-dedupe.test.ts`: gửi chỉ khi đọc được `localStorage`, không phải trình duyệt CMS, chưa xem; đánh dấu chỉ khi `ok` (giới hạn tần suất / lỗi → không đánh dấu) (quyết định 18). |
+
+### Auto Run Result
+
+- Sửa 6 (4, 5 gộp vào 1–3), hoãn 0 phát hiện (một phần việc hạ tầng CDN nhiều tầng ghi vào `deferred-work.md`), bác 0.
+- `npm test` 330/330 (36 file); `npm run test:db` 184/184 (22 file); `npx tsc --noEmit`, `npm run lint`, `npm run build` sạch (`/bai-viet/[slug]` vẫn `◐`/`○`; cảnh báo Turbopack `child_process.spawn` của `claude-cli` có từ Epic 5).
+- `next start` cổng 3300 (`AI_PROVIDERS=fake`): `/`, `/bio`, `/bai-viet/meo-tay-vet-o-vang-noi-chien-khong-dau`, `/sitemap.xml` 200; `/cms`, `/cms/bai-viet` không đăng nhập 401; có Basic Auth `/cms/bai-viet?sap-xep=luot-xem` 200. Server đã tắt; không đụng cổng 3100/3200.
+- Không gọi `claude -p` thật (epic không có tính năng AI).
+- Cần Vinh: xem Quyết định tự chọn (nhất là 1, 15, 16, 17); khi dựng máy thật cấu hình reverse proxy nối/ghi đè `X-Forwarded-For` (một tầng); chạy `npx prisma migrate deploy`.
 
 ## Verification
 
@@ -147,5 +170,7 @@ Phân loại: **an toàn** (thêm bảng, index); không xoá/đổi tên cột,
 
 **Manual checks (if no CLI):**
 - `npm start` cổng 3300+ (không dùng 3100, 3200): mở bài bằng trình duyệt thật → `PostStat` +1; mở lại không tăng; vào `/cms` rồi mở bài không tăng; `/cms/bai-viet?sap-xep=luot-xem` ở 360px/1280px.
+
+**Kết quả sau review gộp (2026-11-06):** `npm test` 330/330; `npm run test:db` 184/184; tsc, lint, build sạch.
 
 **Kết quả (mốc trước review gộp, 2026-11-06):** `npm test` 316/316 (35 file); `npm run test:db` 183/183 (22 file); `npx tsc --noEmit`, `npm run lint`, `npm run build` sạch (`/bai-viet/[slug]` vẫn prerender). Không gọi `claude -p` (epic không có tính năng AI).
