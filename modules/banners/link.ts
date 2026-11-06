@@ -15,3 +15,18 @@ export function bannerLinkKind(url: string): "shopee" | "internal" | null {
   }
   return shopeeAffiliateUrl.safeParse(url).success ? "shopee" : null;
 }
+
+const POST_PATH = /^\/bai-viet\/([^/]+)\/?$/;
+
+// Slug Bài web nếu link đích là trang bài (`/bai-viet/<slug>`, bỏ qua query/hash); không phải thì null. Trang chủ ẩn
+// Banner trỏ tới bài không còn công khai, CMS hiện cảnh báo (tránh Banner dẫn người đọc tới 404).
+export function bannerPostSlug(url: string): string | null {
+  if (bannerLinkKind(url) !== "internal") return null;
+  const match = POST_PATH.exec(new URL(url, SAME_ORIGIN).pathname);
+  if (!match) return null;
+  try {
+    return decodeURIComponent(match[1]);
+  } catch {
+    return null;
+  }
+}

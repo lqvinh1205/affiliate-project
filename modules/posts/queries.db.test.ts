@@ -8,6 +8,7 @@ import {
   getPostsByType,
   getPostSlugRedirect,
   getRelatedPosts,
+  isPublicPostSlug,
   listCategoriesWithPostCounts,
   listNavCategories,
   listPostsByCategory,
@@ -148,6 +149,7 @@ describe("tag cache của query public (AD-7)", () => {
       ["getPostsByType", () => getPostsByType("GOM_LINK"), ["posts", "products"]],
       ["getRelatedPosts", () => getRelatedPosts("x", c.id), ["posts", "products"]],
       ["getPostSlugRedirect", () => getPostSlugRedirect("x"), ["posts"]],
+      ["isPublicPostSlug", () => isPublicPostSlug("x"), ["posts"]],
       ["getPostBySlug", () => getPostBySlug("t"), ["posts", "products", "categories"]],
       ["listCategoriesWithPostCounts", () => listCategoriesWithPostCounts(), ["posts", "categories"]],
       ["listNavCategories", () => listNavCategories(), ["posts", "categories"]],
@@ -182,5 +184,18 @@ describe("getPostSlugRedirect (AD-20)", () => {
     expect(await getPostSlugRedirect("khong-co")).toBeNull();
     await db.post.update({ where: { id: p.id }, data: { status: "DRAFT" } });
     expect(await getPostSlugRedirect("cu")).toBeNull();
+  });
+});
+
+describe("isPublicPostSlug", () => {
+  it("slug hiện tại hoặc slug cũ của bài đã xuất bản → true; bài về nháp hoặc slug lạ → false", async () => {
+    const p = await publish("moi");
+    await db.postSlugRedirect.create({ data: { oldSlug: "cu", postId: p.id } });
+    expect(await isPublicPostSlug("moi")).toBe(true);
+    expect(await isPublicPostSlug("cu")).toBe(true);
+    expect(await isPublicPostSlug("khong-co")).toBe(false);
+    await db.post.update({ where: { id: p.id }, data: { status: "DRAFT" } });
+    expect(await isPublicPostSlug("moi")).toBe(false);
+    expect(await isPublicPostSlug("cu")).toBe(false);
   });
 });

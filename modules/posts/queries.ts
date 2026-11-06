@@ -133,6 +133,21 @@ export async function getPostSlugRedirect(oldSlug: string) {
   return row?.post.status === "PUBLISHED" ? row.post.slug : null;
 }
 
+// Slug có dẫn tới một Bài web đang xuất bản không: slug hiện tại, hoặc slug cũ còn chuyển hướng 308 (AD-20). Dùng để
+// ẩn link nội bộ trỏ tới bài đã về nháp/xoá (vd Banner) thay vì đưa người đọc tới 404.
+export async function isPublicPostSlug(slug: string) {
+  "use cache";
+  cacheLife("days");
+  cacheTag(POSTS_TAG);
+  const post = await db.post.findFirst({ where: { ...publishedPostWhere, slug }, select: { id: true } });
+  if (post) return true;
+  const redirect = await db.postSlugRedirect.findUnique({
+    where: { oldSlug: slug },
+    select: { post: { select: { status: true } } },
+  });
+  return redirect?.post.status === "PUBLISHED";
+}
+
 export async function getPublishedSlugs() {
   "use cache";
   cacheLife("days");

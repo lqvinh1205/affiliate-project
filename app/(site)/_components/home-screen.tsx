@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { SITE_NAME } from "@/platform/site";
 import { POST_TYPES } from "@/modules/posts/constants";
-import { getLatestPosts, getPostsByType } from "@/modules/posts/queries";
+import { getLatestPosts, getPostsByType, isPublicPostSlug } from "@/modules/posts/queries";
 import { PostCard } from "@/modules/posts/components/post-card";
 import { BIO_HIGHLIGHTS_LIMIT } from "@/modules/bio/constants";
 import { getBioHighlights } from "@/modules/bio/queries";
@@ -11,6 +11,8 @@ import { getPopularPosts } from "@/modules/engagement/queries";
 import { PopularPostList } from "@/modules/engagement/components/popular-post-list";
 import { getLiveBanners } from "@/modules/banners/queries";
 import { BannerSection } from "@/modules/banners/components/banner-section";
+import { bannerPostSlug } from "@/modules/banners/link";
+import type { LiveBanner } from "@/modules/banners/types";
 import type { PostCardData } from "@/modules/posts/types";
 import { EmptyState } from "@/components/shared/empty-state";
 import { SectionHeading } from "@/app/(site)/_components/section-heading";
@@ -40,9 +42,21 @@ function PopularSection({ posts, id, className }: { posts: PostCardData[]; id: s
 // nhau rồi tới Gom link đồ xinh — Xem nhiều dựng hai chỗ (mobile / desktop) để thứ tự đọc và Tab đúng ở cả hai. Khu
 // rỗng thì ẩn. Không JSON-LD (AD-26). `getLiveBanners` revalidate 30 giây, expire 5 phút nên Trang chủ tạo lại
 // tối đa mỗi 30 giây (Banner tới lịch / hết hạn tự đổi — AD-7).
+// Bỏ Banner trỏ tới Bài web không còn công khai (về nháp, đã xoá) để người đọc không bấm vào trang 404. Query bài gắn
+// tag `posts`, nên xuất bản / về nháp làm Trang chủ đổi ngay.
+async function withPublicTargets(banners: LiveBanner[]) {
+  const visible = await Promise.all(
+    banners.map((b) => {
+      const slug = bannerPostSlug(b.linkUrl);
+      return slug ? isPublicPostSlug(slug) : true;
+    }),
+  );
+  return banners.filter((_, i) => visible[i]);
+}
+
 export async function HomeScreen() {
   const [banners, latest, meoVat, highlights, popular] = await Promise.all([
-    getLiveBanners(),
+    getLiveBanners().then(withPublicTargets),
     getLatestPosts(LATEST_COUNT + 1),
     getPostsByType("MEO_VAT", MEO_VAT_COUNT),
     getBioHighlights(BIO_HIGHLIGHTS_LIMIT),

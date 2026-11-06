@@ -3,6 +3,8 @@ import { connection } from "next/server";
 import { Plus } from "lucide-react";
 import { formatDateTime } from "@/platform/format";
 import { listBannersForCms } from "@/modules/banners/cms-queries";
+import { bannerPostSlug } from "@/modules/banners/link";
+import { isPublicPostSlug } from "@/modules/posts/queries";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/components/ui/lib/utils";
 import { BannerList } from "@/app/cms/banner/_components/banner-list.client";
@@ -26,7 +28,13 @@ function scheduleText(startsAt: Date | null, endsAt: Date | null) {
 // Màn `/cms/banner` (UX-DR79): danh sách theo thứ tự hiển thị trên site, StatusBadge, lịch, lên/xuống, sửa, xoá.
 export async function BannerListScreen() {
   await connection();
-  const banners = await listBannersForCms();
+  const rows = await listBannersForCms();
+  const banners = await Promise.all(
+    rows.map(async (b) => {
+      const slug = bannerPostSlug(b.linkUrl);
+      return { ...b, targetUnavailable: slug ? !(await isPublicPostSlug(slug)) : false };
+    }),
+  );
 
   return (
     <div className="flex flex-col gap-space-md">
@@ -55,6 +63,7 @@ export async function BannerListScreen() {
               image: b.image,
               status: b.status,
               schedule: scheduleText(b.startsAt, b.endsAt),
+              targetUnavailable: b.targetUnavailable,
             }))}
           />
         </>

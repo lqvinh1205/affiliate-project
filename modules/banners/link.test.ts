@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { bannerLinkKind } from "@/modules/banners/link";
+import { bannerLinkKind, bannerPostSlug } from "@/modules/banners/link";
 
 describe("bannerLinkKind (FR-32, FR-25)", () => {
   it("link Shopee chính chủ (https)", () => {
@@ -25,6 +25,20 @@ describe("bannerLinkKind (FR-32, FR-25)", () => {
       "bio",
     ]) {
       expect(bannerLinkKind(url)).toBeNull();
+    }
+  });
+});
+
+describe("bannerPostSlug", () => {
+  it("lấy slug từ đường dẫn trang bài, bỏ query/hash", () => {
+    expect(bannerPostSlug("/bai-viet/meo-hay")).toBe("meo-hay");
+    expect(bannerPostSlug("/bai-viet/meo-hay/?x=1#muc")).toBe("meo-hay");
+    expect(bannerPostSlug("/bai-viet/m%E1%BA%B9o")).toBe("mẹo");
+  });
+
+  it("không phải trang bài → null", () => {
+    for (const url of ["/", "/bio", "/bai-viet", "/bai-viet/", "/bai-viet/a/b", "/nha-bep", "https://s.shopee.vn/bai-viet/x", "//evil.com/bai-viet/x", "/bai-viet/%E0%A4%A"]) {
+      expect(bannerPostSlug(url)).toBeNull();
     }
   });
 });

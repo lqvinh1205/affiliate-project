@@ -8,7 +8,7 @@ export async function listBannersForCms() {
   const now = new Date();
   const rows = await db.banner.findMany({
     orderBy: bannerOrderBy,
-    select: { id: true, title: true, image: true, enabled: true, startsAt: true, endsAt: true },
+    select: { id: true, title: true, image: true, linkUrl: true, enabled: true, startsAt: true, endsAt: true },
   });
   return rows.map((b) => ({ ...b, status: bannerStatus(b, now) }));
 }

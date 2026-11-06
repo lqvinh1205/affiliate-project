@@ -2,6 +2,9 @@ import { notFound } from "next/navigation";
 import { connection } from "next/server";
 import { toVietnamDateTimeInput } from "@/platform/format";
 import { getBannerForCms } from "@/modules/banners/cms-queries";
+import { bannerPostSlug } from "@/modules/banners/link";
+import { isPublicPostSlug } from "@/modules/posts/queries";
+import { BannerTargetWarning } from "@/modules/banners/components/banner-target-warning";
 import { BannerForm } from "@/modules/banners/components/banner-form.client";
 import { BannerStatusBadge } from "@/modules/banners/components/banner-status-badge";
 import { BannerScreenHeader } from "@/app/cms/banner/_components/banner-screen-header";
@@ -12,10 +15,17 @@ export async function BannerEditScreen({ params }: Pick<PageProps<"/cms/banner/[
   const { id } = await params;
   const banner = await getBannerForCms(id);
   if (!banner) notFound();
+  const slug = bannerPostSlug(banner.linkUrl);
+  const targetUnavailable = slug ? !(await isPublicPostSlug(slug)) : false;
 
   return (
     <>
       <BannerScreenHeader title="Sửa Banner" badge={<BannerStatusBadge status={banner.status} />} />
+      {targetUnavailable && (
+        <div className="mb-space-md">
+          <BannerTargetWarning />
+        </div>
+      )}
       <BannerForm
         key={banner.id}
         defaultValues={{

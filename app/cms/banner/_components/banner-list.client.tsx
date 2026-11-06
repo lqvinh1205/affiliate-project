@@ -9,13 +9,14 @@ import { deleteBanner, moveBanner } from "@/modules/banners/actions";
 import type { BannerStatus } from "@/modules/banners/constants";
 import type { MoveDirection } from "@/modules/banners/schema";
 import { BannerStatusBadge } from "@/modules/banners/components/banner-status-badge";
+import { BannerTargetWarning } from "@/modules/banners/components/banner-target-warning";
 import { callAction } from "@/components/shared/call-action";
 import { ConfirmDialog } from "@/components/shared/confirm-dialog.client";
 import { ImageFallback } from "@/components/shared/image-fallback.client";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { cn } from "@/components/ui/lib/utils";
 
-type Item = { id: string; title: string; image: string; status: BannerStatus; schedule: string };
+type Item = { id: string; title: string; image: string; status: BannerStatus; schedule: string; targetUnavailable: boolean };
 
 function moved(list: Item[], { id, direction }: { id: string; direction: MoveDirection }) {
   const from = list.findIndex((x) => x.id === id);
@@ -113,6 +114,7 @@ export function BannerList({ items }: { items: Item[] }) {
                 <BannerStatusBadge status={item.status} />
                 <span>{item.schedule}</span>
               </div>
+              {item.targetUnavailable && <BannerTargetWarning />}
             </div>
             <div className="flex items-center gap-2">
               {arrow(item, i, "up")}
