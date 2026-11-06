@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ExternalLink } from "lucide-react";
+import { ExternalLink, Lightbulb } from "lucide-react";
 import type { Platform } from "@/generated/prisma/enums";
 import { getContentSetForCms } from "@/modules/content-sets/cms-queries";
 import { PLATFORM_LABEL, PLATFORM_PART_LABEL, type SocialPlatform } from "@/modules/content-sets/constants";
@@ -64,6 +64,14 @@ function Header({ set, approved, total }: { set: ContentSetForCms; approved: num
           <p className="text-label-md" aria-live="polite">
             {approved}/{total} đã duyệt
           </p>
+        )}
+        {set.inspirationId && (
+          <Link
+            href={`/cms/cam-hung/${set.inspirationId}`}
+            className="inline-flex min-h-touch-target items-center gap-1 text-label-md text-primary hover:underline"
+          >
+            <Lightbulb className="size-4" aria-hidden /> Từ Cảm hứng
+          </Link>
         )}
         {set.post && (
           <Link

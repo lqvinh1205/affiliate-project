@@ -9,13 +9,16 @@ enum Platform {
 // Bộ nội dung (FR-12, FR-16): một lần tạo nội dung cho nhiều nền tảng từ (các) Sản phẩm đã có hồ sơ Duyệt.
 // Chủ: module `content-sets`. Góc viết, Người đọc là bản chụp lựa chọn lúc tạo (chọn theo `id` ổn định của hồ sơ —
 // AD-19) kèm bản sửa tuỳ chọn; sửa hồ sơ sau đó không đổi bộ. Bộ tạo từ Bài web có sẵn (FR-16) không có hai lựa chọn này.
-// `Inspiration` (Epic 10) thêm cột `inspirationId` cùng story tạo bảng đó.
+// Bộ tạo từ Chi tiết Sản phẩm mở kèm `?cam-hung=<id>` ghi `inspirationId` (FR-2): Cảm hứng đó thành *Đã dùng*.
 model ContentSet {
   id             String              @id @default(uuid())
   /// Đích của gợi ý `WEB_POST` (AD-19): ghi khi Duyệt lần đầu, hoặc lúc tạo bộ từ Bài web có sẵn (FR-16).
   /// Xoá Bài web thì bộ giữ lại, chỉ mất liên kết.
   postId         String?             @unique
   post           Post?               @relation(fields: [postId], references: [id], onDelete: SetNull)
+  /// Cảm hứng nguồn (FR-2, UJ-2). Xoá Cảm hứng thì bộ giữ lại, chỉ mất liên kết.
+  inspirationId  String?
+  inspiration    Inspiration?        @relation(fields: [inspirationId], references: [id], onDelete: SetNull)
   angleId        String?             @db.VarChar(40) // CONTENT_SET_CHOICE_ID_MAX (modules/content-sets/constants.ts)
   angleName      String?             @db.VarChar(120) // CONTENT_SET_CHOICE_NAME_MAX
   angleHook      String?             @db.VarChar(500) // CONTENT_SET_CHOICE_TEXT_MAX
@@ -31,6 +34,8 @@ model ContentSet {
   socialPosts    SocialPost[]
   /// Quan hệ ngược (AD-4): bảng của `suggestions`.
   suggestions    Suggestion[]
+
+  @@index([inspirationId])
 }
 
 // Sản phẩm trong Bộ nội dung, theo thứ tự (Sản phẩm đầu tiên dùng cho SM-3). Bài Gom link có 2–3 Sản phẩm (FR-12).

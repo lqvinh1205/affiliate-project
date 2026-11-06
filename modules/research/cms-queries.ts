@@ -1,5 +1,6 @@
 import "server-only";
 import { db } from "@/platform/db";
+import { inspirationResearchSchema } from "@/modules/research/prompts/research-inspiration.prompt";
 import {
   productCategoryPayloadSchema,
   researchProfileSchema,
@@ -31,5 +32,26 @@ export function parseResearchPayload(payload: unknown) {
 
 export function parseProductCategoryPayload(payload: unknown) {
   const r = productCategoryPayloadSchema.safeParse(payload);
+  return r.success ? r.data : null;
+}
+
+// Hồ sơ nghiên cứu đã Duyệt của Cảm hứng (FR-2). Sai schema → coi như chưa có.
+export async function getInspirationResearchForCms(inspirationId: string) {
+  const row = await db.researchProfile.findUnique({
+    where: { inspirationId },
+    select: { id: true, data: true, updatedAt: true },
+  });
+  if (!row) return null;
+  const data = inspirationResearchSchema.safeParse(row.data);
+  if (!data.success) {
+    console.error(`[research] ResearchProfile ${row.id}: data Cảm hứng sai schema`);
+    return null;
+  }
+  return { id: row.id, data: data.data, updatedAt: row.updatedAt };
+}
+
+// Payload gợi ý `RESEARCH` gắn Cảm hứng (đọc từ `suggestions/cms-queries.ts`, AD-15). Sai schema → null.
+export function parseInspirationResearchPayload(payload: unknown) {
+  const r = inspirationResearchSchema.safeParse(payload);
   return r.success ? r.data : null;
 }

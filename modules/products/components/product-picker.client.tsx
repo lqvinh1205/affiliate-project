@@ -43,7 +43,7 @@ export function ProductPicker({
   query: string;
   invalid?: boolean;
   showValue?: boolean;
-  noun?: "bài" | "bộ";
+  noun?: "bài" | "bộ" | "Cảm hứng";
   addLabel?: string;
 }) {
   const router = useRouter();

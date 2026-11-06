@@ -4,18 +4,20 @@ import { useRouter } from "next/navigation";
 import { useTransition } from "react";
 import { Loader2, Sparkles } from "lucide-react";
 import { toast } from "sonner";
-import { researchProduct } from "@/modules/suggestions/actions";
+import { researchInspiration, researchProduct } from "@/modules/suggestions/actions";
 import { callAction } from "@/components/shared/call-action";
 import { Button } from "@/components/ui/button";
 
-// Nút "Nghiên cứu" khi Sản phẩm chưa có hồ sơ (UX-DR45): action ghi gợi ý `GENERATING` rồi trả ngay; màn làm mới
-// để hiện GeneratingIndicator và poller.
-export function ResearchButton({ productId }: { productId: string }) {
+// Nút "Nghiên cứu" khi Sản phẩm (UX-DR45) hoặc Cảm hứng (UX-DR77) chưa có hồ sơ: action ghi gợi ý `GENERATING` rồi
+// trả ngay; màn làm mới để hiện GeneratingIndicator và poller. Truyền đúng một trong `productId` / `inspirationId`.
+export function ResearchButton({ productId, inspirationId }: { productId?: string; inspirationId?: string }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const start = () =>
     startTransition(async () => {
-      const res = await callAction(() => researchProduct({ productId }));
+      const res = await callAction(() =>
+        inspirationId ? researchInspiration({ inspirationId }) : researchProduct({ productId: productId ?? "" }),
+      );
       if (!res.ok) return void toast.error(res.error);
       router.refresh();
     });

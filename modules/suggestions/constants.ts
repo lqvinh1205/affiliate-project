@@ -62,9 +62,17 @@ export const SKIPPED_MESSAGE = {
   video: "AI chưa đọc được nội dung video",
 } as const;
 
+// Cảm hứng không đọc được video (FR-2, UX-DR77): nói rõ hồ sơ dựa trên gì và gợi ý tải file lên.
+export const INSPIRATION_VIDEO_SKIPPED = {
+  link: "AI chưa đọc được nội dung video từ link — hồ sơ chỉ dựa trên tiêu đề, chú thích đọc được và ghi chú. Tải file video hoặc ảnh chụp màn hình lên (mục Sửa Cảm hứng) rồi Tạo lại để AI có thêm dữ liệu.",
+  file: "AI chưa đọc được nội dung file video — hồ sơ chỉ dựa trên link và ghi chú. Hiện AI mới đọc được ảnh: đổi file sang ảnh chụp màn hình (mục Sửa Cảm hứng) rồi Tạo lại nếu cần.",
+} as const;
+
 // Thông báo lỗi tiếng Việt ghi vào `Suggestion.errorMessage` (UX-DR96).
 export const RESEARCH_FAILED = "Chưa nghiên cứu được Sản phẩm. Dữ liệu Sản phẩm vẫn giữ nguyên. Bấm Tạo lại.";
 export const GENERATING_STALE = "AI chạy quá lâu nên đã dừng. Dữ liệu Sản phẩm vẫn giữ nguyên. Bấm Tạo lại.";
+export const INSPIRATION_RESEARCH_FAILED = "Chưa nghiên cứu được Cảm hứng. Dữ liệu Cảm hứng vẫn giữ nguyên. Bấm Tạo lại.";
+export const INSPIRATION_GENERATING_STALE = "AI chạy quá lâu nên đã dừng. Dữ liệu Cảm hứng vẫn giữ nguyên. Bấm Tạo lại.";
 export const PART_STALE = "AI chạy quá lâu nên đã dừng. Phần khác vẫn giữ nguyên. Bấm Tạo lại.";
 export const CATEGORY_NOT_PICKED =
   "AI không chọn được Danh mục có sẵn phù hợp. Chọn Danh mục tay trên form Sản phẩm.";

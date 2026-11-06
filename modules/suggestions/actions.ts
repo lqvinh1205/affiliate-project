@@ -33,6 +33,7 @@ import {
   upsertSocialPostRecord,
 } from "@/modules/content-sets/service";
 import { CONTENT_SETS_TAG } from "@/modules/content-sets/tags";
+import { getInspirationForCms } from "@/modules/inspirations/cms-queries";
 import { getPostForCms } from "@/modules/posts/cms-queries";
 import { toWebPostPayload, webPostPayloadSchema, webPostPrompt } from "@/modules/posts/prompts/web-post.prompt";
 import { applyWebPostSuggestionRecord } from "@/modules/posts/service";
@@ -41,6 +42,11 @@ import { getProductForCms } from "@/modules/products/cms-queries";
 import { setProductCategoryRecord } from "@/modules/products/service";
 import { PRODUCTS_TAG } from "@/modules/products/tags";
 import {
+  inspirationResearchSchema,
+  researchInspirationPrompt,
+  toInspirationResearchPayload,
+} from "@/modules/research/prompts/research-inspiration.prompt";
+import {
   productCategoryPayloadSchema,
   researchProductPrompt,
   researchProfileSchema,
@@ -48,7 +54,7 @@ import {
 } from "@/modules/research/prompts/research-product.prompt";
 import { getResearchProfileForCms } from "@/modules/research/cms-queries";
 import type { ResearchProfileData } from "@/modules/research/types";
-import { upsertResearchProfileRecord } from "@/modules/research/service";
+import { upsertInspirationResearchRecord, upsertResearchProfileRecord } from "@/modules/research/service";
 import { getStyleProfileForCms } from "@/modules/style-profiles/cms-queries";
 import { getSuggestionForCms } from "@/modules/suggestions/cms-queries";
 import { describeSource } from "@/modules/suggestions/content-source";
@@ -56,6 +62,7 @@ import { RESEARCH_TAG } from "@/modules/research/tags";
 import {
   CONTENT_SET_KINDS,
   GENERATING_TIMEOUT_MS,
+  INSPIRATION_RESEARCH_FAILED,
   PART_FAILED,
   RESEARCH_FAILED,
   type ContentSetKind,
@@ -68,6 +75,7 @@ import {
   recordSuggestionCopyInputSchema,
   regenerateSuggestionInputSchema,
   rejectSuggestionInputSchema,
+  researchInspirationInputSchema,
   researchProductInputSchema,
   type AddContentSetPlatformInput,
   type ApproveSuggestionInput,
@@ -76,16 +84,19 @@ import {
   type RecordSuggestionCopyInput,
   type RegenerateSuggestionInput,
   type RejectSuggestionInput,
+  type ResearchInspirationInput,
   type ResearchProductInput,
 } from "@/modules/suggestions/schema";
 import {
   approveSuggestionRecord,
   completeResearchRecords,
+  completeResearchSuggestionRecord,
   completeSuggestionRecord,
   failSuggestionsRecord,
   recordSuggestionCopyRecord,
   rejectSuggestionRecord,
   startContentSetPartsRecord,
+  startInspirationResearchRecord,
   startResearchRecords,
   type ApprovingSuggestion,
   type ContentSetPartSpec,
@@ -153,8 +164,64 @@ async function runResearch(product: Product, instruction: string | null, ids: { 
   }
 }
 
+// ---------- Nghiên cứu Cảm hứng (FR-2, Epic 10) ----------
+
+type Inspiration = NonNullable<Awaited<ReturnType<typeof getInspirationForCms>>>;
+
+const INSPIRATION_NOT_FOUND = "Không tìm thấy Cảm hứng. Có thể đã bị xoá.";
+
+// "Nghiên cứu" ở Chi tiết Cảm hứng (FR-2, UX-DR77) — lần đầu hoặc Tạo lại kèm chỉ dẫn (FR-21): một gợi ý `RESEARCH`
+// gắn `inspirationId` (từ khoá Shopee + dàn ý bài mẹo), AI chạy trong `after()` (AD-18).
+export async function researchInspiration(input: ResearchInspirationInput): Promise<Result<{ id: string }>> {
+  return run(async () => {
+    const parsed = researchInspirationInputSchema.safeParse(input);
+    if (!parsed.success) throw new UserError(firstError(parsed.error));
+    const { inspirationId, instruction } = parsed.data;
+    const inspiration = await getInspirationForCms(inspirationId);
+    if (!inspiration) throw new UserError(INSPIRATION_NOT_FOUND);
+    const { id } = await startInspirationResearchRecord({
+      inspirationId,
+      promptId: researchInspirationPrompt.id,
+      promptVersion: researchInspirationPrompt.version,
+      staleBefore: new Date(Date.now() - GENERATING_TIMEOUT_MS),
+    });
+    after(() => runInspirationResearch(inspiration, instruction, id));
+    return { id };
+  });
+}
+
+// AI làm với những gì đọc được (FR-2): ghi chú, tiêu đề/chú thích trang link (tìm web), ảnh tải lên; link video hoặc file
+// video gửi dưới dạng `videoUrl` — nhà AI chưa đọc được video thì `skipped` có `video` (AD-10), màn báo rõ.
+async function runInspirationResearch(inspiration: Inspiration, instruction: string | null, id: string) {
+  try {
+    const image = inspiration.mediaKind === "image" ? inspiration.mediaUrl : null;
+    const videoFile = inspiration.mediaKind === "video" ? inspiration.mediaUrl : null;
+    const videoUrl = videoFile ?? (inspiration.videoLink ? inspiration.url : null);
+    const res = await ask({
+      prompt: researchInspirationPrompt,
+      input: {
+        url: inspiration.url,
+        videoLink: inspiration.videoLink,
+        note: inspiration.note,
+        hasImage: !!image,
+        hasVideoFile: !!videoFile,
+        instruction,
+      },
+      images: image ? [image] : [],
+      ...(videoUrl ? { videoUrl } : {}),
+      webSearch: !!inspiration.url,
+    });
+    const payload = toInspirationResearchPayload(res.data);
+    await completeResearchSuggestionRecord({ id, payload, sources: res.sources ?? [], skipped: res.skipped });
+  } catch (e) {
+    const message = e instanceof UserError ? `Chưa nghiên cứu được Cảm hứng. ${e.message}` : INSPIRATION_RESEARCH_FAILED;
+    await failSuggestionsRecord({ ids: [id], message });
+    if (!(e instanceof UserError)) throw e;
+  }
+}
+
 // Duyệt (FR-22, AD-19) — upsert vào đích của `kind` trong một transaction, rồi `updateTag` tag của module đích:
-// - `RESEARCH` → `ResearchProfile` theo Sản phẩm; `PRODUCT_CATEGORY` → `Product.categoryId`;
+// - `RESEARCH` → `ResearchProfile` theo Sản phẩm hoặc theo Cảm hứng (FR-2); `PRODUCT_CATEGORY` → `Product.categoryId`;
 // - `WEB_POST` → `Post` nháp của Bộ nội dung (tạo khi chưa có, khoá `ContentSet.postId`; bài đã xuất bản → `UserError`);
 // - `THREADS_POST` / `FACEBOOK_POST` → `SocialPost` (`contentSetId` + `platform`); `LINK_COMMENT` → `linkComment`
 //   (cần bài cùng nền tảng đã Duyệt).
@@ -192,6 +259,12 @@ function approvalData<T>(schema: { safeParse: (v: unknown) => { success: true; d
 const changed = (a: unknown, b: unknown) => JSON.stringify(a) !== JSON.stringify(b);
 
 async function applyApproval(s: ApprovingSuggestion, edited: unknown, tx: Tx): Promise<{ edited: boolean }> {
+  if (s.kind === "RESEARCH" && s.inspirationId) {
+    const original = inspirationResearchSchema.parse(s.payload);
+    const data = approvalData(inspirationResearchSchema, original, edited);
+    await upsertInspirationResearchRecord({ inspirationId: s.inspirationId, data }, tx);
+    return { edited: changed(data, original) };
+  }
   if (s.kind === "RESEARCH" || s.kind === "PRODUCT_CATEGORY") {
     if (!s.productId) throw new UserError("Gợi ý không gắn Sản phẩm nào.");
     if (s.kind === "RESEARCH") {
@@ -309,6 +382,8 @@ function pickChoice(
 export async function createContentSet(input: CreateContentSetInput): Promise<Result<{ contentSetId: string }>> {
   return run(async () => {
     const data = parse(createContentSetInputSchema.safeParse(input));
+    // Mở từ Cảm hứng (FR-2): bộ ghi liên kết; Cảm hứng đã bị xoá thì báo, không tạo bộ thiếu liên kết.
+    if (data.inspirationId && !(await getInspirationForCms(data.inspirationId))) throw new UserError(INSPIRATION_NOT_FOUND);
     const products = await Promise.all(data.productIds.map((id) => getProductForCms(id)));
     const profiles = new Map<string, ResearchProfileData>();
     for (const [i, product] of products.entries()) {
@@ -323,7 +398,13 @@ export async function createContentSet(input: CreateContentSetInput): Promise<Re
     const audience = pickChoice(profiles, data.audience!, "audiences", data.audienceEdit);
     const started = await startContentSetPartsRecord({
       contentSetId: null,
-      createSet: async (tx) => (await createContentSetRecord({ productIds: data.productIds, angle, audience }, tx)).id,
+      createSet: async (tx) =>
+        (
+          await createContentSetRecord(
+            { productIds: data.productIds, angle, audience, inspirationId: data.inspirationId ?? null },
+            tx,
+          )
+        ).id,
       parts: data.platforms.flatMap(partsOf),
       mode: "add",
       existsMessage,

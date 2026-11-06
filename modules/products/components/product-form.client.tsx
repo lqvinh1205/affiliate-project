@@ -22,15 +22,17 @@ const SELECT_CLASS =
 
 // Form tạo/sửa Sản phẩm (UX-DR74): tên, Link affiliate, giá tham khảo, ảnh, Danh mục, Dữ liệu thô.
 // Chỉ đọc `defaultValues` lúc mount (AD-12), trừ Danh mục (Duyệt Danh mục gợi ý đổi được). Tạo xong chuyển sang
-// màn sửa; sửa xong làm mới ngày giá và "nơi đang dùng".
+// màn sửa (giữ `createdQuery`, vd `cam-hung=<id>` khi mở từ Cảm hứng); sửa xong làm mới ngày giá và "nơi đang dùng".
 export function ProductForm({
   defaultValues,
   categories,
   priceUpdatedAt,
+  createdQuery = null,
 }: {
   defaultValues: ProductFormValues;
   categories: CategoryOption[];
   priceUpdatedAt: string | null;
+  createdQuery?: string | null;
 }) {
   const router = useRouter();
   const form = useForm({ resolver: zodResolver(productInputSchema), defaultValues });
@@ -50,7 +52,7 @@ export function ProductForm({
       action={saveProduct}
       busyLabel={uploading > 0 ? "Đang tải ảnh…" : null}
       onSaved={(saved, values) => {
-        if (!values.id) router.replace(`/cms/san-pham/${saved.id}`);
+        if (!values.id) router.replace(`/cms/san-pham/${saved.id}${createdQuery ? `?${createdQuery}` : ""}`);
         else router.refresh();
       }}
     >

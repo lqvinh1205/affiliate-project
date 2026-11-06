@@ -16,6 +16,7 @@ type NavItem = { label: string; href: string; match: (pathname: string) => boole
 const NAV_ITEMS: NavItem[] = [
   { label: "Bài web", href: "/cms/bai-viet", match: (p) => p === "/cms/bai-viet" || p.startsWith("/cms/bai-viet/") },
   { label: "Sản phẩm", href: "/cms/san-pham", match: (p) => p === "/cms/san-pham" || p.startsWith("/cms/san-pham/") },
+  { label: "Cảm hứng", href: "/cms/cam-hung", match: (p) => p === "/cms/cam-hung" || p.startsWith("/cms/cam-hung/") },
   { label: "Danh mục", href: "/cms/danh-muc", match: (p) => p === "/cms/danh-muc" || p.startsWith("/cms/danh-muc/") },
   { label: "Banner", href: "/cms/banner", match: (p) => p === "/cms/banner" || p.startsWith("/cms/banner/") },
   { label: "Trang bio", href: "/cms/bio", match: (p) => p === "/cms/bio" },

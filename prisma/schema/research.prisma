@@ -1,13 +1,19 @@
 // Hồ sơ nghiên cứu đã Duyệt (FR-6..FR-10, spine AD-19): đích của gợi ý `RESEARCH`. Chủ: module `research`.
 // `data` là Json có Zod `researchProfileSchema` (modules/research/prompts/research-product.prompt.ts) — đọc ra phải
-// parse. Duyệt upsert theo `productId` nên Duyệt hai lần không tạo hai hồ sơ. Hồ sơ từ Cảm hứng (`inspirationId`)
-// thêm cùng story tạo bảng `Inspiration` (Epic 10).
+// parse. Duyệt upsert theo khoá đích (`productId` hoặc `inspirationId` — AD-19) nên Duyệt hai lần không tạo hai hồ sơ.
+// Hồ sơ của Cảm hứng (FR-2) có `data` theo Zod `inspirationResearchSchema`
+// (modules/research/prompts/research-inspiration.prompt.ts): từ khoá tìm trên Shopee + dàn ý bài mẹo.
+/// CHECK `ResearchProfile_one_target` (viết tay trong migration `add_inspiration`): đúng một trong `productId` /
+/// `inspirationId` khác null.
 model ResearchProfile {
-  id        String   @id @default(uuid())
+  id            String       @id @default(uuid())
   /// Hồ sơ thuộc hẳn Sản phẩm: xoá Sản phẩm thì xoá hồ sơ.
-  productId String?  @unique
-  product   Product? @relation(fields: [productId], references: [id], onDelete: Cascade)
-  data      Json
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  productId     String?      @unique
+  product       Product?     @relation(fields: [productId], references: [id], onDelete: Cascade)
+  /// Hồ sơ thuộc hẳn Cảm hứng: xoá Cảm hứng thì xoá hồ sơ.
+  inspirationId String?      @unique
+  inspiration   Inspiration? @relation(fields: [inspirationId], references: [id], onDelete: Cascade)
+  data          Json
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
 }

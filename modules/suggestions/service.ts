@@ -3,7 +3,12 @@ import { Prisma } from "@/generated/prisma/client";
 import type { Platform, SuggestionKind } from "@/generated/prisma/enums";
 import { db } from "@/platform/db";
 import { UserError } from "@/platform/errors";
-import { CATEGORY_NOT_PICKED, GENERATING_STALE, SUGGESTION_ERROR_MAX } from "@/modules/suggestions/constants";
+import {
+  CATEGORY_NOT_PICKED,
+  GENERATING_STALE,
+  INSPIRATION_GENERATING_STALE,
+  SUGGESTION_ERROR_MAX,
+} from "@/modules/suggestions/constants";
 
 // Ghi bảng `Suggestion` (chủ: `suggestions`). Vòng đời theo spine AD-18:
 // GENERATING → PENDING | FAILED; PENDING → APPROVED | REJECTED | SUPERSEDED. Mọi chuyển trạng thái là `updateMany`
@@ -104,6 +109,69 @@ export async function completeResearchRecords(data: {
   });
 }
 
+// ---------- Nghiên cứu Cảm hứng (FR-2, Epic 10) ----------
+
+const INSPIRATION_BUSY = "AI đang nghiên cứu Cảm hứng này. Chờ xong rồi thử lại.";
+const INSPIRATION_APPROVED = "Hồ sơ nghiên cứu của Cảm hứng đã duyệt. Sửa trực tiếp trên hồ sơ.";
+
+// Bắt đầu nghiên cứu một Cảm hứng (lần đầu hoặc Tạo lại — như Sản phẩm, AD-19): một gợi ý `RESEARCH` gắn
+// `inspirationId`. Trong một transaction: hồ sơ đã Duyệt → `UserError`; đang tạo chưa quá hạn → `UserError`; quá hạn →
+// `FAILED`; đang chờ duyệt → `SUPERSEDED`; chèn bản mới `GENERATING` mang `parentSuggestionId`. Partial unique index
+// `Suggestion_active_inspiration_key` chặn hai lần bấm cùng lúc (P2002 → `UserError`).
+export async function startInspirationResearchRecord(data: {
+  inspirationId: string;
+  promptId: string;
+  promptVersion: number;
+  staleBefore: Date;
+}) {
+  try {
+    return await db.$transaction(async (tx) => {
+      const key = { inspirationId: data.inspirationId, kind: "RESEARCH" as const };
+      const latest = await tx.suggestion.findFirst({
+        where: { ...key, status: { not: "SUPERSEDED" } },
+        orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+        select: { id: true, status: true },
+      });
+      if (latest?.status === "APPROVED") throw new UserError(INSPIRATION_APPROVED);
+      const busy = await tx.suggestion.count({
+        where: { ...key, status: "GENERATING", createdAt: { gte: data.staleBefore } },
+      });
+      if (busy > 0) throw new UserError(INSPIRATION_BUSY);
+      await tx.suggestion.updateMany({
+        where: { ...key, status: "GENERATING" },
+        data: { status: "FAILED", errorMessage: INSPIRATION_GENERATING_STALE },
+      });
+      await tx.suggestion.updateMany({ where: { ...key, status: "PENDING" }, data: { status: "SUPERSEDED" } });
+      return tx.suggestion.create({
+        data: {
+          ...key,
+          promptId: data.promptId,
+          promptVersion: data.promptVersion,
+          parentSuggestionId: latest?.id ?? null,
+        },
+        select: { id: true },
+      });
+    });
+  } catch (e) {
+    if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2002") throw new UserError(INSPIRATION_BUSY);
+    throw e;
+  }
+}
+
+// AI xong một gợi ý nghiên cứu (gọi trong `after()`): `PENDING` kèm `payload`, `sources`, `skipped`. Chỉ ghi gợi ý còn
+// `GENERATING` (bản đã bị thay thì bỏ).
+export async function completeResearchSuggestionRecord(data: {
+  id: string;
+  payload: unknown;
+  sources: { url: string; title: string }[];
+  skipped: string[];
+}) {
+  await db.suggestion.updateMany({
+    where: { id: data.id, status: "GENERATING" },
+    data: { status: "PENDING", payload: json(data.payload), sources: json(data.sources), skipped: json(data.skipped) },
+  });
+}
+
 // AI lỗi (gọi trong `after()`): các gợi ý còn `GENERATING` → `FAILED` kèm thông báo tiếng Việt (AD-13, AD-18).
 export async function failSuggestionsRecord(data: { ids: string[]; message: string }) {
   await db.suggestion.updateMany({
@@ -120,6 +188,7 @@ export type ApprovingSuggestion = {
   payload: unknown;
   productId: string | null;
   contentSetId: string | null;
+  inspirationId: string | null;
   platform: Platform | null;
   firstCopiedAt: Date | null;
 };
@@ -137,6 +206,7 @@ export async function approveSuggestionRecord(
         payload: true,
         productId: true,
         contentSetId: true,
+        inspirationId: true,
         platform: true,
         firstCopiedAt: true,
       },

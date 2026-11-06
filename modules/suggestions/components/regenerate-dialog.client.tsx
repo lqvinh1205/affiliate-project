@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { useId, useState, useTransition } from "react";
 import { Loader2, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
-import { regenerateSuggestion, researchProduct } from "@/modules/suggestions/actions";
+import { regenerateSuggestion, researchInspiration, researchProduct } from "@/modules/suggestions/actions";
 import { REGENERATE_CHIPS, SUGGESTION_INSTRUCTION_MAX } from "@/modules/suggestions/constants";
 import { callAction } from "@/components/shared/call-action";
 import { Button } from "@/components/ui/button";
@@ -24,13 +24,16 @@ import { Textarea } from "@/components/ui/textarea";
 // RegenerateDialog (UX-DR57, FR-21): chỉ dẫn ngắn tuỳ chọn + chip mẫu. Xác nhận → gợi ý hiện hành thành SUPERSEDED,
 // thẻ chuyển Đang tạo. Hai đích:
 // - `productId`: Tạo lại Hồ sơ nghiên cứu — chạy lại lần nghiên cứu chung, thay cả Danh mục gợi ý đang chờ (AD-19);
+// - `inspirationId`: Tạo lại Hồ sơ nghiên cứu của Cảm hứng (FR-2) — thay bản đang chờ duyệt;
 // - `part`: Tạo lại một phần của Bộ nội dung (Story 5.7, kể cả phần đã Duyệt) — các phần khác giữ nguyên.
 export function RegenerateDialog({
   productId,
+  inspirationId,
   part,
   variant = "ghost",
 }: {
   productId?: string;
+  inspirationId?: string;
   part?: { suggestionId: string; title: string; approved: boolean };
   variant?: "ghost" | "outline" | "default";
 }) {
@@ -48,7 +51,9 @@ export function RegenerateDialog({
       const res = await callAction(() =>
         part
           ? regenerateSuggestion({ id: part.suggestionId, instruction })
-          : researchProduct({ productId: productId ?? "", instruction }),
+          : inspirationId
+            ? researchInspiration({ inspirationId, instruction })
+            : researchProduct({ productId: productId ?? "", instruction }),
       );
       if (!res.ok) return void toast.error(res.error);
       setOpen(false);
@@ -66,7 +71,9 @@ export function RegenerateDialog({
         <DialogHeader>
           <DialogTitle>Tạo lại {part ? part.title : "Hồ sơ nghiên cứu"}</DialogTitle>
           <DialogDescription>
-            {!part
+            {inspirationId
+              ? "AI nghiên cứu lại Cảm hứng từ đầu. Bản đang chờ duyệt sẽ được thay bằng bản mới."
+              : !part
               ? "AI nghiên cứu lại từ đầu. Hồ sơ và Danh mục gợi ý đang chờ duyệt sẽ được thay bằng bản mới."
               : part.approved
                 ? "AI viết bản mới để bạn duyệt lại. Bản đã duyệt vẫn giữ cho tới khi bạn Duyệt bản mới; các phần khác không đổi."

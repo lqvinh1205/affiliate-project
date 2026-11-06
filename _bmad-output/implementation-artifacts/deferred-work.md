@@ -67,3 +67,6 @@
 - source_spec: `_bmad-output/implementation-artifacts/spec-8-luot-gop-epic-8.md`
   summary: Tìm kiếm công khai (`searchPostsRecord`, không cache) đọc cả `content` và chạy `sanitizePostHtml` để tính phút đọc cho tối đa 20 kết quả mỗi lần gõ; bài dài (tới 200 000 ký tự) làm mỗi lần tìm nặng.
   evidence: Review gộp Epic 8 #3. Đang chặn bởi trần 20 kết quả + 60 lần/phút/nguồn. Sửa gốc: lưu phút đọc thành cột `Post.readingMinutes` khi ghi bài (service + seed + backfill), `postCardSelect` bỏ `content` — mọi PostCard (Trang chủ, Danh mục, Xem nhiều) cùng nhẹ đi.
+- source_spec: `_bmad-output/implementation-artifacts/spec-10-luot-gop-epic-10.md`
+  summary: Cảm hứng có file video: AI chưa nhận "khung hình" của video (Story 10.2 AC) — `claude -p` không đọc video nên `ask({ videoUrl })` trả `skipped` có `video`; hồ sơ chỉ dựa trên link, ghi chú (và ảnh nếu file là ảnh). Link TikTok/Pinterest cũng chỉ đọc được tiêu đề/chú thích trang qua tìm web.
+  evidence: Spine Deferred "cách đọc video từ link"; tách khung hình cần `ffmpeg` hoặc thư viện chưa có trong spine/UX/PRD (không cài theo luật lượt chạy). Màn Cảm hứng báo rõ và gợi ý tải ảnh chụp màn hình (`INSPIRATION_VIDEO_SKIPPED`). Chốt cùng nhà AI đọc được video.

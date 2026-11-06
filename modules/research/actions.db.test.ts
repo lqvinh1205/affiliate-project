@@ -1,9 +1,9 @@
 import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { db } from "@/platform/db";
 import { actionTest, resetTestDb } from "@/vitest.db.helpers";
-import { saveResearchProfile } from "@/modules/research/actions";
-import { getResearchProfileForCms } from "@/modules/research/cms-queries";
-import type { ResearchProfileData } from "@/modules/research/types";
+import { saveInspirationResearch, saveResearchProfile } from "@/modules/research/actions";
+import { getInspirationResearchForCms, getResearchProfileForCms } from "@/modules/research/cms-queries";
+import type { InspirationResearchData, ResearchProfileData } from "@/modules/research/types";
 
 const data: ResearchProfileData = {
   info: [{ id: "info-1", text: "Rửa được bằng máy", sourceUrl: "https://example.com/a" }],
@@ -71,5 +71,46 @@ describe("getResearchProfileForCms", () => {
     const p = await product();
     await db.researchProfile.create({ data: { productId: p.id, data: { sai: true } } });
     expect(await getResearchProfileForCms(p.id)).toBeNull();
+  });
+});
+
+describe("saveInspirationResearch (FR-2, FR-22)", () => {
+  const inspirationData: InspirationResearchData = {
+    summary: "Mẹo gấp áo",
+    keywords: [{ id: "tu-khoa-1", text: "bảng gấp áo" }],
+    outline: [
+      { id: "muc-1", heading: "Mở bài", detail: "" },
+      { id: "muc-2", heading: "Các bước", detail: "Dùng bảng gấp" },
+    ],
+  };
+
+  it("sửa hồ sơ Cảm hứng đã Duyệt, làm mới tag research", async () => {
+    const i = await db.inspiration.create({ data: { url: "https://pin.it/x" } });
+    await db.researchProfile.create({ data: { inspirationId: i.id, data: inspirationData } });
+    const res = await saveInspirationResearch({ inspirationId: i.id, data: { ...inspirationData, summary: "Sửa tay" } });
+    expect(res.ok).toBe(true);
+    expect((await getInspirationResearchForCms(i.id))?.data.summary).toBe("Sửa tay");
+    expect(actionTest.updatedTags).toEqual(["research"]);
+  });
+
+  it("chưa có hồ sơ đã Duyệt → lỗi tiếng Việt; dữ liệu sai → lỗi tại trường", async () => {
+    const i = await db.inspiration.create({ data: { url: "https://pin.it/x" } });
+    expect(await saveInspirationResearch({ inspirationId: i.id, data: inspirationData })).toEqual({
+      ok: false,
+      error: "Chưa có Hồ sơ nghiên cứu đã duyệt cho Cảm hứng này. Tải lại trang.",
+    });
+    const bad = await saveInspirationResearch({
+      inspirationId: i.id,
+      data: { ...inspirationData, outline: [{ id: "muc-1", heading: " ", detail: "" }, inspirationData.outline[1]] },
+    });
+    expect(bad).toEqual({ ok: false, error: "Nhập tiêu đề mục" });
+  });
+
+  it("CHECK DB: hồ sơ thuộc đúng một đích", async () => {
+    const i = await db.inspiration.create({ data: { url: "https://pin.it/x" } });
+    const p = await product();
+    await expect(
+      db.researchProfile.create({ data: { productId: p.id, inspirationId: i.id, data: inspirationData } }),
+    ).rejects.toThrow();
   });
 });

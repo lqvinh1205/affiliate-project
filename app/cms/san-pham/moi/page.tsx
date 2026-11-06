@@ -5,10 +5,10 @@ import { ProductFormSkeleton } from "@/app/cms/san-pham/_components/product-form
 
 export const metadata: Metadata = { title: "Tạo Sản phẩm" };
 
-export default function NewProductPage() {
+export default function NewProductPage({ searchParams }: PageProps<"/cms/san-pham/moi">) {
   return (
     <Suspense fallback={<ProductFormSkeleton />}>
-      <ProductCreateScreen />
+      <ProductCreateScreen searchParams={searchParams} />
     </Suspense>
   );
 }

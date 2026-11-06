@@ -20,3 +20,14 @@ export const REVIEW_SUMMARY_LABELS = { praise: "Khen", complaints: "Chê", fit: 
 // Ô "Sửa lại (tuỳ chọn)" dưới Góc viết / Người đọc đang chọn (UX-DR46): bằng `RESEARCH_REASON_MAX` — Bộ nội dung
 // lưu bản sửa vào cột `VarChar(500)` (`CONTENT_SET_CHOICE_TEXT_MAX`).
 export const CONTENT_CHOICE_EDIT_MAX = RESEARCH_REASON_MAX;
+
+// Hồ sơ nghiên cứu của Cảm hứng (FR-2): từ khoá tìm trên Shopee + dàn ý bài mẹo. Json → giới hạn chỉ ở Zod
+// (`inspirationResearchSchema`).
+export const INSPIRATION_SUMMARY_MAX = 600;
+export const INSPIRATION_KEYWORDS_MIN = 1;
+export const INSPIRATION_KEYWORDS_MAX = 8;
+export const INSPIRATION_KEYWORD_MAX = 80;
+export const INSPIRATION_OUTLINE_MIN = 2;
+export const INSPIRATION_OUTLINE_MAX = 8;
+export const INSPIRATION_OUTLINE_HEADING_MAX = 120;
+export const INSPIRATION_OUTLINE_DETAIL_MAX = 500;

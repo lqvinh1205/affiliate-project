@@ -1,0 +1,26 @@
+// Cảm hứng (FR-1, FR-2): link video/mẹo hoặc file video/ảnh Vinh lưu nhanh, kèm ghi chú tuỳ chọn. Chủ: module
+// `inspirations` (spine AD-4). Trạng thái lưu chỉ có *Mới* / *Bỏ qua*; *Đã dùng* suy ra từ `ContentSet.inspirationId`
+// (spine: không lưu cột) và thắng trạng thái lưu.
+enum InspirationStatus {
+  NEW
+  SKIPPED
+}
+
+/// CHECK `Inspiration_has_source` (viết tay trong migration `add_inspiration`): có ít nhất một trong `url` / `mediaUrl`.
+model Inspiration {
+  id              String            @id @default(uuid())
+  /// Link dán vào (TikTok, Pinterest, Shopee…): http(s).
+  url             String?           @db.VarChar(2000) // INSPIRATION_URL_MAX (modules/inspirations/constants.ts)
+  /// File video hoặc ảnh tải lên qua `/cms/upload` (AD-24): đường dẫn `/uploads/<sha256>.<đuôi>`.
+  mediaUrl        String?           @db.VarChar(200) // INSPIRATION_MEDIA_URL_MAX
+  note            String?           @db.VarChar(500) // INSPIRATION_NOTE_MAX
+  status          InspirationStatus @default(NEW)
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  /// Quan hệ ngược (AD-4): bảng của `research`, `suggestions`, `content-sets`.
+  researchProfile ResearchProfile?
+  suggestions     Suggestion[]
+  contentSets     ContentSet[]
+
+  @@index([status, createdAt])
+}

@@ -19,6 +19,7 @@ export async function createContentSetRecord(
   data: {
     productIds: string[];
     postId?: string | null;
+    inspirationId?: string | null;
     angle?: ContentSetChoice | null;
     audience?: ContentSetChoice | null;
   },
@@ -28,6 +29,7 @@ export async function createContentSetRecord(
   return (tx ?? db).contentSet.create({
     data: {
       postId: data.postId ?? null,
+      inspirationId: data.inspirationId ?? null,
       angleId: angle?.id ?? null,
       angleName: angle?.name ?? null,
       angleHook: angle?.text ?? null,

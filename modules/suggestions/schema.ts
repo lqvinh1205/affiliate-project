@@ -21,6 +21,17 @@ export const researchProductInputSchema = z.object({
     .transform((s) => s || null),
 });
 
+// Bấm "Nghiên cứu" ở Chi tiết Cảm hứng hoặc "Tạo lại" kèm chỉ dẫn (FR-2, FR-21).
+export const researchInspirationInputSchema = z.object({
+  inspirationId: z.string().min(1, "Thiếu Cảm hứng"),
+  instruction: z
+    .string()
+    .trim()
+    .max(SUGGESTION_INSTRUCTION_MAX, `Chỉ dẫn tối đa ${SUGGESTION_INSTRUCTION_MAX} ký tự`)
+    .optional()
+    .transform((s) => s || null),
+});
+
 // Duyệt: `payload` là nội dung đã sửa (theo Zod của `kind`, parse ở action); bỏ trống = Duyệt nguyên bản AI.
 export const approveSuggestionInputSchema = z.object({ id: suggestionId, payload: z.unknown().optional() });
 
@@ -31,6 +42,7 @@ export const suggestionSourcesSchema = z.array(z.object({ url: z.string(), title
 export const suggestionSkippedSchema = z.array(z.enum(["images", "webSearch", "video"]));
 
 export type ResearchProductInput = z.input<typeof researchProductInputSchema>;
+export type ResearchInspirationInput = z.input<typeof researchInspirationInputSchema>;
 export type ApproveSuggestionInput = z.input<typeof approveSuggestionInputSchema>;
 export type RejectSuggestionInput = z.input<typeof rejectSuggestionInputSchema>;
 
@@ -61,6 +73,8 @@ export const createContentSetInputSchema = z.object({
   audience: choiceRef.nullable().refine((v) => v !== null, "Chọn một Người đọc"),
   audienceEdit: choiceEdit,
   platforms,
+  // Mở từ Cảm hứng (`?cam-hung=<id>`, FR-2): bộ ghi liên kết, Cảm hứng thành *Đã dùng*.
+  inspirationId: z.string().min(1).nullish(),
 });
 
 // "Thêm Bài {nền tảng}" vào bộ đang có (UX-DR75).

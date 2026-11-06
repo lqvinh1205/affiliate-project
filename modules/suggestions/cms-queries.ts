@@ -8,10 +8,15 @@ import {
   parseThreadsPayload,
 } from "@/modules/content-sets/cms-queries";
 import { parseWebPostPayload } from "@/modules/posts/cms-queries";
-import { parseProductCategoryPayload, parseResearchPayload } from "@/modules/research/cms-queries";
+import {
+  parseInspirationResearchPayload,
+  parseProductCategoryPayload,
+  parseResearchPayload,
+} from "@/modules/research/cms-queries";
 import {
   GENERATING_STALE,
   GENERATING_TIMEOUT_MS,
+  INSPIRATION_GENERATING_STALE,
   PART_STALE,
   type ContentSetKind,
   type VisibleSuggestionStatus,
@@ -65,6 +70,19 @@ export async function getProductSuggestionsForCms(productId: string) {
     research: research ? { ...view(research, parseResearchPayload(research.payload), now), editedBeforeApproval: research.editedBeforeApproval } : null,
     category: category ? view(category, parseProductCategoryPayload(category.payload), now) : null,
   };
+}
+
+// Gợi ý nghiên cứu hiện hành của Chi tiết Cảm hứng (FR-2, UX-DR77): bản `RESEARCH` mới nhất gắn `inspirationId`.
+export async function getInspirationSuggestionForCms(inspirationId: string) {
+  const row = await db.suggestion.findFirst({
+    where: { inspirationId, kind: "RESEARCH", status: { not: "SUPERSEDED" } },
+    orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+    select,
+  });
+  if (!row) return null;
+  const v = view(row, parseInspirationResearchPayload(row.payload), Date.now());
+  const stale = v.status === "FAILED" && row.status === "GENERATING";
+  return { ...v, errorMessage: stale ? INSPIRATION_GENERATING_STALE : v.errorMessage };
 }
 
 // ---------- Bộ nội dung (Epic 5) ----------

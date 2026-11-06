@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { acceptAttribute, IMAGE_MAX_BYTES, uploadError, VIDEO_MAX_BYTES } from "@/platform/upload-rules";
+import { acceptAttribute, IMAGE_MAX_BYTES, uploadError, uploadedMediaKind, VIDEO_MAX_BYTES } from "@/platform/upload-rules";
 
 describe("uploadError", () => {
   it("nhận ảnh > 10 MB trong giới hạn ảnh", () => {
@@ -33,5 +33,26 @@ describe("acceptAttribute", () => {
   it("trường ảnh không có loại video", () => {
     expect(acceptAttribute("image")).not.toContain("video/");
     expect(acceptAttribute("media")).toContain("video/mp4");
+  });
+});
+
+describe("uploadedMediaKind", () => {
+  const sha = "a".repeat(64);
+  it("nhận đúng file upload, phân loại ảnh / video theo đuôi", () => {
+    expect(uploadedMediaKind(`/uploads/${sha}.jpg`)).toBe("image");
+    expect(uploadedMediaKind(`/uploads/${sha}.avif`)).toBe("image");
+    expect(uploadedMediaKind(`/uploads/${sha}.mp4`)).toBe("video");
+    expect(uploadedMediaKind(`/uploads/${sha}.mov`)).toBe("video");
+  });
+
+  it.each([
+    `https://cf.shopee.vn/${sha}.jpg`,
+    `/uploads/${sha}.svg`,
+    `/uploads/abc.mp4`,
+    `/uploads/../${sha}.mp4`,
+    `/uploads/${sha}.mp4?x=1`,
+    "",
+  ])("từ chối %s", (url) => {
+    expect(uploadedMediaKind(url)).toBeNull();
   });
 });

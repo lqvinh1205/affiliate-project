@@ -12,6 +12,7 @@ import {
   PLATFORM_KEYS,
 } from "@/modules/content-sets/constants";
 import { PlatformToggle } from "@/modules/content-sets/components/platform-toggle.client";
+import { InspirationStrip } from "@/modules/inspirations/components/inspiration-strip";
 import type { PickerProduct } from "@/modules/products/types";
 import { ProductPicker } from "@/modules/products/components/product-picker.client";
 import type { ResearchProfileData } from "@/modules/research/types";
@@ -52,17 +53,20 @@ function Thumb({ image }: { image: string | null }) {
 // từng món), ProductPicker "Thêm Sản phẩm (bài Gom link)", AnglePicker / AudiencePicker (nhóm theo Sản phẩm khi bộ
 // nhiều món), PlatformToggle, nút "Tạo bộ nội dung". Món thêm vào nằm trên URL `?bo=` (AD-12) để Screen đọc lại hồ sơ
 // của nó; lựa chọn Góc viết / Người đọc là trạng thái trên màn (mất khi rời trang — UX-DR46). Nút chỉ bật khi đủ điều
-// kiện; khi tắt dùng `aria-disabled` + dòng lý do điều kiện đầu tiên chưa đạt.
+// kiện; khi tắt dùng `aria-disabled` + dòng lý do điều kiện đầu tiên chưa đạt. Mở từ Cảm hứng (`?cam-hung=<id>`):
+// dải "Từ Cảm hứng: …" đầu khối, bộ tạo ra ghi liên kết Cảm hứng (FR-2).
 export function CreateContentSetPanel({
   current,
   extras,
   pickerResults,
   pickerQuery,
+  inspiration = null,
 }: {
   current: PanelProduct;
   extras: PanelProduct[];
   pickerResults: PickerProduct[];
   pickerQuery: string;
+  inspiration?: { id: string; label: string } | null;
 }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -131,6 +135,7 @@ export function CreateContentSetPanel({
           audience: splitKey(audienceKey),
           audienceEdit,
           platforms,
+          inspirationId: inspiration?.id ?? null,
         }),
       );
       if (!res.ok) return void toast.error(res.error);
@@ -175,6 +180,7 @@ export function CreateContentSetPanel({
       <h2 id="create-content-set" className="text-headline-sm">
         Tạo bộ nội dung
       </h2>
+      {inspiration && <InspirationStrip id={inspiration.id} label={inspiration.label} />}
 
       <div className="space-y-space-sm">
         <p className="text-label-md">Sản phẩm trong bộ</p>

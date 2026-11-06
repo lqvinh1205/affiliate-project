@@ -5,8 +5,10 @@
 // Viết tay trong migration `add_suggestion` (AD-15):
 // - CHECK "Suggestion_one_target": đúng một trong `productId` / `contentSetId` / `inspirationId` khác null.
 // - Partial unique index "Suggestion_active_product_key" trên (`kind`, `productId`) khi `status` là
-//   GENERATING/PENDING: mỗi khoá đích tối đa một gợi ý đang chờ. Khoá đích của `inspirationId` thêm cùng story tạo
-//   bảng `Inspiration` (Epic 10).
+//   GENERATING/PENDING: mỗi khoá đích tối đa một gợi ý đang chờ.
+// Viết tay trong migration `add_inspiration` (Story 10.1):
+// - Partial unique index "Suggestion_active_inspiration_key" trên (`kind`, `inspirationId`) khi `status` là
+//   GENERATING/PENDING.
 // Viết tay trong migration `add_content_set` (Story 5.2):
 // - CHECK "Suggestion_content_set_platform": gợi ý của Bộ nội dung luôn có `platform` (khoá đích AD-19).
 // - Partial unique index "Suggestion_active_content_set_key" trên (`kind`, `contentSetId`, `platform`) khi `status`
@@ -41,13 +43,15 @@ model Suggestion {
   contentSet           ContentSet?      @relation(fields: [contentSetId], references: [id], onDelete: Cascade)
   /// Nền tảng của phần trong Bộ nội dung (`WEB_POST` → WEBSITE; bài và Bình luận kèm link → THREADS/FACEBOOK).
   platform             Platform?
-  /// Khoá ngoại tới `Inspiration` thêm cùng story tạo bảng đó (chưa có bảng).
+  /// Gợi ý thuộc hẳn Cảm hứng (FR-2): xoá Cảm hứng thì xoá gợi ý.
   inspirationId        String?
+  inspiration          Inspiration?     @relation(fields: [inspirationId], references: [id], onDelete: Cascade)
   createdAt            DateTime         @default(now())
   updatedAt            DateTime         @updatedAt
 
   @@index([productId, kind, createdAt])
   @@index([contentSetId, kind, createdAt])
+  @@index([inspirationId, kind, createdAt])
   @@index([parentSuggestionId])
 }
 

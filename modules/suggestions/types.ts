@@ -1,4 +1,8 @@
-import type { getContentSetSuggestionsForCms, getProductSuggestionsForCms } from "@/modules/suggestions/cms-queries";
+import type {
+  getContentSetSuggestionsForCms,
+  getInspirationSuggestionForCms,
+  getProductSuggestionsForCms,
+} from "@/modules/suggestions/cms-queries";
 
 type ProductSuggestions = Awaited<ReturnType<typeof getProductSuggestionsForCms>>;
 
@@ -6,6 +10,8 @@ type ProductSuggestions = Awaited<ReturnType<typeof getProductSuggestionsForCms>
 export type ResearchSuggestionView = NonNullable<ProductSuggestions["research"]>;
 export type CategorySuggestionView = NonNullable<ProductSuggestions["category"]>;
 export type SuggestionSkipped = ResearchSuggestionView["skipped"][number];
+// Gợi ý nghiên cứu của Cảm hứng (FR-2).
+export type InspirationResearchSuggestionView = NonNullable<Awaited<ReturnType<typeof getInspirationSuggestionForCms>>>;
 
 type ContentSetSuggestions = Awaited<ReturnType<typeof getContentSetSuggestionsForCms>>;
 

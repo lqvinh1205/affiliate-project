@@ -2,6 +2,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { formatShortDate } from "@/platform/format";
 import { listCategoryOptionsForCms } from "@/modules/categories/cms-queries";
+import { getInspirationForCms } from "@/modules/inspirations/cms-queries";
+import { INSPIRATION_PARAM } from "@/modules/inspirations/constants";
 import {
   listContentSetsForProductForCms,
   listPostedPlatformsByProductForCms,
@@ -23,12 +25,14 @@ function first(v: string | string[] | undefined) {
 
 export async function ProductEditScreen({ params, searchParams }: PageProps<"/cms/san-pham/[id]">) {
   const [{ id }, query] = await Promise.all([params, searchParams]);
-  const [product, categories, posts, contentSets, posted] = await Promise.all([
+  const inspirationId = first(query[INSPIRATION_PARAM]).trim();
+  const [product, categories, posts, contentSets, posted, inspiration] = await Promise.all([
     getProductForCms(id),
     listCategoryOptionsForCms(),
     listPostsUsingProductForCms(id),
     listContentSetsForProductForCms(id),
     listPostedPlatformsByProductForCms([id]),
+    inspirationId ? getInspirationForCms(inspirationId) : null,
   ]);
   if (!product) notFound();
   const platforms = posted.get(id) ?? [];
@@ -62,6 +66,7 @@ export async function ProductEditScreen({ params, searchParams }: PageProps<"/cm
         product={{ id: product.id, name: product.name, image: product.image }}
         extraIds={extraIds}
         pickerQuery={first(query[PRODUCT_PICKER_PARAM]).trim()}
+        inspiration={inspiration && { id: inspiration.id, label: inspiration.label }}
       />
 
       <section aria-labelledby="product-usage" className="mt-space-xl space-y-space-sm">

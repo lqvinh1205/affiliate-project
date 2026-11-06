@@ -54,3 +54,19 @@ export function uploadError(type: string, size: number | null, kind: UploadKind 
   }
   return null;
 }
+
+// File đã tải lên qua route upload (`platform/storage` trả `/uploads/<sha256>.<đuôi>`): loại theo đuôi, hoặc null khi
+// không phải đường dẫn file upload (link ngoài, đường dẫn lạ). Module lưu `url` này (vd Cảm hứng — FR-1) dùng để
+// validate và chọn cách hiển thị.
+const UPLOADED_FILE = new RegExp(
+  `^/uploads/[0-9a-f]{64}(${Object.values(UPLOAD_TYPES)
+    .map((e) => `\\${e}`)
+    .join("|")})$`,
+);
+
+export function uploadedMediaKind(url: string): "image" | "video" | null {
+  const m = UPLOADED_FILE.exec(url);
+  if (!m) return null;
+  const type = Object.entries(UPLOAD_TYPES).find(([, ext]) => ext === m[1])?.[0] ?? "";
+  return isVideo(type) ? "video" : "image";
+}

@@ -38,15 +38,18 @@ async function loadPanelProduct(product: ProductBasics) {
 
 // Khu nghiên cứu AI và tạo Bộ nội dung của Chi tiết Sản phẩm (UX-DR45, UX-DR47): ResearchProfileCard, thẻ Danh mục gợi
 // ý, rồi CreateContentSetPanel. Đúng một GeneratingPoller cho cả màn khi còn gợi ý đang tạo (AD-18). Món thêm vào bộ
-// (bài Gom link) nằm trên URL `?bo=`; ô tìm Sản phẩm trên `?sp=` (AD-12) — Screen đọc lại hồ sơ của từng món.
+// (bài Gom link) nằm trên URL `?bo=`; ô tìm Sản phẩm trên `?sp=` (AD-12) — Screen đọc lại hồ sơ của từng món. Mở từ
+// Cảm hứng (`?cam-hung=`): CreateContentSetPanel hiện dải "Từ Cảm hứng" và ghi liên kết khi tạo bộ (FR-2).
 export async function ProductResearchSection({
   product,
   extraIds,
   pickerQuery,
+  inspiration,
 }: {
   product: ProductBasics;
   extraIds: string[];
   pickerQuery: string;
+  inspiration: { id: string; label: string } | null;
 }) {
   const ids = [...new Set(extraIds)].filter((id) => id !== product.id).slice(0, CONTENT_SET_PRODUCTS_MAX - 1);
   const [{ research, category }, profile, extraRows, pickerRows] = await Promise.all([
@@ -72,6 +75,7 @@ export async function ProductResearchSection({
         extras={extras}
         pickerResults={pickerRows.map((p) => ({ ...p, priceUpdatedAt: p.priceUpdatedAt?.toISOString() ?? null }))}
         pickerQuery={pickerQuery}
+        inspiration={inspiration}
       />
     </div>
   );
