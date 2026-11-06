@@ -32,6 +32,7 @@ describe("getBioPage (FR-30, AD-7)", () => {
     expect(page.categories).toEqual([]);
     expect(page.intro.length).toBeGreaterThan(0);
     expect(page.disclosure.length).toBeGreaterThan(0);
+    expect(page.avatar).toBeNull();
   });
 
   it("chỉ Danh mục có món đang hiện, theo thứ tự hiển thị; chỉ trường public", async () => {
@@ -46,6 +47,7 @@ describe("getBioPage (FR-30, AD-7)", () => {
     const page = await getBioPage();
     expect(page.categories.map((c) => c.name)).toEqual(["Dọn dẹp", "Đồ bếp"]);
     expect(page.categories.find((c) => c.id === rong.id)).toBeUndefined();
+    expect(Object.keys(page.categories[0]).sort()).toEqual(["description", "id", "name", "slug"]);
     expect(page.items.map((p) => p.name)).toEqual(["Không Danh mục", "Chổi", "Nồi"]);
     expect(Object.keys(page.items[0]).sort()).toEqual(
       ["affiliateUrl", "categoryId", "id", "image", "name", "pinned", "priceText", "priceUpdatedAt"].sort(),

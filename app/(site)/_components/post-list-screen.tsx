@@ -4,6 +4,7 @@ import { SITE_URL } from "@/platform/site";
 import type { PostListPage } from "@/modules/posts/types";
 import { PostCard } from "@/modules/posts/components/post-card";
 import { Breadcrumb } from "@/components/shared/breadcrumb";
+import { EmptyState } from "@/components/shared/empty-state";
 import { buttonVariants } from "@/components/ui/button";
 import { JsonLd } from "@/app/(site)/_components/json-ld";
 import { Pagination } from "@/app/(site)/_components/pagination";
@@ -50,13 +51,11 @@ export function PostListScreen({
       </header>
 
       {data.total === 0 ? (
-        <div className="mx-auto max-w-md space-y-space-md py-space-xl text-center">
-          <h2 className="text-headline-md">{emptyTitle}</h2>
-          <p className="text-body-regular text-on-surface-variant">Bài mới sẽ sớm có. Ghé Trang chủ đọc bài khác nhé.</p>
+        <EmptyState title={emptyTitle} description="Bài mới sẽ sớm có. Ghé Trang chủ đọc bài khác nhé.">
           <Link href="/" className={buttonVariants({ size: "lg", className: "min-h-touch-target" })}>
             Về Trang chủ
           </Link>
-        </div>
+        </EmptyState>
       ) : (
         <div className="space-y-space-xl">
           <div className="grid gap-x-gutter-desktop gap-y-space-xl sm:grid-cols-2 lg:grid-cols-3">

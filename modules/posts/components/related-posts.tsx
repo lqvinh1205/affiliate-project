@@ -8,7 +8,7 @@ export function RelatedPosts({ posts }: { posts: PostCardData[] }) {
   if (posts.length === 0) return null;
   return (
     <section aria-labelledby={RELATED_POSTS_TITLE_ID} className="space-y-space-md">
-      <h2 id={RELATED_POSTS_TITLE_ID} className="text-headline-md">
+      <h2 id={RELATED_POSTS_TITLE_ID} className="text-headline-md lg:text-headline-lg">
         Bài liên quan
       </h2>
       <ul className="divide-y lg:hidden">

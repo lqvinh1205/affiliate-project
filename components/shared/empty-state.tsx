@@ -15,7 +15,7 @@ function TeaSprout() {
 }
 
 // EmptyState (UX-DR33): minh hoạ, tiêu đề `headline-md`, một câu gợi ý, một hành động chính. Dùng ở 404, trang lỗi,
-// Trang chủ chưa có bài. `titleAs` = h1 khi EmptyState là nội dung chính của trang (mỗi trang một h1 — UX-DR87).
+// Trang chủ chưa có bài, Danh mục rỗng, tìm không thấy, bio rỗng. `titleAs` = h1 khi EmptyState là nội dung chính của trang (mỗi trang một h1 — UX-DR87).
 export function EmptyState({
   title,
   description,

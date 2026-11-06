@@ -12,7 +12,13 @@ function ReferencePrice({ priceText, priceUpdatedAt }: Pick<PublicProduct, "pric
   return (
     <span className="block text-label-meta text-on-surface-variant">
       Giá tham khảo <span className="text-headline-sm text-primary">{priceText}</span>
-      {date && ` · cập nhật ${date}`}
+      {/* "cập nhật dd/mm/yyyy" không gãy giữa chừng ở màn hẹp (390px). */}
+      {date && (
+        <>
+          {" · "}
+          <span className="whitespace-nowrap">cập nhật {date}</span>
+        </>
+      )}
     </span>
   );
 }

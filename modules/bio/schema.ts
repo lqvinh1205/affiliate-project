@@ -1,13 +1,15 @@
 import { z } from "zod";
-import { requiredText } from "@/platform/validation/fields";
+import { imageUrl, requiredText } from "@/platform/validation/fields";
 import { BIO_DISCLOSURE_MAX, BIO_INTRO_MAX } from "@/modules/bio/constants";
 
 const productId = z.string().min(1, "Thiếu Sản phẩm");
 
-// Giới thiệu và câu công khai `/bio` (FR-31): câu công khai sửa được, không tắt được (bắt buộc có chữ).
+// Giới thiệu, câu công khai và ảnh đại diện `/bio` (FR-31): câu công khai sửa được, không tắt được (bắt buộc có chữ).
+// Ảnh đại diện tuỳ chọn, cùng luật ảnh Sản phẩm (`imageUrl`); rỗng → null.
 export const bioSettingsInputSchema = z.object({
   intro: requiredText(BIO_INTRO_MAX, "Nhập phần giới thiệu"),
   disclosure: requiredText(BIO_DISCLOSURE_MAX, "Nhập câu công khai"),
+  avatar: imageUrl,
 });
 
 export const setBioItemVisibleInputSchema = z.object({ productId, visible: z.boolean() });

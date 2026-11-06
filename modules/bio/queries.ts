@@ -38,21 +38,21 @@ async function visibleBioProducts(): Promise<(PublicProduct & { categoryId: stri
   }));
 }
 
-// Trang `/bio` (FR-30, UX-DR66): giới thiệu, câu công khai (thiếu bản ghi = giá trị khởi tạo), món theo thứ tự bio
-// và Danh mục có món theo thứ tự hiển thị (chip, nhóm).
+// Trang `/bio` (FR-30, UX-DR66): giới thiệu, câu công khai, ảnh đại diện (thiếu bản ghi = giá trị khởi tạo), món theo
+// thứ tự bio và Danh mục có món theo thứ tự hiển thị (dòng Danh mục, nhóm).
 export async function getBioPage() {
   "use cache";
   cacheLife("days");
   cacheTag(BIO_TAG, PRODUCTS_TAG, CATEGORIES_TAG);
   const [settings, items] = await Promise.all([
-    db.bioSettings.findFirst({ orderBy: { createdAt: "asc" }, select: { intro: true, disclosure: true } }),
+    db.bioSettings.findFirst({ orderBy: { createdAt: "asc" }, select: { intro: true, disclosure: true, avatar: true } }),
     visibleBioProducts(),
   ]);
   const used = [...new Set(items.flatMap((p) => (p.categoryId ? [p.categoryId] : [])))];
   const categories = await db.category.findMany({
     where: { id: { in: used } },
     orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }, { id: "asc" }],
-    select: { id: true, name: true },
+    select: { id: true, name: true, slug: true, description: true },
   });
   return { ...(settings ?? BIO_SETTINGS_DEFAULTS), items, categories };
 }

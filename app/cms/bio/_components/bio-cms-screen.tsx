@@ -5,7 +5,7 @@ import { getBioForCms } from "@/modules/bio/cms-queries";
 import { BioProductList } from "@/modules/bio/components/bio-product-list.client";
 import { BioSettingsForm } from "@/modules/bio/components/bio-settings-form.client";
 
-// Trang bio (CMS) `/cms/bio` (UX-DR80, FR-31): giới thiệu + câu chữ nhãn, rồi BioProductList (chọn / ghim / sắp xếp).
+// Trang bio (CMS) `/cms/bio` (UX-DR80, FR-31): giới thiệu + ảnh đại diện + câu chữ nhãn, rồi BioProductList (chọn / ghim / sắp xếp).
 // Đọc lúc request (CMS không cache — AD-7).
 export async function BioCmsScreen() {
   await connection();
@@ -25,9 +25,9 @@ export async function BioCmsScreen() {
       </div>
       <section aria-labelledby="bio-settings" className="space-y-space-md rounded-xl border bg-card p-space-md">
         <h2 id="bio-settings" className="text-headline-sm">
-          Giới thiệu và nhãn công khai
+          Giới thiệu, ảnh đại diện và nhãn công khai
         </h2>
-        <BioSettingsForm defaultValues={settings} />
+        <BioSettingsForm defaultValues={{ ...settings, avatar: settings.avatar ?? "" }} />
       </section>
       <section aria-labelledby="bio-products" className="space-y-space-sm">
         <h2 id="bio-products" className="text-headline-sm">

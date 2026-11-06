@@ -102,7 +102,7 @@ export function PostCard({ post, variant = "grid", headingLevel = "h3", preload 
       <div className="@container">
         <Link
           href={href}
-          className="group grid overflow-hidden rounded-xl bg-surface-container-lowest outline-offset-2 @3xl:grid-cols-12 @3xl:items-center"
+          className="group grid overflow-hidden rounded-xl bg-surface-container-lowest shadow-level-0 outline-offset-2 @3xl:grid-cols-12 @3xl:items-center"
         >
           <span className="relative block aspect-video overflow-hidden bg-surface-container @3xl:col-span-7">
             <ImageFallback
@@ -116,7 +116,7 @@ export function PostCard({ post, variant = "grid", headingLevel = "h3", preload 
             <PostTypeBadge postType={post.postType} className="absolute top-space-md left-space-md" />
           </span>
           <div className="flex flex-col gap-space-sm p-space-md @3xl:col-span-5 @3xl:p-space-lg">
-            <Title className={`text-headline-lg-mobile lg:text-headline-display ${TITLE_HOVER}`}>{post.title}</Title>
+            <Title className={`text-headline-display-mobile lg:text-headline-display ${TITLE_HOVER}`}>{post.title}</Title>
             {post.excerpt && <span className="line-clamp-3 text-body-regular text-on-surface-variant">{post.excerpt}</span>}
             <Meta post={post} />
           </div>
@@ -126,7 +126,7 @@ export function PostCard({ post, variant = "grid", headingLevel = "h3", preload 
   }
 
   return (
-    <Link href={href} className="group flex h-full flex-col overflow-hidden rounded-xl bg-surface-container-lowest outline-offset-2">
+    <Link href={href} className="group flex h-full flex-col overflow-hidden rounded-xl bg-surface-container-lowest shadow-level-0 outline-offset-2">
       <span className="relative block aspect-video overflow-hidden bg-surface-container">
         <ImageFallback
           src={post.featuredImage}

@@ -17,7 +17,8 @@ import { ImageFallback } from "@/components/shared/image-fallback.client";
 // dữ liệu: `html` + `headings` là thân bài đã sanitize và gắn id h2 (AD-22), phút đọc tính trên HTML đó.
 // Thứ tự: Breadcrumb → PostTypeBadge + H1 + ngày · phút đọc → AffiliateDisclosure (nếu có Sản phẩm) → ảnh 16:9 →
 // TableOfContents → ArticleBody → khối Sản phẩm → PostTags → thả tim + chia sẻ → RelatedPosts. Mobile một cột (TOC
-// thu gọn được ở đầu bài); desktop thân 8 cột + cột phải dính (TOC, tim, chia sẻ) (UX-DR63, UX-DR93).
+// thu gọn được ở đầu bài); desktop: đầu bài (tới ảnh) rộng hết khung, từ thân bài chia 8 cột + cột phải dính (TOC, tim,
+// chia sẻ) (UX-DR63, UX-DR93, Vinh 2026-11-06 theo Stitch).
 // `actions`: LikeButton + ShareButtons do trang public truyền vào (`posts` không import `engagement` — AD-2); bản xem
 // trước không có.
 export function PostArticle({
@@ -37,39 +38,42 @@ export function PostArticle({
   const hasToc = headings.length >= 2;
   return (
     <article className="mx-auto max-w-container-max px-margin py-space-lg lg:px-margin-desktop lg:py-space-xl">
-      <div className="lg:grid lg:grid-cols-12 lg:gap-gutter-desktop">
+      {/* Đầu bài rộng hết khung trên desktop (Stitch); lưới 8/4 bắt đầu từ thân bài. */}
+      <div className="space-y-space-lg">
+        <header className="space-y-space-sm">
+          {post.category && <Breadcrumb label={post.category.name} href={`/${post.category.slug}`} />}
+          <PostTypeBadge postType={post.postType} />
+          <h1 className="max-w-4xl text-headline-lg-mobile lg:text-headline-display">{post.title}</h1>
+          <p className="text-label-sm text-on-surface-variant">
+            {post.publishedAt && (
+              <>
+                <time dateTime={post.publishedAt.toISOString()}>{formatDate(post.publishedAt)}</time>
+                <span aria-hidden> · </span>
+              </>
+            )}
+            {post.readingMinutes} phút đọc
+          </p>
+        </header>
+
+        {/* Nhãn công khai dưới dòng meta, trước ảnh đầu bài; không có Sản phẩm đang hiện thì không render (FR-24). */}
+        {hasProducts && <AffiliateDisclosure />}
+
+        {post.featuredImage && (
+          <div className="relative aspect-video overflow-hidden rounded-xl bg-surface-container">
+            <ImageFallback
+              src={post.featuredImage}
+              alt={post.title}
+              fill
+              preload
+              sizes="(min-width: 1024px) 1120px, 100vw"
+              className="object-cover"
+            />
+          </div>
+        )}
+      </div>
+
+      <div className="mt-space-lg lg:grid lg:grid-cols-12 lg:gap-gutter-desktop">
         <div className="min-w-0 space-y-space-lg lg:col-span-8">
-          <header className="space-y-space-sm">
-            {post.category && <Breadcrumb label={post.category.name} href={`/${post.category.slug}`} />}
-            <PostTypeBadge postType={post.postType} />
-            <h1 className="text-headline-display-mobile lg:text-headline-display">{post.title}</h1>
-            <p className="text-label-sm text-on-surface-variant">
-              {post.publishedAt && (
-                <>
-                  <time dateTime={post.publishedAt.toISOString()}>{formatDate(post.publishedAt)}</time>
-                  <span aria-hidden> · </span>
-                </>
-              )}
-              {post.readingMinutes} phút đọc
-            </p>
-          </header>
-
-          {/* Nhãn công khai dưới dòng meta, trước ảnh đầu bài; không có Sản phẩm đang hiện thì không render (FR-24). */}
-          {hasProducts && <AffiliateDisclosure />}
-
-          {post.featuredImage && (
-            <div className="relative aspect-video overflow-hidden rounded-xl bg-surface-container">
-              <ImageFallback
-                src={post.featuredImage}
-                alt={post.title}
-                fill
-                preload
-                sizes="(min-width: 1024px) 740px, 100vw"
-                className="object-cover"
-              />
-            </div>
-          )}
-
           <div className="lg:hidden">
             <TableOfContents headings={headings} variant="inline" />
           </div>

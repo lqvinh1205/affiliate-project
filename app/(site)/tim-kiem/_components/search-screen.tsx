@@ -35,7 +35,7 @@ export async function SearchScreen() {
   const noResults =
     popular.length > 0 ? (
       <section aria-labelledby="doc-nhieu-nhat">
-        <h2 id="doc-nhieu-nhat" className="border-b pb-space-sm text-headline-md">
+        <h2 id="doc-nhieu-nhat" className="border-b pb-space-sm text-headline-md lg:text-headline-lg">
           Chủ đề được đọc nhiều nhất
         </h2>
         <PopularPostList posts={popular} />

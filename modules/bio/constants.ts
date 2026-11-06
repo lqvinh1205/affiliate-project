@@ -8,13 +8,17 @@ export const BIO_SETTINGS_DEFAULTS = {
   intro: "Mình là Vinh. Đây là những món đồ nhà bếp, dọn dẹp, ở trọ mình thấy đáng mua, gom lại cho bạn dễ tìm.",
   disclosure:
     "Trang có link tiếp thị liên kết Shopee. Bạn mua qua link, mình nhận một khoản hoa hồng nhỏ để duy trì trang web, giá bạn trả hoàn toàn không đổi.",
+  avatar: null,
 } as const;
 
 // Số món tối đa của dải "Gom link đồ xinh" trên Trang chủ (UX-DR62).
 export const BIO_HIGHLIGHTS_LIMIT = 8;
 
-// Tên nhóm cho Sản phẩm chưa có Danh mục trên chip "Tất cả" của `/bio`.
+// Tên nhóm/dòng Danh mục cho Sản phẩm chưa có Danh mục trên `/bio`.
 export const BIO_UNCATEGORIZED_LABEL = "Khác";
 
 // Dòng AffiliateDisclosure ngắn dưới tiêu đề dải "Gom link đồ xinh" Trang chủ (EXPERIENCE.md › AffiliateDisclosure).
 export const BIO_HIGHLIGHTS_DISCLOSURE = "Link Shopee là link tiếp thị liên kết, mình nhận hoa hồng nhỏ, giá bạn trả không đổi.";
+
+// Số dòng Danh mục hiện sẵn trên `/bio`; còn lại sau nút "Xem thêm N danh mục" (Vinh 2026-11-06, theo Stitch).
+export const BIO_CATEGORY_ROWS_VISIBLE = 5;

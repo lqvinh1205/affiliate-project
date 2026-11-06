@@ -25,7 +25,7 @@ export async function NotFoundScreen() {
         <SearchLauncher />
         {popular.length > 0 && (
           <section aria-labelledby="xem-nhieu-404">
-            <h2 id="xem-nhieu-404" className="border-b pb-space-sm text-headline-md">
+            <h2 id="xem-nhieu-404" className="border-b pb-space-sm text-headline-md lg:text-headline-lg">
               Xem nhiều
             </h2>
             <PopularPostList posts={popular} />

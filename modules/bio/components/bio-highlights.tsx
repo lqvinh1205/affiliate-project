@@ -12,7 +12,7 @@ export function BioHighlights({ products }: { products: PublicProduct[] }) {
   return (
     <section aria-labelledby="gom-link-do-xinh">
       <div className="mb-space-sm flex items-end justify-between gap-space-md border-b pb-space-sm">
-        <h2 id="gom-link-do-xinh" className="text-headline-md">
+        <h2 id="gom-link-do-xinh" className="text-headline-md lg:text-headline-lg">
           Gom link đồ xinh
         </h2>
         <Link href="/bio" className="inline-flex min-h-touch-target shrink-0 items-center text-label-md text-primary hover:underline">

@@ -65,15 +65,16 @@ sources:
 - Desktop (≥ 1024px): SiteHeader có nav ngang: Mẹo vặt, Gom link, các Danh mục theo thứ tự; Danh mục không vừa bề ngang gom vào menu "Thêm" [ASSUMPTION]; nút tìm kiếm; nút "Đồ hay".
 - SiteFooter: giới thiệu ngắn, link Danh mục, link `/bio`, câu công khai, ©. Không link trang tĩnh (Q9).
 
-**Bố cục `/bio` (FR-30)** — một cột, ProductCard *row*:
+**Bố cục `/bio` (FR-30)** — một cột, ProductCard *row*. **Vinh chốt 2026-11-06: theo màn Stitch [Bio-M]** (thay bố cục FilterChips trước đó), vẫn giữ các loại trừ của PRD: không tick xác minh, không @handle, không icon MXH, không emoji, không ô tìm, không "Bài mới nhất", không bộ sưu tập ảo.
 
 | Thứ tự | Khối | Quy tắc |
 |---|---|---|
-| 1 | Giới thiệu + link "Về trang chủ" | Câu chữ từ CMS (FR-31); link là liên kết tuỳ chỉnh duy nhất. |
-| 2 | AffiliateDisclosure | Luôn hiện, không đóng được. |
-| 3 | FilterChips | "Tất cả" + mỗi Danh mục có Sản phẩm hiện. |
-| 4a | Chip "Tất cả" | Nhóm "Nổi bật" (Sản phẩm ghim, theo thứ tự bio) trước; sau đó mỗi Danh mục một nhóm theo thứ tự hiển thị, tiêu đề nhóm `{typography.headline-sm}` + số món. Sản phẩm ghim chỉ nằm trong "Nổi bật", không lặp ở nhóm Danh mục [ASSUMPTION]. |
-| 4b | Chip một Danh mục | Danh sách phẳng không tiêu đề nhóm; Sản phẩm ghim của Danh mục đó lên đầu, giữ dấu Ghim. |
+| 1 | Đầu trang căn giữa | Ảnh đại diện vuông bo góc (tuỳ chọn, sửa ở `/cms/bio`, cùng luật upload ảnh Sản phẩm; không có thì không render), tiêu đề "Đồ hay", giới thiệu từ CMS (FR-31). |
+| 2 | AffiliateDisclosure | Luôn hiện, không đóng được, **giữ ở đầu trang** trước mọi Link affiliate (FR-24, FR-30) — không dời xuống cuối như khối minh bạch của Stitch. |
+| 3 | Dòng Danh mục | Mỗi Danh mục có Sản phẩm hiện một thẻ dòng: tên, mô tả Danh mục cắt 1 dòng (nếu có), viên "N món" (tính cả món ghim), chevron; món chưa có Danh mục thành dòng "Khác" cuối. Hiện 5 dòng đầu; nhiều hơn 6 thì nút "Xem thêm N danh mục" / "Thu gọn". |
+| 4a | Màn mặc định | Nhóm "Nổi bật" (Sản phẩm ghim, theo thứ tự bio), tiêu đề `{typography.headline-sm}` + số món. Không có món ghim → mọi nhóm theo Danh mục như trước (Danh mục theo thứ tự hiển thị, "Khác" cuối, món ghim không lặp). |
+| 4b | Chạm một dòng Danh mục | Ẩn dòng Danh mục và nhóm mặc định; hiện link "← Về nổi bật" (không có món ghim: "← Tất cả danh mục"), tên + mô tả + số món, danh sách phẳng (món ghim lên đầu, giữ dấu Ghim). Dòng đang xem nằm trên URL `/bio?danh-muc=<slug>` (dòng "Khác": `_khac`) nên quay lại/tải lại giữ đúng màn; slug không khớp → màn mặc định. |
+| 5 | Thẻ "Ghé thăm Website" | Thẻ nền `{colors.primary-container}` gần cuối, link `/` cùng tab — liên kết tuỳ chỉnh duy nhất (thay link chữ "Về trang chủ"). |
 
 ### CMS
 
@@ -154,7 +155,7 @@ Hành vi. Hình ảnh ở `DESIGN.md` Components.
 | ArticleActionBar | Bài viết mobile | Dính đáy. "Sản phẩm" cuộn tới khối Sản phẩm; bài không có Sản phẩm: ẩn nút này. |
 | Breadcrumb | Bài viết, Danh mục | "Trang chủ › {Danh mục}"; mỗi cấp là link trừ cấp cuối. |
 | Pagination | Danh mục, Loại bài | Link tĩnh (AD-7): trang 1 = `/[danh-muc]` · `/meo-vat` · `/gom-link`; trang n = `…/trang/n` của chính trang đó; `/…/trang/1` chuyển hướng về trang gốc. Hiện trang đầu, cuối, ±1 quanh trang hiện tại. Chỉ 1 trang: ẩn. |
-| FilterChips | `/bio`, Tìm kiếm (chưa gõ) | `/bio`: chip đầu "Tất cả" + mỗi Danh mục có Sản phẩm hiện, kèm số món; lọc phía client tức thì, không đổi URL [ASSUMPTION: không có route con]. Tìm kiếm: mỗi Danh mục có Bài web đã xuất bản (không có "Tất cả", không kèm số); chạm → `/[danh-muc]` [ASSUMPTION]. Chip chọn cuộn vào giữa. |
+| FilterChips | Tìm kiếm (chưa gõ) | `/bio` không còn dùng FilterChips (Vinh 2026-11-06: dòng Danh mục, xem Bố cục `/bio`). Tìm kiếm: mỗi Danh mục có Bài web đã xuất bản (không có "Tất cả", không kèm số); chạm → `/[danh-muc]` [ASSUMPTION]. Chip chọn cuộn vào giữa. |
 | SearchBox | `/tim-kiem`, 404 | Gõ → tìm sau 300ms ngừng gõ [ASSUMPTION], tối thiểu 2 ký tự. Enter tìm ngay. Nút xoá làm rỗng và focus lại. Khớp không dấu (FR-36). Không ghi log từ khoá (NFR-7). |
 | SearchResultItem | `/tim-kiem` | PostCard *row*, từ khớp được highlight. Kèm dòng "Tìm thấy N bài viết cho "…"". Chỉ Bài web, không tab "Shopee" (Q4). |
 | EmptyState | tìm kiếm rỗng, 404, Danh mục rỗng, bio rỗng | Một tiêu đề, một câu gợi ý, một nút chính; có thể kèm danh sách gợi ý (Xem nhiều). |
@@ -247,8 +248,8 @@ Hành vi. Hình ảnh ở `DESIGN.md` Components.
 | Bài viết | Người dùng huỷ `navigator.share` | Không làm gì, không Toast. |
 | Danh mục / Loại bài | Rỗng | EmptyState "Danh mục này chưa có bài nào" + link Trang chủ. |
 | Danh mục / Loại bài | Trang n vượt quá | 404. |
-| `/bio` | Không có Sản phẩm hiện | Vẫn hiện phần giới thiệu + AffiliateDisclosure + link Trang chủ; EmptyState "Sắp có đồ hay, ghé lại sau nhé". |
-| `/bio` | Lọc Danh mục không có món | Không xảy ra (chip chỉ có Danh mục có món). |
+| `/bio` | Không có Sản phẩm hiện | Vẫn hiện đầu trang + AffiliateDisclosure + thẻ "Ghé thăm Website"; EmptyState "Sắp có đồ hay, ghé lại sau nhé". |
+| `/bio` | `?danh-muc=` không khớp / Danh mục hết món | Hiện màn mặc định (dòng Danh mục chỉ có Danh mục có món). |
 | Tìm kiếm | Chưa gõ | SearchBox + chip Danh mục để duyệt nhanh (thay "Gợi ý từ khoá" của Stitch) [ASSUMPTION]. |
 | Tìm kiếm | Mới gõ 1 ký tự | Chưa tìm; giữ nguyên trạng thái trước đó, không báo lỗi. |
 | Tìm kiếm | Đang tìm | 3 Skeleton dòng dưới ô tìm; giữ kết quả cũ mờ đi nếu đã có. |
@@ -318,7 +319,7 @@ Tương phản màu ở `DESIGN.md` Colors. PRD không có NFR a11y riêng; mứ
 |---|---|
 | < 768px | Một cột. BottomTabBar. TOC thu gọn được ở đầu bài. ArticleActionBar. Trang chủ: Banner → Bài nổi bật → Gom link đồ xinh (ProductCard *tile* cuộn ngang) → Xem nhiều → Mới cập nhật → Mẹo vặt hay (dạng dòng). |
 | 768–1023px | Lưới 6 cột: PostCard grid 2 cột. Vẫn BottomTabBar [ASSUMPTION]. |
-| ≥ 1024px | Nav ngang, không BottomTabBar. Trang chủ cùng thứ tự, trừ Bài nổi bật (7 cột) + Xem nhiều (5 cột) đứng cạnh nhau (Stitch desktop) rồi tới Gom link đồ xinh lưới 4 cột *tile*; Mới cập nhật 3 cột. Bài viết: thân 8 cột + cột phải dính (TOC, tim, chia sẻ). |
+| ≥ 1024px | Nav ngang, không BottomTabBar. Trang chủ cùng thứ tự, trừ Bài nổi bật (7 cột) + Xem nhiều (5 cột) đứng cạnh nhau (Stitch desktop) rồi tới Gom link đồ xinh lưới 4 cột *tile*; Mới cập nhật 3 cột. Bài viết: đầu bài (Breadcrumb, badge, H1, meta, AffiliateDisclosure, ảnh đầu bài) rộng hết khung như Stitch desktop; từ thân bài chia 8 cột + cột phải dính (TOC, tim, chia sẻ) (Vinh 2026-11-06). |
 | `/bio` | Thiết kế cho mobile (FR-30); desktop chỉ căn giữa cột rộng tối đa 560px [ASSUMPTION]. |
 | CMS | Mọi luồng UJ-1, UJ-2 làm trọn trên điện thoại 360px (NFR-4). Desktop thêm sidebar và bảng; Bộ nội dung giữ một cột ≤ 768px. |
 
@@ -414,7 +415,7 @@ Lỗi: bài chưa gắn Sản phẩm → nút trong Dialog tắt, lý do "Gắn 
 
 Câu hỏi 1–3 của `reconcile-stitch.md` đã chốt trong memlog. Câu 4–10 và mọi giả định dưới đây **đã được Vinh chấp nhận** (memlog 2026-11-04). Nhãn `[ASSUMPTION]` trong file được **giữ để truy vết**, không phải câu hỏi mở — không mở lại khi làm story.
 
-1. **Q4 — Phạm vi tìm kiếm:** chỉ Bài web (FR-36); bỏ tab "Shopee"; `/bio` không có ô tìm, chỉ FilterChips (FR-30).
+1. **Q4 — Phạm vi tìm kiếm:** chỉ Bài web (FR-36); bỏ tab "Shopee"; `/bio` không có ô tìm, chỉ duyệt theo Danh mục (FR-30; từ 2026-11-06 là dòng Danh mục thay FilterChips).
 2. **Q5 — Số đếm công khai:** không hiện Lượt xem ở đâu trên site; Lượt tim chỉ hiện trong trang bài (LikeButton), không trên PostCard.
 3. **Q6 — Bộ tab mobile:** Tạp chí / Mẹo vặt / Gom link / Danh mục (Sheet) / Đồ hay.
 4. **Q7 — Mô tả ngắn trên ProductCard:** không có; thẻ chỉ ảnh, tên, giá tham khảo + ngày, nút (Product không có trường này, FR-3).

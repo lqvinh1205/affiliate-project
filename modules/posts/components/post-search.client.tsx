@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
+import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { formatCount } from "@/platform/format";
 import { searchPosts } from "@/modules/posts/actions";
@@ -11,7 +12,7 @@ import type { SearchPostItem } from "@/modules/posts/types";
 import { PostCard } from "@/modules/posts/components/post-card";
 import { SearchBox } from "@/modules/posts/components/search-box.client";
 import { EmptyState } from "@/components/shared/empty-state";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 
 // Chờ ngừng gõ rồi mới tìm (UX-DR31); Enter tìm ngay.
@@ -140,7 +141,11 @@ export function PostSearch({ initialQuery, idle, noResults }: PostSearchProps) {
               <EmptyState
                 title="Chưa tìm thấy mẹo nào phù hợp với từ khoá này rồi..."
                 description="Bạn thử gõ ngắn hơn, chỉ tên món đồ hoặc việc cần làm, ví dụ “nồi chiên” hay “giặt”."
-              />
+              >
+                <Link href="/" className={buttonVariants({ size: "lg", className: "min-h-touch-target" })}>
+                  Về Trang chủ
+                </Link>
+              </EmptyState>
               {noResults}
             </div>
           )}

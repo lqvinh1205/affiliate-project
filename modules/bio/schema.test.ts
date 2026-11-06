@@ -10,20 +10,30 @@ function errorAt(input: Record<string, unknown>, field: string) {
 
 describe("bioSettingsInputSchema (FR-31)", () => {
   it("cắt khoảng trắng", () => {
-    expect(bioSettingsInputSchema.parse({ intro: " Xin chào ", disclosure: " Mình nhận hoa hồng. " })).toEqual({
+    expect(bioSettingsInputSchema.parse({ intro: " Xin chào ", disclosure: " Mình nhận hoa hồng. ", avatar: " " })).toEqual({
       intro: "Xin chào",
       disclosure: "Mình nhận hoa hồng.",
+      avatar: null,
     });
   });
 
+  it("ảnh đại diện tuỳ chọn, cùng luật ảnh Sản phẩm (upload hoặc host cho phép)", () => {
+    expect(bioSettingsInputSchema.parse({ intro: "a", disclosure: "b", avatar: "/uploads/x.webp" }).avatar).toBe(
+      "/uploads/x.webp",
+    );
+    expect(errorAt({ intro: "a", disclosure: "b", avatar: "http://example.com/x.jpg" }, "avatar")).toBe(
+      "Ảnh phải là link https từ Shopee hoặc đường dẫn trong site",
+    );
+  });
+
   it("câu công khai không tắt được: rỗng báo lỗi tại trường", () => {
-    expect(errorAt({ intro: "Xin chào", disclosure: "   " }, "disclosure")).toBe("Nhập câu công khai");
-    expect(errorAt({ intro: "", disclosure: "Có" }, "intro")).toBe("Nhập phần giới thiệu");
+    expect(errorAt({ intro: "Xin chào", disclosure: "   ", avatar: "" }, "disclosure")).toBe("Nhập câu công khai");
+    expect(errorAt({ intro: "", disclosure: "Có", avatar: "" }, "intro")).toBe("Nhập phần giới thiệu");
   });
 
   it("vượt giới hạn cứng báo số ký tự", () => {
-    expect(errorAt({ intro: "a".repeat(BIO_INTRO_MAX + 1), disclosure: "Có" }, "intro")).toBe(`Tối đa ${BIO_INTRO_MAX} ký tự`);
-    expect(errorAt({ intro: "Có", disclosure: "a".repeat(BIO_DISCLOSURE_MAX + 1) }, "disclosure")).toBe(
+    expect(errorAt({ intro: "a".repeat(BIO_INTRO_MAX + 1), disclosure: "Có", avatar: "" }, "intro")).toBe(`Tối đa ${BIO_INTRO_MAX} ký tự`);
+    expect(errorAt({ intro: "Có", disclosure: "a".repeat(BIO_DISCLOSURE_MAX + 1), avatar: "" }, "disclosure")).toBe(
       `Tối đa ${BIO_DISCLOSURE_MAX} ký tự`,
     );
   });

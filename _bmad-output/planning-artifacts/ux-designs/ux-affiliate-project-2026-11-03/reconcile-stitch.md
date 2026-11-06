@@ -299,3 +299,8 @@ Ghi chú: brief `ui-design-prompt.md` chỉ giao cho Stitch phần site public. 
 8. Trang chủ: dải "Gom link" là **bài Gom link** (theo PRD và brief) hay **thẻ Sản phẩm** (theo Stitch)?
 9. Footer có cần các trang tĩnh (Giới thiệu, Chính sách affiliate…) không? PRD chưa có route nào cho chúng.
 10. Các bộ sưu tập ảo trên bio ("Món tâm đắc", "Dưới 50k") có cần không? Hay chỉ dùng Danh mục cộng ghim nổi bật như FR-30/31? Và Danh mục có cần thêm emoji/icon không?
+
+## 5. Quyết định sau (Vinh 2026-11-06)
+
+- **Trang bio theo màn Stitch [Bio-M]**, thay bố cục FilterChips đã chốt trước: đầu trang căn giữa có ảnh đại diện (trường mới `BioSettings.avatar`, sửa ở `/cms/bio`), dòng Danh mục (tên, mô tả 1 dòng, "N món", chevron, "Xem thêm N danh mục"), nhóm "Nổi bật", thẻ "Ghé thăm Website" về `/`. Vẫn bỏ: tick verified, @handle, icon MXH, emoji Danh mục, ô tìm, bộ sưu tập ảo, "Bài mới nhất", newsletter. Khối minh bạch **không** dời xuống cuối như Stitch: FR-24/FR-30 yêu cầu nhãn ở đầu trang, trước Link affiliate. Chi tiết: `EXPERIENCE.md` › Bố cục `/bio`, `DESIGN.md` › Components.
+- **Trang bài desktop**: đầu bài và ảnh đầu bài rộng hết khung như Stitch desktop; lưới 8/4 bắt đầu từ thân bài. Giữ khối thả tim cuối bài.

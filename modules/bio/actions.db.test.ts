@@ -33,17 +33,36 @@ describe("Giới thiệu và câu công khai (FR-31)", () => {
     expect(await getBioPage()).toMatchObject(BIO_SETTINGS_DEFAULTS);
     expect(await db.bioSettings.count()).toBe(0);
 
-    expect(await saveBioSettings({ intro: "Chào bạn", disclosure: "Mình nhận hoa hồng." })).toEqual({ ok: true });
-    expect(await saveBioSettings({ intro: "Chào bạn nhé", disclosure: "Mình nhận hoa hồng nhỏ." })).toEqual({ ok: true });
+    expect(await saveBioSettings({ intro: "Chào bạn", disclosure: "Mình nhận hoa hồng.", avatar: "/uploads/a.webp" })).toEqual(
+      { ok: true },
+    );
+    expect(await getBioPage()).toMatchObject({ avatar: "/uploads/a.webp" });
+    expect(await saveBioSettings({ intro: "Chào bạn nhé", disclosure: "Mình nhận hoa hồng nhỏ.", avatar: " " })).toEqual({
+      ok: true,
+    });
     expect(await db.bioSettings.count()).toBe(1);
-    expect(await getBioPage()).toMatchObject({ intro: "Chào bạn nhé", disclosure: "Mình nhận hoa hồng nhỏ." });
+    expect(await getBioPage()).toMatchObject({ intro: "Chào bạn nhé", disclosure: "Mình nhận hoa hồng nhỏ.", avatar: null });
+    expect((await getBioForCms()).settings).toEqual({
+      intro: "Chào bạn nhé",
+      disclosure: "Mình nhận hoa hồng nhỏ.",
+      avatar: null,
+    });
     expect(actionTest.updatedTags).toEqual(["bio", "bio"]);
   });
 
+  it("ảnh đại diện ngoài host cho phép bị từ chối, không ghi", async () => {
+    expect(await saveBioSettings({ intro: "Chào", disclosure: "Có", avatar: "https://example.com/a.jpg" })).toEqual({
+      ok: false,
+      error: "Ảnh phải là link https từ Shopee hoặc đường dẫn trong site",
+    });
+    expect(await db.bioSettings.count()).toBe(0);
+    expect(actionTest.updatedTags).toEqual([]);
+  });
+
   it("câu công khai rỗng bị từ chối; chưa đăng nhập bị chặn", async () => {
-    expect(await saveBioSettings({ intro: "Chào", disclosure: " " })).toEqual({ ok: false, error: "Nhập câu công khai" });
+    expect(await saveBioSettings({ intro: "Chào", disclosure: " ", avatar: "" })).toEqual({ ok: false, error: "Nhập câu công khai" });
     actionTest.authorization = null;
-    expect(await saveBioSettings({ intro: "Chào", disclosure: "Có" })).toEqual({
+    expect(await saveBioSettings({ intro: "Chào", disclosure: "Có", avatar: "" })).toEqual({
       ok: false,
       error: "Bạn cần đăng nhập CMS",
     });

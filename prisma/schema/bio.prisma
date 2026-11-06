@@ -6,6 +6,8 @@ model BioSettings {
   id         String   @id @default(uuid())
   intro      String   @db.VarChar(500) // BIO_INTRO_MAX (modules/bio/constants.ts)
   disclosure String   @db.VarChar(300) // BIO_DISCLOSURE_MAX
+  /// Ảnh đại diện đầu `/bio` (Vinh 2026-11-06): file upload (`/uploads/…`) hoặc host trong `platform/images.ts`; null = không ảnh.
+  avatar     String?
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 }
