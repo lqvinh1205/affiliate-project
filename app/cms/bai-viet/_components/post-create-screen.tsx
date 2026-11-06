@@ -1,7 +1,7 @@
 import { connection } from "next/server";
 import { listCategoryOptionsForCms } from "@/modules/categories/cms-queries";
+import { createPost } from "@/modules/posts/actions";
 import { NewPostForm } from "@/modules/posts/components/new-post-form.client";
-import { createPost } from "@/app/cms/actions";
 import { PostScreenHeader } from "@/app/cms/bai-viet/_components/post-screen-header";
 
 // Danh mục đọc lúc request (CMS không cache — AD-7).

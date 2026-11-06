@@ -2,7 +2,7 @@
 
 > Nguồn: spine kiến trúc `_bmad-output/planning-artifacts/architecture/architecture-affiliate-project-2026-11-03/ARCHITECTURE-SPINE.md` (AD-xx), `docs/quy-dinh.md`, `docs/nen-tang-ky-thuat/lop-ai.md`, `docs/nen-tang-ky-thuat/nextjs-16.md` · Kiểm lần cuối: 2026-11-05 @ 8771851
 
-Công thức theo spine; code hiện tại chưa theo, xem `docs/cong-thuc/chuyen-code-cu.md`.
+Công thức theo spine. Mẫu đầy đủ đã có từ Epic 4: nghiên cứu Sản phẩm (`modules/suggestions/actions.ts` → `researchProduct`, `approveSuggestion`; `modules/research/prompts/research-product.prompt.ts`; test `modules/suggestions/actions.db.test.ts` với `fakeAi` + `runAfterCallbacks`).
 
 Dùng khi thêm hoặc sửa một tính năng tạo nội dung bằng AI (nghiên cứu, bài web, Threads, Facebook, bình luận link, gợi ý Danh mục). Làm kèm `docs/cong-thuc/them-server-action.md` cho mọi action và query. Reviewer chấm diff theo mục **Checklist**.
 
@@ -12,7 +12,8 @@ Dùng khi thêm hoặc sửa một tính năng tạo nội dung bằng AI (nghi�
 - **Chỉ `platform/ai` gọi nhà cung cấp**, qua `ask()`. Không dùng OpenAI, không import SDK nhà cung cấp ở nơi khác (AD-10, `[QD-09]`, `[QD-10]`).
 - **Không chờ AI trong request:** action ghi `GENERATING`, trả về ngay, gọi AI trong `after()`, hạn 90 giây (AD-18).
 - **Mỗi `kind` có một đích cố định**, Duyệt là upsert; tạo lại thì gợi ý cũ `SUPERSEDED` (AD-19).
-- `docs/nen-tang-ky-thuat/lop-ai.md` mô tả lớp AI cũ (`lib/ai.ts`, OpenAI); chỉ dùng cho hành vi nhà cung cấp (`[AI-07]`..`[AI-12]`), không dùng cho cấu trúc.
+- `docs/nen-tang-ky-thuat/lop-ai.md` mô tả `platform/ai` (nhà `claude -p`, giả lập `fakeAi`, cài đặt máy chủ); `[AI-07]`..`[AI-12]` là tham khảo cho nhà dự phòng.
+- Test DB: `after()` không chạy ngay mà xếp hàng; gọi `runAfterCallbacks()` (`vitest.db.helpers.ts`) để chạy phần gọi AI giả lập.
 
 ## Đọc trước
 

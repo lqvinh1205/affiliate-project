@@ -20,6 +20,8 @@ export default defineConfig({
       DIRECT_URL: "",
       ADMIN_USERNAME: "test-admin",
       ADMIN_PASSWORD: "test-mat-khau",
+      // Suite không bao giờ gọi AI thật (spine AD-16): `platform/ai` dùng nhà giả lập.
+      AI_PROVIDERS: "fake",
     },
     // Các file dùng chung một DB: chạy lần lượt.
     fileParallelism: false,

@@ -21,7 +21,7 @@ const MODES = [
 
 // Tạo Bài web mới (`/cms/bai-viet/moi`, AD-14): React Hook Form + cùng `newPostInputSchema` với server, qua CmsForm
 // (lỗi tại trường, nút dính đáy, UnsavedChangesGuard). AI viết bản nháp theo chủ đề hoặc bản nháp trống; xong chuyển
-// sang trình soạn. `createPost` (action AI cũ ở `app/cms/actions.ts` tới Epic 4) do Screen truyền vào.
+// sang trình soạn. `createPost` (`modules/posts/actions.ts`) do Screen truyền vào.
 export function NewPostForm({
   categories,
   createPost,

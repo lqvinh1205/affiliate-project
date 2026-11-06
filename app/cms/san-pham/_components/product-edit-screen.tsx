@@ -7,6 +7,7 @@ import { getProductForCms } from "@/modules/products/cms-queries";
 import { ProductForm } from "@/modules/products/components/product-form.client";
 import { ProductStatusBadge } from "@/modules/products/components/product-status-badge";
 import { ProductVisibilityButton } from "@/modules/products/components/product-visibility-button.client";
+import { ProductResearchSection } from "@/app/cms/san-pham/_components/product-research-section";
 import { ProductScreenHeader } from "@/app/cms/san-pham/_components/product-screen-header";
 
 export async function ProductEditScreen({ params }: Pick<PageProps<"/cms/san-pham/[id]">, "params">) {
@@ -25,8 +26,9 @@ export async function ProductEditScreen({ params }: Pick<PageProps<"/cms/san-pha
         badge={<ProductStatusBadge hidden={product.hidden} />}
         actions={<ProductVisibilityButton id={product.id} name={product.name} hidden={product.hidden} />}
       />
+      {/* Duyệt Danh mục gợi ý đổi `categoryId`: khoá theo Danh mục để form đọc lại giá trị mới (AD-12). */}
       <ProductForm
-        key={product.id}
+        key={`${product.id}-${product.categoryId ?? ""}`}
         categories={categories}
         priceUpdatedAt={product.priceUpdatedAt?.toISOString() ?? null}
         defaultValues={{
@@ -41,6 +43,8 @@ export async function ProductEditScreen({ params }: Pick<PageProps<"/cms/san-pha
           rawImageUrls: product.rawImageUrls.join("\n"),
         }}
       />
+
+      <ProductResearchSection productId={product.id} />
 
       <section aria-labelledby="product-usage" className="mt-space-xl space-y-space-sm">
         <h2 id="product-usage" className="text-headline-sm">

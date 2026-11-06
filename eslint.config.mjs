@@ -19,10 +19,8 @@ const AD9_TARGETS = ["posts", "products", "content-sets", "research"];
 
 // File cũ được miễn luật `app/**` (import `@/lib/*`, `@/components/site|cms/*`, `@/platform/db`).
 // Chuyển file nào sang cấu trúc mới thì bỏ nó khỏi danh sách (AD-17). Không dùng glob.
-const LEGACY_APP_FILES = [
-  // Chỉ còn các action AI cũ (`createPost`, `runSeoCheck`, `runThreads`, import `@/lib/ai`); chuyển ở Epic 4 (`platform/ai`).
-  "app/cms/actions.ts",
-];
+// Rỗng từ Story 4.1 (Epic 4): `app/cms/actions.ts` và `lib/ai.ts` đã chuyển hết; giữ cơ chế cho file cũ phát hiện thêm.
+const LEGACY_APP_FILES = [];
 
 // Đường dẫn tường minh: thoát ký tự glob như `[`, `(` trong tên route.
 const literalPath = (p) => p.replace(/[[\]()*?{}!]/g, "\\$&");

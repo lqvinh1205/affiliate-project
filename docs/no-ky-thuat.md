@@ -13,18 +13,19 @@ Không còn mục mở. [NO-01]–[NO-05] đã sửa ở Story 1.2, có unit tes
 [NO-09] (Sản phẩm bị xoá và tạo lại mỗi lần lưu bài) đã sửa ở Story 2.3: Kho Sản phẩm độc lập, trình soạn bài không ghi `Product`/`PostProduct`.
 
 - **[NO-08]** `prisma/seed.ts` chạy `deleteMany()` toàn bộ bài trước khi seed — phá huỷ dữ liệu. Xem `[PR-14]`.
-- **[NO-10]** `toThreads` (`lib/ai.ts`) đặt link website ở bài cuối chuỗi, trái PRD FR-14 (link affiliate nằm ở Bình luận kèm link).
+- **[NO-10]** Chuỗi Threads (`modules/content-sets/prompts/threads-post.prompt.ts`, action `content-sets.runThreads`) đặt link website ở bài cuối chuỗi, trái PRD FR-14 (link affiliate nằm ở Bình luận kèm link). Epic 5 thay bằng gợi ý `THREADS_POST` + `LINK_COMMENT`.
 - **[NO-14]** (đã bỏ) Không còn là nợ: spine AD-6 quy định không có endpoint công khai dưới `/api`, nên matcher chặn `/api/:path*` là đúng. Xem `[NX-57]`.
 
 ## Thấp — nhất quán và dọn dẹp
 
-Đã sửa ở lượt gộp Epic 3: [NO-07] (slug bài, chuyển hướng) — `PostSlugRedirect` + `loadPost`; [NO-12] (tóm tắt 200 vs 500) — `POST_EXCERPT_MAX` = 500 = `@db.VarChar(500)`; prompt AI 200 là mục tiêu mềm; [NO-13] (`priority`) — dùng `preload`; [NO-20] (khoá `category` mang nghĩa Loại bài) — trình soạn mới dùng `postType`; chỉ `generatePost({ category })` trong `lib/ai.ts` còn tên cũ, hết ở Epic 4.
+Đã sửa ở lượt gộp Epic 3: [NO-07] (slug bài, chuyển hướng) — `PostSlugRedirect` + `loadPost`; [NO-12] (tóm tắt 200 vs 500) — `POST_EXCERPT_MAX` = 500 = `@db.VarChar(500)`; prompt AI 200 là mục tiêu mềm; [NO-13] (`priority`) — dùng `preload`; [NO-20] (khoá `category` mang nghĩa Loại bài) — trình soạn mới dùng `postType`; prompt viết bài (`web-post.prompt.ts`, Epic 4) cũng dùng `postType`.
+
+Đã sửa ở lượt gộp Epic 4: [NO-17] (hai kiểu `ProductInput`) — bản của `lib/ai.ts` bỏ cùng file; [NO-19] phần `lib/ai.ts` — prompt mới dùng `PostType` của `@/generated/prisma/enums`. Gói `openai` đã gỡ ở Story 4.1 (sớm hơn kế hoạch "story thay thế cuối cùng của Epic 5" vì không còn code nào dùng — xem spec Epic 4, Quyết định tự chọn).
 
 [NO-16] (comment `lib/posts.ts` ghi `revalidateTag`) đã sửa ở Story 2.3. [NO-18] (kiểu `PostCard` chép tay) đã sửa ở lượt gộp 2.4–2.8: `PostCardData` suy từ query trong `modules/posts/types.ts`.
 
 - **[NO-25]** `cn` (package `cn` = clsx + tailwind-merge) coi lớp cỡ chữ token (`text-label-meta`, `text-label-sm`, `text-headline-*`…) và lớp màu `text-<màu>` là cùng nhóm, nên bỏ mất cỡ chữ khi ghép chung. Component mới của lượt gộp ghép chuỗi thường ở các chỗ này (`bottom-tab-bar.client.tsx`, `pagination.tsx`, `product-card.tsx`, `post-type-badge.tsx`); sửa tận gốc cần `extendTailwindMerge` khai báo nhóm `font-size` cho token — chưa làm (`[GD-05]`, `[GD-29]`).
-- **[NO-17]** Hai kiểu cùng tên `ProductInput`, khác hình dạng: `lib/ai.ts` (`{ name, priceText? }`, Sản phẩm đưa cho AI) và `modules/products/schema.ts` (dữ liệu Kho đã parse). Bản ở `lib/post-input.ts` đã bỏ ở Story 2.3; bản ở `lib/ai.ts` hết khi prompt chuyển sang `modules/posts/prompts/` (AD-10).
-- **[NO-19]** (thu hẹp ở Epic 3) `modules/posts` dùng `z.enum(PostType)`/`z.enum(Status)` và kiểu từ `@/generated/prisma/enums`; còn literal ở `lib/ai.ts` (Epic 4) và vài test.
+- **[NO-19]** (thu hẹp ở Epic 3, Epic 4) `modules/posts` dùng `z.enum(PostType)`/`z.enum(Status)` và kiểu từ `@/generated/prisma/enums`; còn literal ở vài test.
 - **[NO-21]** `README.md` ở gốc repo vẫn là mẫu create-next-app.
 - **[NO-22]** Kiểu import `cn` lẫn lộn: `components/ui/*` import từ gói `cn`, phần còn lại từ `@/components/ui/lib/utils` (cả hai cùng một hàm). Xem `[GD-05]`.
 

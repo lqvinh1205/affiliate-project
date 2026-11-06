@@ -376,3 +376,13 @@ body:has([data-article-action-bar]) [data-bottom-tab-bar] {
     animation: none;
   }
 }
+
+/* Thanh tiến trình không xác định của GeneratingIndicator (UX-DR42); tắt khi reduced-motion ở chỗ dùng. */
+@keyframes progress-indeterminate {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(300%);
+  }
+}

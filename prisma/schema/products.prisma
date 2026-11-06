@@ -1,27 +1,30 @@
 // Sản phẩm là dữ liệu nguồn độc lập trong Kho (FR-3, FR-4): Bài web chỉ tham chiếu qua `PostProduct`,
 // trình soạn bài không tạo/sửa/xoá Sản phẩm.
 model Product {
-  id             String        @id @default(uuid())
-  name           String        @db.VarChar(200) // PRODUCT_NAME_MAX (modules/products/constants.ts)
-  image          String?
+  id              String           @id @default(uuid())
+  name            String           @db.VarChar(200) // PRODUCT_NAME_MAX (modules/products/constants.ts)
+  image           String?
   /// "Giá tham khảo" người nhập (vd "~89.000đ"); migration `add_product_price_and_raw_data` đổi tên từ cột `price` cũ.
-  priceText      String?       @db.VarChar(50) // PRODUCT_PRICE_TEXT_MAX
+  priceText       String?          @db.VarChar(50) // PRODUCT_PRICE_TEXT_MAX
   /// Lúc `priceText` đổi lần cuối; null khi không có giá. Migration đặt = lúc áp cho giá cũ có sẵn.
-  priceUpdatedAt DateTime?
-  affiliateUrl   String // link affiliate do admin tạo sẵn từ Shopee Affiliate
+  priceUpdatedAt  DateTime?
+  affiliateUrl    String // link affiliate do admin tạo sẵn từ Shopee Affiliate
   // Dữ liệu thô (FR-3): chữ, đánh giá, URL ảnh dán tay từ trang Shopee; nguồn cho AI viết sau này.
-  rawText        String?       @db.Text
-  rawReviews     String?       @db.Text
-  rawImageUrls   String[]      @default([])
+  rawText         String?          @db.Text
+  rawReviews      String?          @db.Text
+  rawImageUrls    String[]         @default([])
   /// Ẩn khỏi website (FR-5): mọi query public lọc qua `visibleProductWhere` (modules/products/queries.ts).
   /// Sản phẩm đang dùng chỉ ẩn, không xoá cứng (AD-15).
-  hidden         Boolean       @default(false)
-  categoryId     String?
-  category       Category?     @relation(fields: [categoryId], references: [id], onDelete: Restrict)
-  postProducts   PostProduct[]
+  hidden          Boolean          @default(false)
+  categoryId      String?
+  category        Category?        @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  postProducts    PostProduct[]
+  /// Quan hệ ngược (AD-4): bảng của `suggestions`, `research`.
+  suggestions     Suggestion[]
+  researchProfile ResearchProfile?
   /// Migration đặt `createdAt`/`updatedAt` = lúc áp cho Sản phẩm có sẵn.
-  createdAt      DateTime      @default(now())
-  updatedAt      DateTime      @updatedAt
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
 
   @@index([categoryId])
   @@index([createdAt])

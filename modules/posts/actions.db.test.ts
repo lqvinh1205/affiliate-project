@@ -1,7 +1,9 @@
 import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { db } from "@/platform/db";
 import { actionTest, resetTestDb } from "@/vitest.db.helpers";
-import { createPostDraft, deletePost, savePost, setPostStatus } from "@/modules/posts/actions";
+import { AI_BAD_OUTPUT } from "@/platform/ai/ask";
+import { fakeAi } from "@/platform/ai/providers/fake";
+import { checkPostSeo, createPost, createPostDraft, deletePost, savePost, setPostStatus } from "@/modules/posts/actions";
 import type { PostFormValues } from "@/modules/posts/schema";
 
 async function product(name: string, data: { hidden?: boolean } = {}) {
@@ -291,5 +293,84 @@ describe("createPostDraft", () => {
       ok: false,
       error: "Danh mục đã chọn không còn tồn tại. Tải lại trang rồi chọn lại.",
     });
+  });
+});
+
+// Chuyển từ `app/cms/actions.db.test.ts` (Story 4.1): `createPost` nay ở `modules/posts/actions.ts`, nhánh AI chạy
+// trên `platform/ai` giả lập (AD-16).
+describe("createPost", () => {
+  it("AI không có chủ đề báo UserError, không tạo bài, không gọi AI", async () => {
+    expect(await createPost({ postType: "MEO_VAT", categoryId: "", topic: "  ", useAi: true })).toEqual({
+      ok: false,
+      error: "Nhập chủ đề để AI viết bài",
+    });
+    expect(await db.post.count()).toBe(0);
+    expect(fakeAi.calls()).toHaveLength(0);
+  });
+
+  it("bản nháp trống ghi Danh mục đã chọn", async () => {
+    const c = await db.category.create({ data: { name: "Nhà bếp", slug: "nha-bep" } });
+    const res = await createPost({ postType: "MEO_VAT", categoryId: c.id, topic: "Mẹo bếp", useAi: false });
+    expect(res.ok).toBe(true);
+    expect(await db.post.findFirstOrThrow()).toMatchObject({ title: "Mẹo bếp", categoryId: c.id, status: "DRAFT" });
+  });
+
+  it("chủ đề dài quá giới hạn tiêu đề bị từ chối tại trường", async () => {
+    expect(await createPost({ postType: "MEO_VAT", categoryId: "", topic: "a".repeat(201), useAi: false })).toEqual({
+      ok: false,
+      error: "Tối đa 200 ký tự",
+    });
+  });
+
+  it("AI viết bản nháp: chuẩn hoá về giới hạn Bài web, thân bài sanitize, là nháp, không làm mới cache", async () => {
+    fakeAi.reply(() => ({
+      title: "t".repeat(300),
+      excerpt: "Tóm tắt",
+      seoTitle: "SEO",
+      seoDescription: "Mô tả",
+      content: "<h2>Mục</h2><p>x</p><a href='https://x.vn'>link</a>",
+      tags: ["bếp", "Bếp", "mẹo, hay"],
+      seoKeywords: ["mẹo bếp"],
+    }));
+    const res = await createPost({ postType: "MEO_VAT", categoryId: "", topic: "Mẹo bếp", useAi: true });
+    expect(res.ok).toBe(true);
+    const saved = await db.post.findFirstOrThrow();
+    expect(saved.title).toHaveLength(200);
+    expect(saved).toMatchObject({ status: "DRAFT", tags: ["bếp", "mẹo hay"], seoKeywords: ["mẹo bếp"] });
+    expect(saved.content).not.toContain("<a");
+    expect(fakeAi.calls()[0]).toMatchObject({ profile: "quality", webSearch: false });
+    expect(fakeAi.calls()[0].user).toContain("Chủ đề/ý tưởng: Mẹo bếp");
+    expect(actionTest.updatedTags).toEqual([]);
+  });
+
+  it("AI trả sai định dạng hai lần: báo UserError tiếng Việt, không tạo bài", async () => {
+    fakeAi.reply(() => ({ sai: true }));
+    expect(await createPost({ postType: "GOM_LINK", categoryId: "", topic: "Đồ xinh", useAi: true })).toEqual({
+      ok: false,
+      error: AI_BAD_OUTPUT,
+    });
+    expect(await db.post.count()).toBe(0);
+  });
+});
+
+describe("checkPostSeo", () => {
+  const seoInput = { title: "Mẹo bếp", seoTitle: "", seoDescription: "", content: "<p>x</p>", keywords: ["mẹo bếp"] };
+
+  it("trả điểm đã kẹp 0–100 và gợi ý; không lưu, không tạo Suggestion, không làm mới cache (AD-9)", async () => {
+    fakeAi.reply(() => ({ score: 123.4, suggestions: [" Thêm từ khoá vào h2 ", ""] }));
+    expect(await checkPostSeo(seoInput)).toEqual({
+      ok: true,
+      report: { score: 100, suggestions: ["Thêm từ khoá vào h2"] },
+    });
+    expect(fakeAi.calls()[0]).toMatchObject({ profile: "fast" });
+    expect(fakeAi.calls()[0].user).toContain("Từ khoá mục tiêu: mẹo bếp");
+    expect(await db.suggestion.count()).toBe(0);
+    expect(actionTest.updatedTags).toEqual([]);
+  });
+
+  it("chưa đăng nhập bị chặn, không gọi AI", async () => {
+    actionTest.authorization = null;
+    expect(await checkPostSeo(seoInput)).toEqual({ ok: false, error: "Bạn cần đăng nhập CMS" });
+    expect(fakeAi.calls()).toHaveLength(0);
   });
 });

@@ -3,8 +3,9 @@ import { listCategoryOptionsForCms } from "@/modules/categories/cms-queries";
 import { PRODUCT_PICKER_PARAM } from "@/modules/products/constants";
 import { listPickerProductsForCms } from "@/modules/products/cms-queries";
 import { getPostForCms } from "@/modules/posts/cms-queries";
+import { checkPostSeo } from "@/modules/posts/actions";
 import { PostForm } from "@/modules/posts/components/post-form.client";
-import { runSeoCheck, runThreads } from "@/app/cms/actions";
+import { runThreads } from "@/modules/content-sets/actions";
 import { PostScreenHeader } from "@/app/cms/bai-viet/_components/post-screen-header";
 
 function first(v: string | string[] | undefined) {
@@ -40,7 +41,7 @@ export async function PostEditScreen({ params, searchParams }: PageProps<"/cms/b
         products={attached.map(toPicker)}
         productResults={productResults.map(toPicker)}
         productQuery={productQuery}
-        ai={{ seoCheck: runSeoCheck, threads: runThreads }}
+        ai={{ seoCheck: checkPostSeo, threads: runThreads }}
         defaultValues={{
           id: post.id,
           title: post.title,

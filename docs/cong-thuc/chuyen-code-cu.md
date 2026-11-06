@@ -1,6 +1,6 @@
 # Công thức: chuyển code cũ sang cấu trúc spine
 
-> Nguồn: spine kiến trúc `_bmad-output/planning-artifacts/architecture/architecture-affiliate-project-2026-11-03/ARCHITECTURE-SPINE.md` (AD-1, AD-2, AD-5, AD-8, AD-11, AD-17), danh sách file từ `ls lib components components/site components/cms app/cms` · Kiểm lần cuối: 2026-11-05 (lượt gộp Epic 3)
+> Nguồn: spine kiến trúc `_bmad-output/planning-artifacts/architecture/architecture-affiliate-project-2026-11-03/ARCHITECTURE-SPINE.md` (AD-1, AD-2, AD-5, AD-8, AD-11, AD-17), danh sách file từ `ls lib components components/site components/cms app/cms` · Kiểm lần cuối: 2026-11-06 (lượt gộp Epic 4)
 
 Dùng khi một story chạm file ở vị trí cũ: `lib/*`, `components/site/*`, `components/cms/*`, `components/*.tsx` ở gốc, `app/cms/actions.ts`, route CMS tên tiếng Anh. Áp dụng sau epic nền; trong epic nền, thứ tự chuyển theo AD-17. Các công thức khác (`them-man-hinh.md`, `sua-loi.md`, `bo-chuc-nang.md`, `doi-schema.md`) trỏ về đây.
 
@@ -34,10 +34,10 @@ Dòng ghi **Đã chuyển** là lịch sử của epic nền: file cũ không c�
 | `lib/categories.ts` | **Đã chuyển** (lượt gộp 2.4–2.8): `modules/posts/constants.ts` — `POST_TYPES` (nhãn, slug, mô tả; khoá là enum `PostType`), `POST_TYPE_KEYS`; `CategoryKey` thay bằng `PostType` của `@/generated/prisma/enums`; `categoryFromSlug` bỏ (`/meo-vat`, `/gom-link` là thư mục riêng) | Consistency Conventions (Loại bài), AD-5 |
 | `lib/posts.ts` | **Đã chuyển** (lượt gộp 2.4–2.8): `modules/posts/queries.ts` (`getPostsByCategory` → `getPostsByType`; khoá `category` của thẻ đổi thành `postType` — `[NO-20]`); `POSTS_TAG` → `modules/posts/tags.ts`; kiểu suy từ query → `modules/posts/types.ts` | AD-5, AD-7 |
 | `lib/post-input.ts` | **Đã chuyển** (Epic 3, file đã xoá): `postInputSchema`, `postDraftInputSchema`, `newPostInputSchema` → `modules/posts/schema.ts`; khoá `category` → `postType`; `productInputSchema` đã thay bằng `modules/products/schema.ts` (Story 2.3, file cũ không còn schema Sản phẩm); trường dùng chung (`optionalText`, `imageUrl`, `shopeeAffiliateUrl`) đã ở `platform/validation/fields.ts`, `firstError` đã ở `platform/validation/errors.ts` (epic nền) | AD-4, AD-5, AD-14 |
-| `lib/ai.ts` | phần gọi nhà cung cấp → `platform/ai` (không giữ OpenAI); prompt → `modules/<miền>/prompts/*.prompt.ts` theo module chủ đích: viết Bài web → `modules/posts/prompts/web-post.prompt.ts`, chấm SEO → `modules/posts/prompts/seo-review.prompt.ts`, chuỗi Threads → `modules/content-sets/prompts/threads-post.prompt.ts` | AD-10, `[QD-09]` |
+| `lib/ai.ts` | **Đã chuyển** (Epic 4, file và thư mục `lib/` đã xoá, gói `openai` đã gỡ): gọi nhà cung cấp → `platform/ai/ask.ts` + `platform/ai/providers/claude-cli.ts`; prompt → `modules/posts/prompts/web-post.prompt.ts` (viết Bài web), `modules/posts/prompts/seo-review.prompt.ts` (chấm SEO), `modules/content-sets/prompts/threads-post.prompt.ts` (chuỗi Threads) | AD-10, `[QD-09]` |
 | `lib/content.ts` (`readingMinutes`, `withHeadingIds`) | **Đã chuyển** (epic nền): `platform/html/content.ts` (tính sau sanitize) | AD-22, Structural Seed |
 | `lib/utils.ts` (`cn`) | **Đã chuyển** (epic nền): `components/ui/lib/utils.ts`, alias `components.json` đã đổi; hook dùng chung → `components/shared/hooks/` | AD-17 bước 2 |
-| `app/cms/actions.ts` | **Đã chuyển một phần** (Epic 3): `setPostStatus`, `deletePost`, `savePost` → `modules/posts/actions.ts` + `service.ts`; ghi bản nháp → `createPostDraft` (`modules/posts/actions.ts`). **Còn tới Epic 4:** `createPost` có AI → `modules/suggestions/actions.ts` (kind `WEB_POST`); `runThreads` → `modules/suggestions/actions.ts` (kind `THREADS_POST`); `runSeoCheck` → `posts.checkPostSeo`. Chỉ chuyển action bị chạm; file xoá khi rỗng | AD-6, AD-9 |
+| `app/cms/actions.ts` | **Đã chuyển** (Epic 3 + Epic 4, file đã xoá): `setPostStatus`, `deletePost`, `savePost`, `createPostDraft` → `modules/posts/actions.ts` (Epic 3); `runSeoCheck` → `posts.checkPostSeo`, `createPost` → `modules/posts/actions.ts`, `runThreads` → `modules/content-sets/actions.ts` (Epic 4, hành vi giữ nguyên; Epic 5 thay `createPost` nhánh AI và `runThreads` bằng gợi ý `WEB_POST`, `THREADS_POST` ở `modules/suggestions/actions.ts`). Test `app/cms/actions.db.test.ts` → `modules/posts/actions.db.test.ts` | AD-6, AD-9 |
 | `app/cms/new/page.tsx` | **Đã chuyển** (Epic 3): `app/cms/bai-viet/moi/page.tsx` (route cũ 404) | Structural Seed |
 | `app/cms/posts/[id]/page.tsx` | **Đã chuyển** (Epic 3): `app/cms/bai-viet/[id]/page.tsx` (route cũ 404) | Structural Seed |
 | `components/site/affiliate-disclosure.tsx` | **Đã chuyển** (lượt gộp): `modules/products/components/affiliate-disclosure.tsx` (biến thể `box`, `text`) | AD-11 |
@@ -62,7 +62,7 @@ Tên file chính xác trong `platform/` (file hay thư mục, ví dụ `platform
 ## Ngoại lệ
 
 - **Story 2.3 — Kho Sản phẩm độc lập** (Vinh duyệt 2026-11-05): **hết hiệu lực** ở lượt gộp Epic 3 (2026-11-05) — trình soạn bài đã chuyển hẳn sang `modules/posts/` + `app/cms/bai-viet/`; `components/cms/`, `lib/post-input.ts`, `app/cms/new/`, `app/cms/posts/` đã xoá.
-- **Còn lại tới Epic 4 (`platform/ai`):** `lib/ai.ts` và `app/cms/actions.ts` với đúng ba action AI `createPost` (AI viết hoặc bản trống, ghi qua `createPostDraft` của `modules/posts`), `runSeoCheck`, `runThreads`. `app/cms/actions.ts` là file duy nhất trong `LEGACY_APP_FILES` (vì import `@/lib/ai`); không thêm action mới vào đây. `app/cms/actions.db.test.ts` (test `createPost`) đi cùng file này nhưng không còn cần miễn luật.
+- **Code AI cũ** (`lib/ai.ts`, `app/cms/actions.ts`): **hết** ở lượt gộp Epic 4 (2026-11-06). `LEGACY_APP_FILES` trong `eslint.config.mjs` rỗng; không còn file cũ nào được miễn luật ranh giới. Tạm thời có hai tính năng AI chạy đồng bộ không qua `Suggestion` (`posts.createPost` nhánh AI, `content-sets.runThreads`) — giữ hành vi cũ tới Epic 5.
 
 ## Bước 1: Xác định vị trí đích
 

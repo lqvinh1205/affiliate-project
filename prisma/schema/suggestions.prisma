@@ -1,0 +1,57 @@
+// Gợi ý AI (spine AD-9, AD-18, AD-19): mọi đầu ra AI là một bản ghi ở đây, Vinh Duyệt rồi mới vào đích.
+// Chủ: module `suggestions`. `payload`, `riskWarnings`, `sources`, `skipped` là Json có Zod theo `kind`
+// (modules/suggestions/schema.ts, payload theo prompt của module chủ đích) — đọc ra phải parse, không truy vấn bên trong.
+//
+// Viết tay trong migration `add_suggestion` (AD-15):
+// - CHECK "Suggestion_one_target": đúng một trong `productId` / `contentSetId` / `inspirationId` khác null.
+// - Partial unique index "Suggestion_active_product_key" trên (`kind`, `productId`) khi `status` là
+//   GENERATING/PENDING: mỗi khoá đích tối đa một gợi ý đang chờ. Khoá đích của `contentSetId`/`inspirationId`
+//   thêm cùng story tạo bảng `ContentSet`/`Inspiration` (Epic 5, Epic 10).
+model Suggestion {
+  id                   String           @id @default(uuid())
+  kind                 SuggestionKind
+  status               SuggestionStatus @default(GENERATING)
+  /// Kết quả AI theo `kind`; null khi GENERATING/FAILED. Sau Duyệt bất biến (AD-19).
+  payload              Json?
+  /// Cảnh báo rủi ro (FR-23, Epic 5); mảng rỗng khi chưa có.
+  riskWarnings         Json             @default("[]")
+  /// Thông báo lỗi tiếng Việt khi FAILED (AD-13, UX-DR96).
+  errorMessage         String?          @db.VarChar(300) // SUGGESTION_ERROR_MAX (modules/suggestions/constants.ts)
+  promptId             String           @db.VarChar(100) // SUGGESTION_PROMPT_ID_MAX
+  promptVersion        Int
+  editedBeforeApproval Boolean          @default(false)
+  /// Bản trước khi Tạo lại (FR-21). Xoá bản cũ thì bản mới giữ lại, chỉ mất liên kết.
+  parentSuggestionId   String?
+  parent               Suggestion?      @relation("SuggestionRegenerate", fields: [parentSuggestionId], references: [id], onDelete: SetNull)
+  children             Suggestion[]     @relation("SuggestionRegenerate")
+  /// Nguồn web AI đã dùng `{ url, title }[]` và năng lực bị bỏ qua (`images` | `webSearch` | `video`) — từ `ask()`.
+  sources              Json?
+  skipped              Json?
+  /// Lần sao chép đầu khi chưa Duyệt (AD-21, Epic 5).
+  firstCopiedAt        DateTime?
+  /// Gợi ý thuộc hẳn Sản phẩm: xoá Sản phẩm thì xoá gợi ý.
+  productId            String?
+  product              Product?         @relation(fields: [productId], references: [id], onDelete: Cascade)
+  /// Khoá ngoại tới `ContentSet` / `Inspiration` thêm cùng story tạo bảng đó (chưa có bảng).
+  contentSetId         String?
+  inspirationId        String?
+  createdAt            DateTime         @default(now())
+  updatedAt            DateTime         @updatedAt
+
+  @@index([productId, kind, createdAt])
+  @@index([parentSuggestionId])
+}
+
+enum SuggestionKind {
+  RESEARCH
+  PRODUCT_CATEGORY
+}
+
+enum SuggestionStatus {
+  GENERATING
+  PENDING
+  APPROVED
+  REJECTED
+  FAILED
+  SUPERSEDED
+}

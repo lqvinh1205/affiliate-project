@@ -1,0 +1,13 @@
+// Hồ sơ nghiên cứu đã Duyệt (FR-6..FR-10, spine AD-19): đích của gợi ý `RESEARCH`. Chủ: module `research`.
+// `data` là Json có Zod `researchProfileSchema` (modules/research/prompts/research-product.prompt.ts) — đọc ra phải
+// parse. Duyệt upsert theo `productId` nên Duyệt hai lần không tạo hai hồ sơ. Hồ sơ từ Cảm hứng (`inspirationId`)
+// thêm cùng story tạo bảng `Inspiration` (Epic 10).
+model ResearchProfile {
+  id        String   @id @default(uuid())
+  /// Hồ sơ thuộc hẳn Sản phẩm: xoá Sản phẩm thì xoá hồ sơ.
+  productId String?  @unique
+  product   Product? @relation(fields: [productId], references: [id], onDelete: Cascade)
+  data      Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}

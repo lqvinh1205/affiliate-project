@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 export type ThreadsInput = { title: string; content: string; slug: string };
 export type ThreadsAction = (input: ThreadsInput) => Promise<Result<{ posts: string[] }>>;
 
-// Chuỗi Threads bằng AI (action cũ `runThreads`, giữ nguyên tới Epic 4): đọc giá trị form lúc bấm.
+// Chuỗi Threads bằng AI (action `runThreads` của `content-sets`, tạm tới Epic 5): đọc giá trị form lúc bấm.
 export function PostThreads({
   getInput,
   threads,

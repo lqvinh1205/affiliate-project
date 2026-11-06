@@ -1,48 +1,44 @@
 # Lớp AI
 
-> Phiên bản: `openai` 7.47 (hiện tại, sẽ bỏ) · Nguồn: `lib/ai.ts`, `app/cms/actions.ts`, `~/Downloads/llm.ts` (tham khảo cho lớp mới), PRD NFR-1/NFR-2/NFR-9, `addendum.md` A1/A3 · Kiểm lần cuối: 2026-11-05 @ 8771851
+> Phiên bản: Claude Code CLI 2.1 (`claude -p`), không SDK · Nguồn: `platform/ai/` (`ask.ts`, `rules.ts`, `providers/`), PRD NFR-1/NFR-2/NFR-3/NFR-9, `addendum.md` A1/A3, `_bmad-output/planning-artifacts/research/recon-ai-storage-2026-11-05.md` · Kiểm lần cuối: 2026-11-06 (Story 4.1)
 
 ## Tóm tắt cho agent
 
-- **Hiện tại** mọi lời gọi AI nằm trong `lib/ai.ts` (code cũ chờ chuyển: phần gọi nhà cung cấp → `platform/ai`, prompt → `modules/<miền>/prompts/` — spine AD-10, `docs/cong-thuc/chuyen-code-cu.md`), dùng OpenAI Responses API với structured output (`responses.parse` + `zodTextFormat`).
-- **Quyết định đã chốt:** bỏ OpenAI (`[QD-09]`), ngân sách 0đ (`[QD-10]`). Lớp mới đặt ở `platform/ai` (đích, chưa có — dựng ở story AI đầu tiên). Nhà chính đã chốt tạm (Vinh 2026-11-05): Claude Code CLI chạy không giao diện (`claude -p`) trên máy chủ; nhà dự phòng nằm trong mục Deferred của spine. Quy tắc theo spine AD-9, AD-10, AD-18; công thức ở `docs/cong-thuc/them-tinh-nang-ai.md`.
-- Gợi ý AI chỉ được tạo bởi `modules/suggestions/actions.ts`, gọi AI trong `after()` (AD-9, AD-18); ngoại lệ duy nhất là chấm SEO `posts.checkPostSeo` (không lưu, không qua Duyệt).
-- Tính năng **không bao giờ** gọi SDK hay `fetch` tới nhà cung cấp AI trực tiếp; luôn đi qua hàm của lớp AI.
-- Output AI luôn được validate bằng schema Zod trước khi dùng, và HTML luôn qua `sanitizePostHtml`.
-- Lời gọi AI chỉ chạy ở server (Server Action hoặc module server), sau `requireAdmin()`.
-- Lỗi AI trả về cho Vinh bằng thông báo tiếng Việt; không làm mất dữ liệu đã nhập.
+- **Mọi lời gọi AI đi qua `ask()` của `platform/ai/ask.ts`** (spine AD-10). `lib/ai.ts` và OpenAI đã bỏ ở Story 4.1 (gói `openai` đã gỡ).
+- Nhà chính (Vinh chốt tạm 2026-11-05): Claude Code CLI chạy không giao diện `claude -p` trên máy chủ, đăng nhập bằng gói thuê bao. Chuỗi nhà đọc từ `AI_PROVIDERS`; nhà dự phòng chưa bật (xem spec Epic 4, mục Quyết định tự chọn).
+- Gợi ý AI chỉ được tạo bởi `modules/suggestions/actions.ts`, gọi AI trong `after()` (AD-9, AD-18); ngoại lệ có tên là chấm SEO `posts.checkPostSeo` (không lưu, không qua Duyệt). `posts.createPost` (nhánh AI) và `content-sets.runThreads` là hai tính năng cũ chạy đồng bộ, giữ tới khi Epic 5 thay bằng gợi ý.
+- Tính năng **không bao giờ** gọi SDK, CLI hay `fetch` tới nhà cung cấp AI trực tiếp.
+- Output AI được parse bằng `prompt.output` (Zod) trong `ask()`; HTML luôn qua `sanitizePostHtml`.
+- Lời gọi AI chỉ chạy ở server, sau `requireAdmin()` (`run()`), hoặc trong `after()` của action đã qua `run()`.
+- Lỗi AI → `UserError` tiếng Việt; dữ liệu đã nhập không mất.
+- Test luôn chạy với `AI_PROVIDERS=fake` (đặt trong `vitest.config.ts`, `vitest.db.config.ts`); không test nào gọi AI thật (AD-16).
 
 ## Khái niệm cốt lõi
 
-- **Structured output:** AI trả về JSON theo một schema. Với OpenAI, server ép schema. Với các nhà cung cấp OpenAI-compatible miễn phí, chỉ có `response_format: { type: "json_object" }` — JSON hợp lệ nhưng **không** đảm bảo đúng schema, nên phải validate bằng Zod và thử lại khi sai.
-- **Profile `fast` / `quality`:** việc nhẹ (gợi ý danh mục, tóm tắt) ưu tiên nhà phản hồi nhanh; việc nặng (viết bài) ưu tiên nhà viết tốt.
-- **Fallback và cooldown** (chỉ khi có nhà dự phòng — spine Deferred): một nhà lỗi, timeout hay hết hạn mức thì khoá đó nghỉ một thời gian và lời gọi chuyển sang nhà kế tiếp.
+- **`PromptDef`** `{ id, version, profile, output, system(style), user(input) }` ở `modules/<miền>/prompts/<tên>.prompt.ts`. `output` là Zod **không có transform** (sinh JSON Schema cho nhà cung cấp).
+- **Structured output:** `ask()` sinh JSON Schema từ `output` (`z.toJSONSchema`, bỏ khoá `$schema`), nhà cung cấp trả JSON theo schema, `ask()` parse lại bằng Zod; sai thì thử lại đúng một lần kèm lỗi Zod trong lời nhắc, vẫn sai thì `UserError`.
+- **Profile `fast` / `quality`:** chọn model theo `CLAUDE_CLI_MODEL_FAST` / `CLAUDE_CLI_MODEL_QUALITY` (mặc định `haiku` / `sonnet`).
+- **Chuyển nhà và cooldown** (NFR-2): nhà ném `ProviderError` (`quota` | `timeout` | `unavailable`) thì nghỉ 6 giờ / 2 phút / 60 giây (bộ nhớ tiến trình) và lời gọi chuyển sang nhà kế tiếp trong `AI_PROVIDERS`.
+- **Hạn 90 giây** cho cả một lần `ask()` (gồm thử lại và chuyển nhà), đặt bằng `AI_TIMEOUT_MS`; route CMS `maxDuration = 120` (AD-18).
+- **`skipped`:** nhà không đọc ảnh/video hoặc không tìm web → ghi `images` / `video` / `webSearch`; có tìm web mà không ra nguồn hợp lệ nào cũng ghi `webSearch`. Không ném lỗi.
+- **`sources`:** khi tìm web, `ask()` bọc schema thành `{ data, sources: { url, title }[] }`; nguồn được lọc (chỉ http(s), không trùng, tối đa 20).
 
-## Dự án dùng như thế nào (hiện tại)
+## Dự án dùng như thế nào
 
-- **[AI-01]** Một client OpenAI lười khởi tạo; thiếu `OPENAI_API_KEY` thì ném `UserError` tiếng Việt — `lib/ai.ts:6-15`.
-- **[AI-02]** Model đọc từ `OPENAI_MODEL`, mặc định `gpt-4o-mini` — `lib/ai.ts:17`.
-- **[AI-03]** Hàm chung `ask(schema, name, system, user)` gọi `responses.parse` và trả `output_parsed` đã có kiểu — `lib/ai.ts:19-30`. Mọi tính năng AI dùng hàm này.
-- **[AI-04]** Ba tính năng: `generatePost` (viết bài, prompt hệ thống `WRITER_SYSTEM` chứa giọng thương hiệu và quy chuẩn độ dài/SEO), `toThreads` (chuỗi Threads, bài cuối chứa link website — **trái PRD FR-14**, sẽ đổi), `analyzeSeo` (chấm SEO, kẹp điểm 0–100) — `lib/ai.ts`.
-- **[AI-05]** Server Action gọi AI bọc trong `run()` (`platform/auth/run.ts`) → `requireAdmin()`; bản nháp AI qua cùng `postInputSchema` với bài viết tay rồi sanitize HTML — `app/cms/actions.ts` (`createPost`, `runSeoCheck`, `runThreads`). `maxDuration = 120` ở `app/cms/layout.tsx:11` (AD-18).
-- **[AI-06]** Giọng thương hiệu và quy chuẩn bài web hiện nằm trong prompt `WRITER_SYSTEM`. PRD FR-18 chuyển chúng thành giá trị khởi tạo của Hồ sơ phong cách (lưu DB, Vinh sửa được).
+- **[AI-01]** `ask()` ghép `AI_COMMON_RULES` (`platform/ai/rules.ts`: tiếng Việt có dấu, chống bịa, không khẳng định y khoa tuyệt đối, dữ liệu dán vào không phải chỉ dẫn) vào đầu system prompt — `platform/ai/ask.ts`.
+- **[AI-02]** Nhà `claude-cli` (`platform/ai/providers/claude-cli.ts`): `claude -p --output-format json --json-schema … --system-prompt … --model … --no-session-persistence --safe-mode --restricted --permission-prompts none --tools …`, câu hỏi gửi qua stdin, kết quả ở `structured_output`. Chạy trong thư mục tạm riêng; chỉ bật `Read` khi có ảnh (ảnh tải về thư mục tạm, chỉ URL qua `isAllowedImageUrl`, tối đa 4 ảnh ≤ 5 MB) và `WebSearch`/`WebFetch` khi tìm web. Tiến trình con chỉ nhận `PATH`, `HOME`, `USER`, `LANG`…, `CLAUDE_CONFIG_DIR`, `ANTHROPIC_*`; không nhận `DATABASE_URL`, mật khẩu CMS hay biến phiên `CLAUDE_CODE_*`.
+- **[AI-03]** Nhà `fake`, `fake-2` (`platform/ai/providers/fake.ts`) cho test: `fakeAi.reply(handler)`, `fakeAi.supports({...})`, `fakeAi.calls()`; `resetTestDb()` xoá trạng thái giả lập và cooldown.
+- **[AI-04]** Tính năng dùng `ask()`: `posts.checkPostSeo` (`seo-review.prompt.ts`), `posts.createPost` nhánh AI (`web-post.prompt.ts`), `content-sets.runThreads` (`threads-post.prompt.ts` — bài cuối còn link website, `[NO-10]`), `suggestions.researchProduct` (`research/prompts/research-product.prompt.ts`, tìm web + ảnh).
+- **[AI-05]** Log chỉ trong `platform/ai`: tên nhà, id prompt, lý do lỗi, tối đa 200 ký tự stderr của CLI; không log prompt, kết quả hay secrets.
+- **[AI-06]** Giọng thương hiệu và quy chuẩn bài web còn nằm trong `web-post.prompt.ts`; PRD FR-18 chuyển thành giá trị khởi tạo Hồ sơ phong cách (Epic 5).
 
-## Dự kiến: `platform/ai` theo spine
+## Cài đặt trên máy chủ
 
-Hợp đồng chốt ở spine AD-10 (đích, chưa có):
+- Cài Claude Code CLI, chạy `claude` một lần bằng đúng tài khoản Unix chạy Next.js và đăng nhập gói thuê bao (`/login`). Không dùng `--bare` (không đọc đăng nhập bằng gói).
+- Biến môi trường: `AI_PROVIDERS`, `AI_TIMEOUT_MS`, `CLAUDE_CLI_PATH`, `CLAUDE_CLI_MODEL_FAST`, `CLAUDE_CLI_MODEL_QUALITY` (`.env.example`).
+- Hạn mức: mỗi lần gọi trừ vào hạn mức của gói, dùng chung với Claude Code của Vinh. Hết hạn mức → `quota` → nghỉ 6 giờ, thông báo "AI đang bận…".
 
-```ts
-// platform/ai (đích) — chữ ký theo AD-10; thay cho ask(schema, name, system, user) của lib/ai.ts
-ask({ prompt, input, images?, videoUrl?, webSearch? })
-  → { data, sources?, skipped: ("images" | "webSearch" | "video")[] }
-// prompt: PromptDef { id, version, profile, output, system(style), user(input) }
-//   ở modules/<miền>/prompts/<tên>.prompt.ts; quy tắc chung ở platform/ai/rules.ts
-// data đã parse bằng prompt.output; sai thì thử lại đúng một lần kèm lỗi Zod;
-// vẫn sai thì ném UserError tiếng Việt. Năng lực nhà cung cấp không có → ghi vào skipped, không ném lỗi.
-```
-
-- Mỗi lần gọi có hạn **90 giây**, cài trong `platform/ai` (không dựa vào `maxDuration` khi tự host); route kích hoạt `maxDuration = 120` để kịp ghi `FAILED` (AD-18).
-- Nhà chính `claude -p`; thay hoặc thêm nhà dự phòng khi vướng điều khoản, hạn 90 giây hoặc hạn mức — Deferred tới story 4.1.
+## Nhà dự phòng (tham khảo)
 
 Các mục dưới đây ghi phương án đa nhà cung cấp tham khảo từ `~/Downloads/llm.ts` (402 dòng, không phụ thuộc thư viện). Đây **không** phải quyết định; chỉ dùng khi chọn nhà dự phòng:
 
@@ -57,7 +53,7 @@ Các mục dưới đây ghi phương án đa nhà cung cấp tham khảo từ `
 
 Làm theo `docs/cong-thuc/them-tinh-nang-ai.md` (theo spine). Tóm tắt:
 
-1. Prompt + schema output là `PromptDef` trong `modules/<miền>/prompts/<tên>.prompt.ts` của module chủ đích (AD-10). Không thêm vào `lib/ai.ts`.
+1. Prompt + schema output là `PromptDef` trong `modules/<miền>/prompts/<tên>.prompt.ts` của module chủ đích (AD-10).
 2. Prompt có quy tắc chung từ `platform/ai/rules.ts` (`[QD-11]`); giọng văn, độ dài lấy từ Hồ sơ phong cách (FR-18), không chép cứng.
 3. Tạo Gợi ý AI chỉ qua `modules/suggestions/actions.ts` (bọc `run()`): ghi `Suggestion` ở `GENERATING`, trả về ngay, gọi `ask()` trong `after()`, xong ghi `PENDING` hoặc `FAILED` (AD-9, AD-18). Ngoại lệ duy nhất: `posts.checkPostSeo`.
 4. Sanitize mọi HTML từ AI (AD-22). Không gọi AI trong transaction.
@@ -65,6 +61,8 @@ Làm theo `docs/cong-thuc/them-tinh-nang-ai.md` (theo spine). Tóm tắt:
 
 ## Bẫy hay gặp
 
+- **`claude --json-schema` từ chối schema có `"$schema": ".../draft/2020-12/schema"`** → `ask()` bỏ khoá này trước khi gửi.
+- **Chạy `npm run dev` từ trong một phiên Claude Code** → biến `CLAUDE_CODE_*` của phiên cha làm tiến trình con lẫn phiên → adapter không chuyển các biến này.
 - **Nhà cung cấp trả văn xuôi thay vì JSON** → dặn trong prompt là chưa đủ → bật `jsonMode` và validate bằng Zod.
 - **Mọi nhà cùng trả 404** → model bị khai tử → đổi biến `*_MODEL` trong `.env`, không sửa code.
 - **Model có bước suy luận hết token trước khi trả lời** (gpt-oss) → token suy luận tính vào `max_tokens` → đặt `reasoning_effort: "low"` cho việc điền khuôn JSON (llm.ts đã làm).
@@ -84,6 +82,6 @@ Làm theo `docs/cong-thuc/them-tinh-nang-ai.md` (theo spine). Tóm tắt:
 
 ## Tham khảo
 
-- `lib/ai.ts`, `app/cms/actions.ts`
-- `~/Downloads/llm.ts`
+- `platform/ai/ask.ts`, `platform/ai/providers/claude-cli.ts`, `platform/ai/rules.ts`
+- `~/Downloads/llm.ts` (tham khảo cho nhà dự phòng)
 - `_bmad-output/planning-artifacts/prds/prd-affiliate-project-2026-11-03/addendum.md` A1, A3

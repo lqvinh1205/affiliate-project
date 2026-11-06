@@ -103,6 +103,15 @@ export const newPostInputSchema = z
     if (v.useAi && !v.topic) ctx.addIssue({ code: "custom", path: ["topic"], message: "Nhập chủ đề để AI viết bài" });
   });
 
+// Chấm SEO (`checkPostSeo`): giá trị form lúc bấm, chưa lưu. Chỉ giới hạn độ dài để không gửi khối chữ vô hạn cho AI.
+export const seoCheckInputSchema = z.object({
+  title: z.string().max(POST_TITLE_MAX, `Tối đa ${POST_TITLE_MAX} ký tự`),
+  seoTitle: z.string().max(POST_SEO_TITLE_MAX, `Tối đa ${POST_SEO_TITLE_MAX} ký tự`),
+  seoDescription: z.string().max(POST_SEO_DESCRIPTION_MAX, `Tối đa ${POST_SEO_DESCRIPTION_MAX} ký tự`),
+  content: z.string().max(POST_CONTENT_MAX, "Nội dung quá dài"),
+  keywords: z.array(z.string().max(POST_TAG_MAX)).max(POST_TAGS_MAX),
+});
+
 export const setPostStatusInputSchema = z.object({ id: postId, status: z.enum(Status) });
 
 export const deletePostInputSchema = z.object({ id: postId });
@@ -112,3 +121,4 @@ export type PostFormValues = z.input<typeof postInputSchema>;
 export type PostInput = z.infer<typeof postInputSchema>;
 export type NewPostFormValues = z.input<typeof newPostInputSchema>;
 export type PostDraftFormValues = z.input<typeof postDraftInputSchema>;
+export type SeoCheckInput = z.input<typeof seoCheckInputSchema>;

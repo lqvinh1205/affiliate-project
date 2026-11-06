@@ -64,3 +64,22 @@ export async function setProductHiddenRecord(
     throw e;
   }
 }
+
+// Đặt Danh mục của Sản phẩm — đích Duyệt gợi ý `PRODUCT_CATEGORY` (gọi từ `modules/suggestions/actions.ts`, AD-9,
+// AD-19). Vinh vẫn đổi Danh mục tay trên form Sản phẩm (`saveProductRecord`), không cần Duyệt (FR-22).
+export async function setProductCategoryRecord(
+  data: { id: string; categoryId: string },
+  tx?: Prisma.TransactionClient,
+) {
+  try {
+    return await (tx ?? db).product.update({
+      where: { id: data.id },
+      data: { categoryId: data.categoryId },
+      select: { id: true, categoryId: true },
+    });
+  } catch (e) {
+    if (prismaCode(e) === "P2003") throw new UserError(CATEGORY_GONE);
+    if (prismaCode(e) === "P2025") throw new UserError(NOT_FOUND);
+    throw e;
+  }
+}

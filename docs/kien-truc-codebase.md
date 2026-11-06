@@ -1,6 +1,6 @@
 # Kiến trúc codebase
 
-> Phiên bản: Next.js 16.4.3, React 19.3.0, Prisma 7.10 (`@prisma/adapter-pg`), Zod 4.6, OpenAI SDK 7.47, Tailwind 4, Tiptap 3, Vitest 5.1 (`package.json`) · Nguồn: mã nguồn repo, spine `_bmad-output/planning-artifacts/architecture/architecture-affiliate-project-2026-11-03/ARCHITECTURE-SPINE.md`, `node_modules/next/dist/docs/` · Kiểm lần cuối: 2026-11-05 (lượt gộp Epic 3, Story 3.1–3.7)
+> Phiên bản: Next.js 16.4.3, React 19.3.0, Prisma 7.10 (`@prisma/adapter-pg`), Zod 4.6, Claude Code CLI (`claude -p`, lớp `platform/ai`), Tailwind 4, Tiptap 3, Vitest 5.1 (`package.json`) · Nguồn: mã nguồn repo, spine `_bmad-output/planning-artifacts/architecture/architecture-affiliate-project-2026-11-03/ARCHITECTURE-SPINE.md`, `node_modules/next/dist/docs/` · Kiểm lần cuối: 2026-11-06 (lượt gộp Epic 4, Story 4.1–4.5)
 
 Tài liệu này là bản đồ của code **đang có**. Cấu trúc đích (spine AD-2, AD-17, Structural Seed) nằm ở mục [Dự kiến](#dự-kiến); spine thắng tài liệu này khi mâu thuẫn. Quy ước viết code xem `docs/quy-uoc-code.md`.
 
@@ -9,7 +9,7 @@ Tài liệu này là bản đồ của code **đang có**. Cấu trúc đích (s
 Tài liệu chỉ trỏ tới **file + tên hàm/hằng**, không ghi số dòng (file đổi thường xuyên làm số dòng lệch).
 
 - Ứng dụng là một Next.js App Router duy nhất, hai mặt: **site public** (`app/(site)/`) và **CMS** (`app/cms/`). Không có `app/api/`. Hai route handler: `app/cms/upload/route.ts` (POST upload) và `app/uploads/[...path]/route.ts` (GET file đã upload).
-- Repo đang chuyển dần sang `app → modules → platform` (spine AD-2, AD-17). Đã có `modules/categories` (T0), `modules/products` (T1), `modules/posts` (T2, site + CMS). Code cũ chỉ còn phần AI chờ `platform/ai` (Epic 4): `lib/ai.ts` và `app/cms/actions.ts` (`createPost` AI, `runSeoCheck`, `runThreads`). `components/site/`, `components/cms/`, `lib/post-input.ts`, `app/cms/new/`, `app/cms/posts/` đã chuyển/xoá ở Epic 3.
+- Repo đang chuyển dần sang `app → modules → platform` (spine AD-2, AD-17). Đã có `modules/categories` (T0), `modules/products` (T1), `modules/posts`, `modules/research` (T2), `modules/content-sets` (T3, mới có prompt chuỗi Threads + `runThreads`), `modules/suggestions` (T4). Không còn code cũ: `lib/` và `app/cms/actions.ts` đã chuyển/xoá ở Epic 4, `LEGACY_APP_FILES` rỗng.
 - Bật `cacheComponents` và `partialPrefetching` (`next.config.ts`). Trang public chỉ đọc qua hàm `"use cache"` trong `modules/<miền>/queries.ts`; không truy vấn `db` trong trang.
 - Ghi dữ liệu: Server Action trong `modules/<miền>/actions.ts` (Danh mục, Sản phẩm, Bài web), bọc `run()` (`platform/auth/run.ts`, gọi `requireAdmin()`), rồi `updateTag` tag của module có dữ liệu đổi.
 - Auth là HTTP Basic: `proxy.ts` chặn `/cms` (trừ `/cms/upload`) + `/api`; Server Action và route upload tự kiểm lại. Realm chung `BASIC_AUTH_CHALLENGE` (`platform/auth/basic-auth.ts`).
@@ -17,7 +17,7 @@ Tài liệu chỉ trỏ tới **file + tên hàm/hằng**, không ghi số dòng
 - HTML bài viết luôn qua `sanitizePostHtml` (`platform/html/sanitize.ts`) khi ghi và khi render — AD-22.
 - Host ảnh cho phép khai báo một chỗ: `IMAGE_HOSTS` (`platform/images.ts`), cùng `UPLOADS_PATH` cho file upload.
 - Sản phẩm public luôn lọc qua `visibleProductWhere` + `publicProductSelect` (`modules/products/queries.ts`) — Sản phẩm ẩn biến khỏi mọi trang.
-- Lớp AI duy nhất là `lib/ai.ts` (code cũ, đích `platform/ai` — chưa có); chỉ `app/cms/actions.ts` gọi nó.
+- Lớp AI duy nhất là `platform/ai` (`ask()`, nhà chính `claude -p`); xem `docs/nen-tang-ky-thuat/lop-ai.md`.
 
 ## Tổng quan tầng
 
@@ -28,19 +28,18 @@ flowchart TD
     S["app/(site)/*<br/>trang public tĩnh"]
     C["app/cms/*<br/>màn CMS động"]
     UP["app/cms/upload/route.ts<br/>app/uploads/[...path]/route.ts"]
-    A["app/cms/actions.ts<br/>(action AI cũ)"]
   end
   subgraph Modules["modules/"]
     MC["categories (T0)"]
     MPR["products (T1)"]
-    MPO["posts (T2)"]
-  end
-  subgraph Legacy["code cũ"]
-    L["lib/ai.ts"]
+    MPO["posts, research (T2)"]
+    MCS["content-sets (T3)"]
+    MSU["suggestions (T4)"]
   end
   subgraph Platform["platform/"]
     PD["db"]
     PA["auth/"]
+    PAI["ai/ (ask, rules, providers)"]
     PS["storage/, upload-rules"]
     PO["html/, validation/, images, slug, format, site, errors"]
   end
@@ -57,9 +56,13 @@ flowchart TD
   C --> MPO
   C --> MPR
   C --> MC
-  C --> A
-  A --> L
-  A --> MPO
+  C --> MSU
+  C --> MCS
+  MSU --> MPO
+  MSU --> MPR
+  MSU --> MC
+  MCS --> MPO
+  Modules --> PAI
   MPO --> MPR
   MPO --> MC
   MPR --> MC
@@ -72,7 +75,7 @@ flowchart TD
   PD --> DB
 ```
 
-Ghi chú: chỉ còn `app/cms/actions.ts` miễn luật ESLint qua `LEGACY_APP_FILES` (`eslint.config.mjs`, vì import `@/lib/ai`); nó không gọi `db`, ghi bản nháp qua action `createPostDraft` của `modules/posts`. Route trong `app/` không import `@/platform/db` hay `service.ts`.
+Ghi chú: `LEGACY_APP_FILES` (`eslint.config.mjs`) rỗng từ Epic 4. Route trong `app/` không import `@/platform/db` hay `service.ts`. `modules/suggestions/actions.ts` là ngoại lệ AD-9 duy nhất: import `service.ts`, `prompts/` của `posts`, `products`, `content-sets`, `research`.
 
 ## Bảng trách nhiệm module
 
@@ -86,9 +89,9 @@ Hạ tầng chung, không chứa nghiệp vụ, không import `modules/` hay `ap
 | `platform/auth/basic-auth.ts` | `isAuthorized()` so Basic Auth bằng `timingSafeEqual` trên SHA-256, fail closed khi thiếu env; `BASIC_AUTH_CHALLENGE` (realm "CMS") | `proxy.ts`, `platform/auth/require-admin.ts`, `app/cms/upload/route.ts` |
 | `platform/auth/require-admin.ts` | `requireAdmin()` đọc header `authorization` qua `headers()`, ném `UserError("Bạn cần đăng nhập CMS")` | `run()` |
 | `platform/auth/run.ts` | `run(fn)`: `requireAdmin()` → chạy → trả `Result<T>`; `UserError` trả nguyên văn, lỗi khác `console.error` + `UNEXPECTED_ERROR` | mọi Server Action |
-| `platform/errors.ts` | `UserError`, kiểu `Result<T>`, hằng `UNEXPECTED_ERROR` = "Có lỗi xảy ra, thử lại sau" | `run()`, `lib/ai.ts`, `app/cms/actions.ts` |
+| `platform/errors.ts` | `UserError`, kiểu `Result<T>`, hằng `UNEXPECTED_ERROR` = "Có lỗi xảy ra, thử lại sau" | `run()`, `platform/ai`, `actions.ts`/`service.ts` của module |
 | `platform/validation/fields.ts` | Trường Zod dùng chung: `optionalText`, `requiredText`, `slugField`, `imageUrl` (theo `isAllowedImageUrl`), `shopeeAffiliateUrl` (chỉ `https` + `shopee.vn`, `s.shopee.vn`, `shope.ee`) | `schema.ts` của module |
-| `platform/validation/errors.ts` | `firstError()` lấy thông báo lỗi Zod đầu tiên | `actions.ts` của module, `app/cms/actions.ts` |
+| `platform/validation/errors.ts` | `firstError()` lấy thông báo lỗi Zod đầu tiên | `actions.ts` của module |
 | `platform/html/sanitize.ts` | `sanitizePostHtml()` — allowlist đúng định dạng trình soạn (h2, h3, p, br, strong, em, ul, ol, li, blockquote), **không** `a`, `img`, bảng, không thuộc tính; `b/i/h1/h4–h6/div` đổi sang thẻ tương đương (AD-22). Hàm thuần, chạy cả ở client | `modules/posts/service.ts` (ghi), `modules/posts/queries.ts` (phút đọc), trang bài `post-screen.tsx`, PreviewSheet và PostEditor (dán) |
 | `platform/html/content.ts` | `visibleText()`, `readingMinutes()` (200 từ/phút), `withHeadingIds(html, reservedIds)` gắn id cho `<h2>` làm mục lục, tránh id dành riêng (`ARTICLE_RESERVED_IDS`); dùng trên HTML đã sanitize | `modules/posts/queries.ts`, `service.ts`, trang bài, PreviewSheet |
 | `platform/slug.ts` | `RESERVED_ROOT_SLUGS` (đường dẫn hệ thống, test so với thư mục `app/` và `app/(site)`), `slugify()` | `modules/categories/schema.ts`, `freePostSlug()` trong `modules/posts/service.ts` |
@@ -96,7 +99,7 @@ Hạ tầng chung, không chứa nghiệp vụ, không import `modules/` hay `ap
 | `platform/format.ts` | `formatDate()` (ngày dài), `formatShortDate()` (dd/mm/yyyy) theo `vi-VN`, `Asia/Ho_Chi_Minh`, trả `""` khi `null` | trang chủ, trang bài, ProductCard, CMS Sản phẩm |
 | `platform/upload-rules.ts` | Luật upload dùng chung server + client: `UPLOAD_ENDPOINT`, loại nhận (`UPLOAD_TYPES` ảnh JPG/PNG/WebP/GIF/AVIF, video MP4/WebM/MOV), `IMAGE_MAX_BYTES` 25 MB, `VIDEO_MAX_BYTES` 100 MB, `uploadError()` | `app/cms/upload/route.ts`, `components/shared/upload-field.client.tsx` |
 | `platform/storage/local-disk.ts` | `import "server-only"`; `put({ type, body }, maxBytes) → { url }` ghi luồng vào `UPLOAD_DIR` (tên = sha256 + đuôi, file tạm rồi đổi tên, vượt cỡ ném `UploadTooLargeError`), `openStoredFile(name)`; thiếu `UPLOAD_DIR` hoặc trỏ vào `public/`/`.next/` → ném lỗi (AD-24) | hai route handler upload |
-| `platform/site.ts` | `SITE_NAME`, `SITE_URL` (từ `NEXT_PUBLIC_SITE_URL`, bỏ `/` cuối), `DEFAULT_OG_IMAGE` (`/og-default.png`), `MAIN_CONTENT_ID` (đích link "Bỏ qua tới nội dung") | root layout, sitemap, robots, trang bài, `runThreads`, layout site/CMS |
+| `platform/site.ts` | `SITE_NAME`, `SITE_URL` (từ `NEXT_PUBLIC_SITE_URL`, bỏ `/` cuối), `DEFAULT_OG_IMAGE` (`/og-default.png`), `MAIN_CONTENT_ID` (đích link "Bỏ qua tới nội dung") | root layout, sitemap, robots, trang bài, `content-sets.runThreads`, `platform/ai` (URL ảnh tương đối), layout site/CMS |
 
 `platform/ai` là **đích, chưa có** (dựng ở story AI đầu tiên).
 
@@ -110,13 +113,9 @@ Hợp đồng file theo spine AD-5 (`schema`, `types`, `constants`, `tags`, `que
 | `modules/products/` (T1) | `Product`; `PRODUCTS_TAG`; `productInputSchema`, `setProductHiddenInputSchema`; `saveProductRecord`, `setProductHiddenRecord`; actions `saveProduct`, `setProductHidden` (`updateTag(PRODUCTS_TAG)`); `queries.ts`: `visibleProductWhere`, `publicProductSelect`; `cms-queries.ts`: `listProductsForCms` (kẹp trang), `getProductForCms`, `listPickerProductsForCms(q, excludeIds)` (chỉ Sản phẩm đang hiện); components `AffiliateLink`, `AffiliateDisclosure`, `ProductCard`, `ProductForm`, `ProductStatusBadge`, `ProductVisibilityButton`, `ProductPicker` (`?sp=` trên URL) | `/cms/san-pham`, trình soạn bài, trang bài, `modules/posts/queries.ts` |
 | `modules/posts/` (T2) | `Post`, `PostProduct`, `PostSlugRedirect`; `POSTS_TAG` (`tags.ts`); `constants.ts`: `POST_TYPES`, giới hạn `POST_*_MAX` (= `@db.VarChar` hoặc chỉ Zod), `POST_STATUS_FILTERS`, `PAGE_SIZE`, `CMS_POST_PAGE_SIZE`, `ARTICLE_RESERVED_IDS`; `schema.ts`: `postInputSchema`, `postDraftInputSchema`, `newPostInputSchema`, `setPostStatusInputSchema`, `deletePostInputSchema`; `service.ts`: `savePostRecord` (ghi `PostProduct` theo thứ tự, chỉ gắn mới Sản phẩm đang hiện; đổi slug bài đã từng xuất bản → `PostSlugRedirect`), `createPostDraftRecord`, `setPostStatusRecord`, `deletePostRecord`; actions `savePost`, `createPostDraft`, `setPostStatus`, `deletePost`; `queries.ts`: `getLatestPosts`, `getPostsByType`, `getRelatedPosts` (cùng Danh mục), `getPostBySlug`, `getPostSlugRedirect`, `getPublishedSlugs`, `listCategoriesWithPostCounts`, `listNavCategories`, `listPostsByCategory`, `listPostsByType`; `cms-queries.ts`: `listPostsForCms`, `getPostForCms`, `listCategoriesForCms`, `listPostsUsingProductForCms`; components `PostCard` (*featured*/*grid*/*row*), `PostTypeBadge`, `PostStatusBadge`, `PostArticle` (thân trang bài dùng chung site + PreviewSheet), `ArticleBody`, `TableOfContents`, `PostTags`, `RelatedPosts`, `PostForm`, `NewPostForm`, `PostBodyEditor` (Tiptap), `PreviewSheet`, `PostActionBar`, `PostSeoCheck`, `PostThreads`, `SeoScore` | mọi trang `app/(site)`, `app/sitemap.ts`, `/cms/bai-viet`, `/cms/danh-muc`, `/cms/san-pham/[id]` |
 
-### lib/ (code cũ chờ chuyển)
+### lib/
 
-Không tạo file mới ở đây (Policy trong `AGENTS.md`, spine AD-17). Vị trí đích theo `docs/cong-thuc/chuyen-code-cu.md`.
-
-| File | Sở hữu | Ai gọi |
-|---|---|---|
-| `lib/ai.ts` | Client OpenAI lười khởi tạo, hàm `ask()` structured output, `generatePost`, `toThreads`, `analyzeSeo` và prompt hệ thống `WRITER_SYSTEM` | `app/cms/actions.ts` |
+Đã xoá ở Epic 4 (không tạo lại — spine AD-1). Lịch sử chuyển ở `docs/cong-thuc/chuyen-code-cu.md`.
 
 ### app/
 
@@ -136,8 +135,7 @@ Không tạo file mới ở đây (Policy trong `AGENTS.md`, spine AD-17). Vị 
 | `app/cms/layout.tsx` | CmsShell, `noindex`, `maxDuration = 120` (AD-18) | trang CMS |
 | `app/cms/danh-muc/**`, `app/cms/san-pham/**` | Màn Danh mục, Kho Sản phẩm (Screen + skeleton trong `_components/`) | module tương ứng |
 | `app/cms/page.tsx` | `redirect("/cms/bai-viet")` (307 — sau này thành dashboard) | — |
-| `app/cms/bai-viet/**` | Danh sách Bài web (lọc `?trang-thai=nhap\|da-xuat-ban`, `?q`, `?trang`), tạo (`moi/`), sửa (`[id]/`, ProductPicker đọc `?sp=`) — Screen + skeleton trong `_components/` | `modules/posts`, `modules/products`, `app/cms/actions.ts` (AI) |
-| `app/cms/actions.ts` | Action AI cũ tới Epic 4: `createPost` (AI viết hoặc bản trống, ghi qua `createPostDraft`), `runSeoCheck`, `runThreads` | `NewPostForm`, `PostForm` (Screen truyền action làm prop) |
+| `app/cms/bai-viet/**` | Danh sách Bài web (lọc `?trang-thai=nhap\|da-xuat-ban`, `?q`, `?trang`), tạo (`moi/`), sửa (`[id]/`, ProductPicker đọc `?sp=`) — Screen + skeleton trong `_components/` | `modules/posts`, `modules/products`, `modules/content-sets` (`runThreads`) |
 | `app/cms/error.tsx`, `app/(site)/error.tsx`, `app/global-error.tsx`; `app/not-found.tsx`, `app/(site)/not-found.tsx`, `app/cms/not-found.tsx` | Trang lỗi (`ErrorScreen`, `components/shared/error-screen.client.tsx`) và 404 | Next.js |
 | `app/cms/styleguide/` | `/cms/styleguide` (noindex): token + component | — |
 
@@ -146,7 +144,7 @@ Không tạo file mới ở đây (Policy trong `AGENTS.md`, spine AD-17). Vị 
 - `proxy.ts` — kiểm Basic Auth cho `matcher: ["/cms", "/cms/((?!upload$).*)", "/api/:path*"]`; `/cms/upload` nằm ngoài proxy và tự `requireAdmin()` (AD-24).
 - `next.config.ts` — `remotePatterns` từ `IMAGE_HOSTS`, `cacheComponents`, `partialPrefetching`. Ảnh `/uploads/…` là ảnh nội bộ, không cần `localPatterns` (mặc định cho mọi đường dẫn nội bộ không query).
 - `prisma/schema/` — `_base.prisma`, `categories.prisma` (`Category`, `CategorySlugRedirect`), `posts.prisma` (`Post`, `PostProduct`, `PostSlugRedirect`, enum `PostType`, `Status`), `products.prisma` (`Product`, có `hidden`). `prisma/seed.ts` upsert 8 Danh mục, xoá bài rồi tạo lại bài mẫu; Sản phẩm mẫu nhận diện bằng Link affiliate placeholder (`[NO-08]`).
-- `eslint.config.mjs` — luật ranh giới module (`TIERS`, `no-restricted-imports`, `import/no-cycle`); file cũ miễn qua `LEGACY_APP_FILES`.
+- `eslint.config.mjs` — luật ranh giới module (`TIERS`, `no-restricted-imports`, `import/no-cycle`); file cũ miễn qua `LEGACY_APP_FILES` (rỗng từ Epic 4).
 - `vitest.config.ts` (unit), `vitest.db.config.ts` + `vitest.db.setup.ts` + `vitest.db.helpers.ts` + `vitest.db.mocks.ts` (test DB và khung test Server Action — `docs/kiem-chung.md` [KC-08]).
 - `components/shared/` — `CmsForm`, `ConfirmDialog`, `UnsavedChangesGuard`, `callAction`, `ImageFallback`, `UploadField`, `Breadcrumb`, `EmptyState`, `ErrorScreen`. `components/ui/` — shadcn base-ui.
 
@@ -178,12 +176,11 @@ Upload: UploadField gửi file thô (XHR, `Content-Type` = loại file) tới `/
 
 ## AI path
 
-1. Client gọi `createPost({ useAi: true })`, `runSeoCheck` hoặc `runThreads` (`NewPostForm`, `PostSeoCheck`, `PostThreads` — Screen truyền action cũ làm prop vì module không import `app/`).
-2. Action qua `run()` → gọi `generatePost` / `analyzeSeo` / `toThreads` trong `lib/ai.ts`.
-3. `ask(schema, name, system, user)` (`lib/ai.ts`) gọi `client.responses.parse` với `zodTextFormat` — structured output phía OpenAI. Không có `output_parsed` → `UserError` tiếng Việt. Model từ `OPENAI_MODEL`, mặc định `gpt-4o-mini`.
-4. Hậu xử lý: `analyzeSeo` kẹp điểm 0–100; `createPost` chuẩn hoá bản AI về giới hạn Bài web (cắt tiêu đề/tóm tắt/SEO, `toCommaListValue` cho thẻ) rồi ghi qua `createPostDraft` (`postDraftInputSchema`, sanitize, slug duy nhất). Chủ đề rỗng + AI → `UserError` "Nhập chủ đề để AI viết bài".
-5. Kết quả AI lưu thẳng thành bài **nháp**. Kết quả SEO và Threads không lưu DB.
-6. Thời gian chạy: `maxDuration = 120` cho route CMS (`app/cms/layout.tsx`, AD-18).
+1. **Nghiên cứu Sản phẩm** (Chi tiết Sản phẩm, `ResearchButton` / `RegenerateDialog`): `suggestions.researchProduct` qua `run()` → `startResearchRecords` ghi `RESEARCH` + `PRODUCT_CATEGORY` ở `GENERATING` (bản đang chờ → `SUPERSEDED`, bản đang tạo quá 120 giây → `FAILED`) → trả ngay → `after()` gọi `ask()` (`research-product.prompt.ts`, tìm web + ảnh) → `toResearchPayloads` → `completeResearchRecords` (`PENDING`) hoặc `failSuggestionsRecord` (`FAILED`, tiếng Việt). Màn có một `GeneratingPoller` (`router.refresh()` mỗi 3 giây, dừng sau 120 giây); `getProductSuggestionsForCms` trả `GENERATING` quá hạn là `FAILED`.
+2. **Duyệt**: `suggestions.approveSuggestion` → transaction: `research/service.upsertResearchProfileRecord` (khoá `productId`) hoặc `products/service.setProductCategoryRecord`, rồi `APPROVED` (+ `editedBeforeApproval`) → `updateTag(research | products)`. Sửa hồ sơ sau Duyệt: `research.saveResearchProfile`.
+3. **Đồng bộ (giữ tới Epic 5)**: `posts.createPost` nhánh AI (`web-post.prompt.ts`, chuẩn hoá về giới hạn Bài web rồi `createPostDraft`), `posts.checkPostSeo` (`seo-review.prompt.ts`, kẹp điểm 0–100, không lưu), `content-sets.runThreads` (`threads-post.prompt.ts`, không lưu). Screen truyền action làm prop cho `NewPostForm`, `PostForm`.
+4. `ask()` (`platform/ai/ask.ts`): ghép `AI_COMMON_RULES`, sinh JSON Schema từ Zod, gọi nhà theo `AI_PROVIDERS` (chuyển nhà + cooldown), parse bằng Zod (thử lại một lần), hạn 90 giây; lỗi → `UserError` tiếng Việt.
+5. Thời gian chạy: `maxDuration = 120` cho route CMS (`app/cms/layout.tsx`, AD-18).
 
 ## Ranh giới auth
 
@@ -227,7 +224,7 @@ Upload: UploadField gửi file thô (XHR, `Content-Type` = loại file) tới `/
 | `AffiliateDisclosure` | Nhãn công khai affiliate | `modules/products/components/affiliate-disclosure.tsx` |
 | `generatePost` / `PostDraft` | Gợi ý AI (cho Bài web) | Lưu thẳng thành bài nháp |
 | `toThreads` | Bài Threads (dạng chuỗi) | Không lưu DB |
-| `WRITER_SYSTEM` (`lib/ai.ts`) | Hồ sơ phong cách (Website) | Đang cứng trong code |
+| `webPostPrompt.system` (`modules/posts/prompts/web-post.prompt.ts`) | Hồ sơ phong cách (Website) | Đang cứng trong code |
 | Basic Auth `ADMIN_USERNAME` | Người vận hành | |
 
 ## Bất biến liên module
@@ -240,15 +237,14 @@ Upload: UploadField gửi file thô (XHR, `Content-Type` = loại file) tới `/
 - **[KT-06] Route public phải tĩnh.** `ensureStatic = "navigation"` (`app/(site)/layout.tsx`): không `cookies()`, `headers()`, `connection()`, `searchParams` hay dữ liệu chưa cache trong `app/(site)/*`; tra slug/redirect/404 trước `<Suspense>`.
 - **[KT-07] Slug bài duy nhất qua `freePostSlug()`** (`modules/posts/service.ts`, tránh cả slug cũ còn chuyển hướng của bài khác; slug nhập tay trùng → `UserError`); slug Danh mục kiểm `RESERVED_ROOT_SLUGS` (`platform/slug.ts`) trong `modules/categories/schema.ts`.
 - **[KT-08] Loại bài khai báo một chỗ.** `POST_TYPES` (`modules/posts/constants.ts`) khoá bằng enum `PostType` (`satisfies Record<PostType, …>`); `modules/posts/schema.ts` dùng `z.enum(PostType)`, `z.enum(Status)` từ enum Prisma.
-- **[KT-09] Lớp AI chỉ gọi từ Server Action.** `lib/ai.ts` chỉ import ở phía server; client chỉ `import type`.
+- **[KT-09] Lớp AI chỉ gọi từ Server Action** (hoặc `after()` của action). `platform/ai` mở đầu `import "server-only"`.
 - **[KT-10] Trang có Sản phẩm phải hiện Nhãn công khai affiliate** (`AffiliateDisclosure`) và mọi link Shopee qua `AffiliateLink`.
 
 ## Dự kiến
 
 Theo spine (AD-2, AD-17, Structural Seed), PRD và `addendum.md` A1, A4. Chỉ liệt kê vị trí đích.
 
-- **Lớp AI** (Epic 4): `lib/ai.ts` → `platform/ai` + `modules/*/prompts/`; `createPost` AI, `runSeoCheck`, `runThreads` rời `app/cms/actions.ts` (file xoá khi rỗng).
-- **Lớp AI** (A1, A3): `lib/ai.ts` → `platform/ai` + `modules/<miền>/prompts/`.
+- **Gợi ý AI cho nội dung** (Epic 5): `posts.createPost` nhánh AI và `content-sets.runThreads` (đồng bộ, không qua `Suggestion`) → gợi ý `WEB_POST`, `THREADS_POST`, `LINK_COMMENT` ở `modules/suggestions/actions.ts`; nhà AI dự phòng theo spine Deferred.
 - **Seed** (A4): link `https://shopee.vn/search?...` qua được `shopeeAffiliateUrl` (đúng domain) — câu hỏi mở ở `addendum.md` §A4.
 - **Bộ nội dung, Gợi ý AI, Cảnh báo rủi ro, Trang bio, Lượt xem, Tìm kiếm**: module và route mới theo spine; `/bio`, `/tim-kiem` hiện 404.
 
@@ -259,7 +255,7 @@ Theo spine (AD-2, AD-17, Structural Seed), PRD và `addendum.md` A1, A4. Chỉ l
 - [ ] Mọi HTML từ người dùng hoặc AI qua `sanitizePostHtml` ([KT-04]).
 - [ ] Host ảnh mới chỉ thêm ở `platform/images.ts` ([KT-03]).
 - [ ] Loại bài mới đồng bộ `CATEGORIES`, enum Prisma và `z.enum` ([KT-08]).
-- [ ] `lib/ai.ts` không bị import vào component client ngoài `import type` ([KT-09]).
+- [ ] `platform/ai` không bị import vào component client ([KT-09]).
 - [ ] Route mới cần auth nằm dưới `/cms` hoặc `/api` để khớp `proxy.ts` matcher; ngoại lệ `/cms/upload` không qua proxy, phải tự `requireAdmin()` (AD-24).
 - [ ] File mới nằm ở `modules/<miền>/`, `platform/`, `components/ui|shared/` hoặc `app/` theo spine, không ở `lib/`, `components/site|cms/`; `npm run lint` sạch (luật ranh giới).
 - [ ] Bảng module trong tài liệu này được cập nhật khi thêm/xoá/chuyển file trong `platform/`, `lib/` hoặc `app/`.
