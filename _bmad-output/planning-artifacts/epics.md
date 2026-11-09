@@ -58,6 +58,8 @@ FR-35: Thả tim. Người đọc thả tim và bỏ tim Bài web không cần �
 FR-36: Tìm kiếm. Người đọc tìm Bài web đã xuất bản theo từ khoá; khớp cả khi gõ không dấu (vd "noi chien" tìm được "nồi chiên").
 FR-37: Chia sẻ. Mỗi Bài web có nút chia sẻ lên Facebook, Threads và nút sao chép link; trên điện thoại dùng được chia sẻ gốc của hệ điều hành.
 FR-38: Thống kê trong CMS. Danh sách bài trong CMS hiện Lượt xem và Lượt tim từng Bài web, sắp xếp được theo hai chỉ số này.
+FR-39: Nhập Bài web từ URL (thêm 2026-11-09). Ở màn Tạo Bài web, dán URL bài bên ngoài → AI đọc trang, điền sẵn tiêu đề, tóm tắt, thân bài vào form bài đầy đủ (chưa lưu); chỉ tạo Nháp khi bấm Lưu. Thân bài làm sạch, không link/ảnh; link ảnh liệt kê riêng, không tự tải; ghi đè cần xác nhận; không đọc được trang thì báo rõ.
+FR-40: AI chỉnh sửa trong trình soạn (thêm 2026-11-09). "AI chỉnh sửa" + chỉ dẫn tuỳ chọn viết lại tiêu đề, tóm tắt, thân bài đang có trong form theo Hồ sơ phong cách Website, kèm Cảnh báo rủi ro; điền form chưa lưu, hoàn tác được. Có ở form nhập từ URL và trình soạn bài đã có. FR-39/40 là ngoại lệ của FR-22 (không tạo Gợi ý AI).
 
 ### NonFunctional Requirements
 
@@ -77,7 +79,7 @@ NFR-11: Giao diện nhất quán. Website hỗ trợ sáng/tối theo hệ thố
 
 Brownfield: không có starter template mới; Epic 1 là epic nền theo AD-17 (4 bước, đúng thứ tự; bước 3 migration nền là đúng một story).
 
-Giai đoạn (PRD §8): GĐ1 = NFR-1, NFR-2, FR-3..FR-31 (gồm Trang bio), FR-33, FR-38. GĐ1.5 = FR-1, FR-2, FR-32, FR-34..FR-37. GĐ2 = bình luận website và các mục ở "Ngoài phạm vi".
+Giai đoạn (PRD §8): GĐ1 = NFR-1, NFR-2, FR-3..FR-31 (gồm Trang bio), FR-33, FR-38. GĐ1.5 = FR-1, FR-2, FR-32, FR-34..FR-37, FR-39, FR-40. GĐ2 = bình luận website và các mục ở "Ngoài phạm vi".
 
 #### Quyết định khi chia story (Vinh 2026-11-05, đã ghi vào spine AD-17)
 
@@ -262,6 +264,7 @@ Từ bảng *Capability → Architecture Map* của spine, bổ sung bằng dòn
 | FR-22, FR-23 Duyệt, cảnh báo | `suggestions` | AD-9, AD-16, AD-19 | — |
 | FR-24, FR-25 Nhãn, quy tắc link | `products/components` | AD-11, AD-14 | — |
 | FR-26, FR-27 Trang bài, CMS bài | `posts` | AD-7, AD-11, AD-12, AD-20, AD-22 | — |
+| FR-39, FR-40 Nhập từ URL, AI chỉnh sửa | `posts`, `platform/ai` | AD-9 (ngoại lệ có tên), AD-10, AD-22 | — |
 | FR-28, FR-29 Danh mục | `categories` | AD-4, AD-7, AD-20 | FR-29: AD-7 |
 | FR-30, FR-31 Trang bio | `bio`, `products` | AD-7, AD-11 | — |
 | FR-32 Banner | `banners` | AD-7, AD-11, AD-24 | — |
@@ -432,7 +435,7 @@ UX-DR70: **Gốc CMS `/cms`.** Chuyển thẳng tới `/cms/bai-viet` (sau này 
 
 UX-DR71: **Danh sách Bài web `/cms/bai-viet`.** DataList, lọc trạng thái (Nháp/Đã xuất bản), cột Lượt xem/Lượt tim, sắp xếp; tham số trên URL. Nguồn: E › IA › CMS. FR-27, FR-38.
 
-UX-DR72: **Soạn / sửa Bài web `/cms/bai-viet/moi`, `/cms/bai-viet/[id]`.** CmsForm gồm PostEditor, trường SEO, ảnh đại diện (UploadField), ProductPicker, SeoCheckPanel ("Chấm SEO"), PreviewSheet ("Xem trước"), Xuất bản; link "← Bộ nội dung" khi bài thuộc Bộ nội dung; nút "Tạo bài mạng xã hội" (SocialFromPostDialog); UnsavedChangesGuard. Bài có gợi ý AI Đang tạo / Chờ duyệt: nút "Xuất bản" tắt + lý do "Cần duyệt bài AI trước khi xuất bản" + link về Bộ nội dung (khoá chỉ ở giao diện). Chuyển bài về nháp qua ConfirmDialog. Nguồn: E › IA › CMS; E › State Patterns › Soạn Bài web; E › Component Patterns. FR-4, FR-13, FR-16, FR-22, FR-27, AD-19.
+UX-DR72: **Soạn / sửa Bài web `/cms/bai-viet/moi`, `/cms/bai-viet/[id]`.** CmsForm gồm PostEditor, trường SEO, ảnh đại diện (UploadField), ProductPicker, SeoCheckPanel ("Chấm SEO"), PreviewSheet ("Xem trước"), Xuất bản; link "← Bộ nội dung" khi bài thuộc Bộ nội dung; nút "Tạo bài mạng xã hội" (SocialFromPostDialog); UnsavedChangesGuard. Bài có gợi ý AI Đang tạo / Chờ duyệt: nút "Xuất bản" tắt + lý do "Cần duyệt bài AI trước khi xuất bản" + link về Bộ nội dung (khoá chỉ ở giao diện). Chuyển bài về nháp qua ConfirmDialog. `/moi` có khối "Nhập từ URL" (FR-39) và form nhập/`/[id]` có "AI chỉnh sửa" (FR-40): kết quả điền form chưa lưu, UnsavedChangesGuard bắt như sửa tay (thêm 2026-11-09). Nguồn: E › IA › CMS; E › State Patterns › Soạn Bài web; E › Component Patterns. FR-4, FR-13, FR-16, FR-22, FR-27, FR-39, FR-40, AD-19.
 
 UX-DR73: **Danh sách Sản phẩm `/cms/san-pham`.** DataList, tìm theo tên, StatusBadge Hiện/Ẩn, hiện đã đăng nền tảng nào; nút "Tạo Sản phẩm". Nguồn: E › IA › CMS; E › Key Flows UJ-1, Flow 5. FR-3, FR-5, FR-20.
 
@@ -512,7 +515,7 @@ UX-DR99: **Phần Stitch bị loại (không dựng lại khi chưa sửa PRD).*
 
 ### FR Coverage Map
 
-Giai đoạn theo PRD §8: GĐ1 = Epic 1–7; GĐ1.5 = Epic 8–10.
+Giai đoạn theo PRD §8: GĐ1 = Epic 1–7; GĐ1.5 = Epic 8–11.
 
 FR-1: Epic 10 - Lưu Cảm hứng
 FR-2: Epic 10 - Biến Cảm hứng thành bài
@@ -552,6 +555,8 @@ FR-35: Epic 8 - Thả tim
 FR-36: Epic 8 - Tìm kiếm
 FR-37: Epic 8 - Chia sẻ
 FR-38: Epic 7 - Thống kê trong CMS (Lượt tim bổ sung ở Epic 8)
+FR-39: Epic 11 - Nhập Bài web từ URL
+FR-40: Epic 11 - AI chỉnh sửa trong trình soạn
 
 NFR: NFR-6, NFR-10 → Epic 1; NFR-5, NFR-8, NFR-11 → Epic 3; NFR-1, NFR-2, NFR-3, NFR-9 → Epic 4; NFR-4 → Epic 5 (kiểm lại ở mọi epic CMS); NFR-7 → Epic 7, Epic 8.
 
@@ -597,7 +602,11 @@ Vinh đặt Banner có lịch (dịp 11.11); site chỉ hiện Banner đang bậ
 Vinh lưu video/link mẹo ban ngày; tối AI gợi ý từ khoá Shopee và dàn ý; gắn Sản phẩm rồi đi tiếp như UJ-1. Chặn bởi Deferred "backend lưu file" và "cách đọc video". Cần Epic 4, 5.
 **FRs covered:** FR-1, FR-2
 
-**Phụ thuộc:** 1 → mọi epic; 4 cần 2; 5 cần 3, 4; 6 cần 2, 3; 8 cần 7 (FR-34); 10 cần 4, 5.
+### Epic 11: Nhập Bài web từ URL (GĐ1.5)
+Vinh dán URL một bài bên ngoài ở màn Tạo Bài web, AI điền sẵn nội dung vào form, rồi Vinh sửa tay hoặc nhờ AI viết lại thành bài mới; chỉ tạo bài khi bấm Lưu. Không đổi schema. Cần Epic 3, 4, 5. (thêm 2026-11-09, Sprint Change Proposal 2026-11-09)
+**FRs covered:** FR-39, FR-40
+
+**Phụ thuộc:** 1 → mọi epic; 4 cần 2; 5 cần 3, 4; 6 cần 2, 3; 8 cần 7 (FR-34); 10 cần 4, 5; 11 cần 3, 4, 5.
 
 **Tách epic có chủ đích:** Epic 4 và Epic 5 cùng chạm `modules/suggestions`; giữ tách vì Epic 4 là điểm phản hồi sớm về nhà cung cấp AI và gộp lại thành ~14 story.
 
@@ -1556,3 +1565,54 @@ So that video mẹo biến thành nội dung bán hàng.
 **Given** Vinh tạo Bộ nội dung từ Sản phẩm mở kèm `?cam-hung`
 **When** bộ được tạo
 **Then** `ContentSet.inspirationId` được ghi; Cảm hứng thành *Đã dùng* và chi tiết hiện link tới Bộ nội dung (FR-2, UJ-2)
+
+## Epic 11: Nhập Bài web từ URL (giai đoạn 1.5)
+
+Vinh dán URL một bài viết bên ngoài; AI đọc trang và điền sẵn tiêu đề, tóm tắt, thân bài vào trình soạn; Vinh sửa tay hoặc bấm "AI chỉnh sửa". Không đổi schema. Cần Epic 3, Epic 4, Epic 5.
+
+### Story 11.1: Nhập nội dung từ URL vào trình soạn
+
+As a Vinh,
+I want dán URL một bài viết để tiêu đề, tóm tắt và thân bài được điền sẵn,
+So that tôi không phải copy tay từng đoạn.
+
+**Acceptance Criteria:**
+
+**Given** `/cms/bai-viet/moi`
+**When** dán URL `http(s)` vào khối "Nhập từ URL", chạm "Lấy nội dung"
+**Then** `posts.importPostFromUrl` qua `run()` validate URL (Zod ở `posts/schema.ts`, độ dài ở `posts/constants.ts`), gọi `ask()` với prompt `modules/posts/prompts/import-post.prompt.ts` và `webSearch: true`; máy chủ không tự fetch URL (spine AD-9 ngoại lệ có tên); chưa ghi gì vào DB
+**And** kết quả `{ title, summary, contentHtml, imageUrls[] }`: `contentHtml` qua `sanitizePostHtml` trước khi trả về; tiêu đề/tóm tắt cắt theo giới hạn trong `posts/constants.ts`
+**And** màn hiện form bài đầy đủ đã điền sẵn (Loại bài, Danh mục, tiêu đề, tóm tắt, PostEditor, ảnh đại diện, thẻ, SEO) theo `postDraftInputSchema`, qua CmsForm + UnsavedChangesGuard; khối "Ảnh trong bài gốc" liệt kê `imageUrls` (link + nút copy), không tự tải ảnh, không gán ảnh đại diện
+
+**Given** form nhập đã điền
+**When** chạm "Lưu nháp"
+**Then** gọi `posts.createPostDraft` (đã có) với giá trị form, rồi chuyển sang `/cms/bai-viet/[id]`; không có bản nháp trống nào được tạo trước đó
+
+**Given** form nhập đã có nội dung
+**When** lấy lại từ URL khác
+**Then** ConfirmDialog "Ghi đè nội dung đang soạn?" trước khi gọi action
+
+**Given** trang không đọc được (AI báo không đọc được, hoặc `skipped` chứa `webSearch`)
+**When** action kết thúc
+**Then** `UserError` tiếng Việt tại dialog, gợi ý copy nội dung dán vào trình soạn; URL vẫn giữ trong ô
+
+**And** dialog có dòng nhắc viết lại trước khi xuất bản (R-9); test prompt + action với `AI_PROVIDERS=fake`
+
+### Story 11.2: AI chỉnh sửa nội dung trong trình soạn
+
+As a Vinh,
+I want bấm "AI chỉnh sửa" kèm chỉ dẫn ngắn để AI viết lại bài đang soạn theo giọng của trang,
+So that bài nhập về thành bài của tôi.
+
+**Acceptance Criteria:**
+
+**Given** form nhập từ URL ở `/cms/bai-viet/moi` (Story 11.1) hoặc trình soạn `/cms/bai-viet/[id]`, thân bài không rỗng
+**When** chạm "AI chỉnh sửa", nhập chỉ dẫn tuỳ chọn, chạm "Viết lại"
+**Then** `posts.rewritePostDraft` qua `run()` gửi tiêu đề, tóm tắt, thân bài hiện tại (chưa cần lưu) + chỉ dẫn; prompt `modules/posts/prompts/rewrite-post.prompt.ts` lấy Hồ sơ phong cách Website và `platform/ai/rules.ts`; kết quả `{ title, summary, contentHtml, riskWarnings }`, `contentHtml` qua `sanitizePostHtml`
+**And** form được điền, chưa lưu; Toast "Đã viết lại" có "Hoàn tác" trả form về đúng nội dung trước lần viết lại; Cảnh báo rủi ro hiện qua RiskWarningList
+
+**Given** AI lỗi hoặc quá 90 giây
+**When** action kết thúc
+**Then** `UserError` tiếng Việt, nội dung form không đổi (NFR-2, NFR-3)
+
+**And** test prompt + action với `AI_PROVIDERS=fake`

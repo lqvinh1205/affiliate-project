@@ -7,8 +7,8 @@ paradigm: 'Modular monolith — vertical domain modules on Next.js App Router (a
 scope: 'Toàn bộ repo affiliate-project: website public, CMS, lớp AI, dữ liệu'
 status: final
 created: '2026-11-03'
-updated: '2026-11-05'
-binds: [FR-1..FR-38, NFR-1..NFR-11]
+updated: '2026-11-09'
+binds: [FR-1..FR-40, NFR-1..NFR-11]
 sources:
   - _bmad-output/planning-artifacts/prds/prd-affiliate-project-2026-11-03/prd.md
   - _bmad-output/planning-artifacts/prds/prd-affiliate-project-2026-11-03/addendum.md
@@ -128,7 +128,7 @@ Không có `index.ts` gom export; import thẳng từng file.
 
 - **Binds:** FR-2, FR-6..FR-23; SM-C2
 - **Prevents:** mỗi module tự làm luật duyệt; hai module cùng coi mình là chủ trạng thái "đã duyệt"; ghi chéo bảng không qua đường hợp lệ.
-- **Rule:** Mọi đầu ra AI là bản ghi `Suggestion` (chủ: `suggestions`) với `kind`, `status`, `payload` (Zod theo `kind`), `riskWarnings`, `promptId`, `promptVersion`, `editedBeforeApproval`, `parentSuggestionId`. Mỗi `Suggestion` gắn đúng một trong `productId` / `contentSetId` / `inspirationId` (CHECK trong SQL). `modules/suggestions/actions.ts` là **điểm điều phối duy nhất** cho cả *tạo* (yêu cầu AI, tạo `ContentSet` nếu chưa có) và *Duyệt*; đây là ngoại lệ duy nhất của AD-2, và chỉ được import `service.ts` và `prompts/` của: `posts`, `products`, `content-sets`, `research`. Duyệt chạy trong một transaction, rồi `updateTag` mọi tag bị ảnh hưởng. Ngữ nghĩa trạng thái và đích: AD-18, AD-19. Nội dung Vinh tự viết không cần `Suggestion`. Ngoại lệ có tên duy nhất: chấm điểm SEO là `posts.checkPostSeo` (action CMS qua `run()`), gọi `platform/ai`, trả báo cáo cho màn hình, không lưu, không qua Duyệt. `Suggestion` còn có `sources` (`Json?`, Zod `{ url, title }[]`) và `skipped` (`Json?`, Zod mảng `images` | `webSearch` | `video`) lấy từ kết quả `ask()`.
+- **Rule:** Mọi đầu ra AI là bản ghi `Suggestion` (chủ: `suggestions`) với `kind`, `status`, `payload` (Zod theo `kind`), `riskWarnings`, `promptId`, `promptVersion`, `editedBeforeApproval`, `parentSuggestionId`. Mỗi `Suggestion` gắn đúng một trong `productId` / `contentSetId` / `inspirationId` (CHECK trong SQL). `modules/suggestions/actions.ts` là **điểm điều phối duy nhất** cho cả *tạo* (yêu cầu AI, tạo `ContentSet` nếu chưa có) và *Duyệt*; đây là ngoại lệ duy nhất của AD-2, và chỉ được import `service.ts` và `prompts/` của: `posts`, `products`, `content-sets`, `research`. Duyệt chạy trong một transaction, rồi `updateTag` mọi tag bị ảnh hưởng. Ngữ nghĩa trạng thái và đích: AD-18, AD-19. Nội dung Vinh tự viết không cần `Suggestion`. Ngoại lệ có tên (đều là action CMS của `posts` qua `run()`, gọi `platform/ai` đồng bộ, trả kết quả cho màn hình, không lưu, không tạo `Suggestion`, không `updateTag`): chấm điểm SEO `posts.checkPostSeo`; nhập bài từ URL `posts.importPostFromUrl` (FR-39, `ask` với `webSearch`, máy chủ không tự tải URL); AI chỉnh sửa trong trình soạn `posts.rewritePostDraft` (FR-40). Kết quả hai action sau điền vào form soạn bài, HTML qua AD-22 trước khi trả về; Vinh lưu như nội dung tự viết. `Suggestion` còn có `sources` (`Json?`, Zod `{ url, title }[]`) và `skipped` (`Json?`, Zod mảng `images` | `webSearch` | `video`) lấy từ kết quả `ask()`.
 
 ### AD-10 — Truy cập AI qua một cửa
 
@@ -408,6 +408,7 @@ flowchart LR
 | FR-22, FR-23 Duyệt, cảnh báo | `suggestions` | AD-9, AD-16, AD-19 |
 | FR-24, FR-25 Nhãn, quy tắc link | `products/components` | AD-11, AD-14 |
 | FR-26, FR-27 Trang bài, CMS bài | `posts` | AD-7, AD-11, AD-12, AD-20, AD-22 |
+| FR-39, FR-40 Nhập từ URL, AI chỉnh sửa | `posts`, `platform/ai` | AD-9 (ngoại lệ có tên), AD-10, AD-22 |
 | FR-28, FR-29 Danh mục | `categories` | AD-4, AD-7, AD-20 |
 | FR-30, FR-31 Trang bio | `bio`, `products` | AD-7, AD-11 |
 | FR-32 Banner | `banners` | AD-7, AD-11, AD-24 |

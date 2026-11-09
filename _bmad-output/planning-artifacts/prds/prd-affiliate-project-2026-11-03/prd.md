@@ -2,7 +2,7 @@
 title: PRD — affiliate-project (Mẹo Vặt Cuộc Sống & Gom Link)
 status: final
 created: 2026-11-03
-updated: 2026-11-03
+updated: 2026-11-09
 ---
 
 # PRD: Mẹo Vặt Cuộc Sống — Xưởng nội dung affiliate có AI
@@ -232,6 +232,7 @@ Mỗi phần AI tạo ra là một Gợi ý AI riêng, được Duyệt riêng: 
 - Nội dung Vinh tự viết, không qua AI, không cần Duyệt.
 - Không xuất bản được Bài web khi phần AI của nó chưa được Duyệt.
 - Bài mạng xã hội chưa Duyệt vẫn copy được, nhưng có cảnh báo rõ. *[ASSUMPTION: chọn "cảnh báo" để không chặn Vinh.]*
+- Ngoại lệ: kết quả của FR-39 và FR-40 điền thẳng vào form soạn bài và được coi là nội dung Vinh tự viết khi Vinh lưu; không tạo Gợi ý AI.
 
 #### FR-23: Cảnh báo rủi ro
 AI kiểm tra nội dung và gắn Cảnh báo rủi ro cho các câu: khẳng định công dụng y tế, mỹ phẩm hoặc thực phẩm; lời cam kết tuyệt đối ("100%", "chắc chắn"); so sánh hạ thấp đối thủ; giá cụ thể trong thân bài; và các điểm có thể vi phạm nội quy Threads/Facebook.
@@ -259,6 +260,18 @@ Trang Bài web hiển thị: mục lục tự sinh từ các mục h2, thời gi
 #### FR-27: Quản lý Bài web trong CMS
 Người vận hành có thể xem trước Bài web, xuất bản, chuyển về nháp và xoá bài (có xác nhận).
 - Đổi slug Bài web đã xuất bản thì đường dẫn cũ chuyển hướng 301 sang đường dẫn mới.
+
+#### FR-39: Nhập Bài web từ URL
+Ở màn Tạo Bài web, người vận hành có thể dán URL một bài viết bên ngoài để AI đọc trang và điền sẵn tiêu đề, tóm tắt và thân bài vào form bài đầy đủ (chưa lưu). Bài chỉ được tạo (Nháp) khi Vinh bấm Lưu; không tạo bản nháp trống trước. *(thêm 2026-11-09)*
+- Thân bài chỉ giữ định dạng website hỗ trợ và được làm sạch (AD-22). Link và ảnh của bài gốc không vào thân bài; link ảnh được liệt kê riêng để Vinh tự lưu và tải lên nếu muốn. Hệ thống không tự tải ảnh về.
+- Nhập lại URL khác khi form đã có nội dung thì hỏi xác nhận trước khi ghi đè.
+- Không đọc được trang (cần đăng nhập, bị chặn, render bằng JS) thì báo rõ bằng tiếng Việt và gợi ý dán nội dung tay.
+- Nội dung nhập về không tự lưu; Vinh lưu form như bài tự viết.
+
+#### FR-40: AI chỉnh sửa nội dung trong trình soạn
+Người vận hành có thể bấm "AI chỉnh sửa", kèm chỉ dẫn ngắn tuỳ chọn (ví dụ "viết lại cho người ở trọ"), để AI viết lại tiêu đề, tóm tắt và thân bài đang có trong form theo Hồ sơ phong cách Website (FR-18), kèm Cảnh báo rủi ro (FR-23). Kết quả điền vào form (chưa lưu). *(thêm 2026-11-09)*
+- Có ở form nhập từ URL (trước khi lưu) và ở trình soạn Bài web (bài đã có), cho cả nội dung nhập về lẫn nội dung Vinh tự viết.
+- Hoàn tác được về nội dung trước lần chỉnh sửa gần nhất, khi chưa lưu.
 
 ### 4.7 Danh mục
 
@@ -350,6 +363,7 @@ Danh sách bài trong CMS hiện Lượt xem và Lượt tim của từng Bài w
 - **R-6. Nội dung AI bị coi là kém nguyên bản** trên Meta. **Giảm thiểu:** bước Duyệt và Hồ sơ phong cách giúp nội dung mang dấu ấn riêng của Vinh.
 - **R-7. Điều khoản Shopee Affiliate.** Tự mua qua link của mình, che giấu hoặc chuyển hướng link qua domain riêng có thể bị coi là gian lận, dẫn tới mất hoa hồng hoặc khoá tài khoản (chưa xác minh với điều khoản gốc). **Giảm thiểu:** FR-3, FR-25; Vinh đọc lại điều khoản Shopee VN trước khi đăng đều.
 - **R-8. Giá lỗi thời** có thể bị coi là thông tin quảng cáo sai. **Giảm thiểu:** giá là "giá tham khảo" có ngày cập nhật (FR-3); thân bài không chứa giá (FR-13); cảnh báo giá trong thân bài (FR-23).
+- **R-9. Bản quyền và nội dung trùng lặp** khi nhập bài từ trang khác (FR-39). Đăng gần nguyên văn có thể vi phạm bản quyền và bị Google coi là nội dung trùng lặp. **Giảm thiểu:** màn nhập nhắc "Viết lại trước khi xuất bản"; "AI chỉnh sửa" (FR-40) luôn có sẵn. Vinh chịu trách nhiệm nội dung xuất bản.
 
 **Việc vận hành ngoài sản phẩm (Vinh tự làm):** khai báo thu nhập; Shopee khấu trừ 10% thuế TNCN khi hoa hồng trong kỳ từ 2 triệu đồng; xác thực danh tính affiliate theo Luật TMĐT.
 
@@ -384,6 +398,7 @@ Danh sách bài trong CMS hiện Lượt xem và Lượt tim của từng Bài w
 - Kho cảm hứng (FR-1, FR-2).
 - Banner (FR-32).
 - Bài xem nhiều, Thả tim, Tìm kiếm, Chia sẻ (FR-34 → FR-37).
+- Nhập Bài web từ URL và AI chỉnh sửa (FR-39, FR-40). *(thêm 2026-11-09)*
 
 ### 8.3 Giai đoạn 2
 - Bình luận trên website (có duyệt, AI lọc spam) — tạm hoãn.

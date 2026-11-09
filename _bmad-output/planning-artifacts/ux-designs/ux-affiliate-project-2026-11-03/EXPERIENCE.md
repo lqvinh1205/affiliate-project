@@ -2,7 +2,7 @@
 name: Mẹo Vặt Cuộc Sống
 status: final
 created: 2026-11-03
-updated: 2026-11-05
+updated: 2026-11-09
 sources:
   - _bmad-output/planning-artifacts/ux-designs/ux-affiliate-project-2026-11-03/.memlog.md
   - _bmad-output/planning-artifacts/ux-designs/ux-affiliate-project-2026-11-03/reconcile-stitch.md
@@ -82,7 +82,7 @@ sources:
 |---|---|---|---|
 | Gốc CMS | `/cms` | Chuyển thẳng tới `/cms/bai-viet` [ASSUMPTION]. Sau này thành dashboard thống kê (chưa thiết kế, Vinh 2026-11-05). | — |
 | Bài web | `/cms/bai-viet` | Danh sách, lọc trạng thái, cột Lượt xem/Lượt tim, sắp xếp | FR-27, FR-38 |
-| Soạn / sửa Bài web | `/cms/bai-viet/moi`, `/cms/bai-viet/[id]` | PostEditor, SEO, ảnh đại diện, ProductPicker, chấm SEO, xem trước, xuất bản; link "← Bộ nội dung" khi bài thuộc một Bộ nội dung; nút **"Tạo bài mạng xã hội"** (FR-16) | FR-4, FR-13, FR-16, FR-22, FR-27 |
+| Soạn / sửa Bài web | `/cms/bai-viet/moi`, `/cms/bai-viet/[id]` | PostEditor, SEO, ảnh đại diện, ProductPicker, chấm SEO, xem trước, xuất bản; link "← Bộ nội dung" khi bài thuộc một Bộ nội dung; nút **"Tạo bài mạng xã hội"** (FR-16); `/moi` có khối **"Nhập từ URL"** (ImportFromUrl, FR-39) ở đầu màn bên cạnh form "Tạo bản nháp"; form nhập và `/[id]` có nút **"AI chỉnh sửa"** (AiRewriteDialog, FR-40) | FR-4, FR-13, FR-16, FR-22, FR-27, FR-39, FR-40 |
 | Sản phẩm | `/cms/san-pham` | Danh sách, tìm theo tên, ẩn/hiện, đã đăng nền tảng nào | FR-3, FR-5, FR-20 |
 | Chi tiết Sản phẩm | `/cms/san-pham/[id]` (cũng là màn tạo mới) | Form, Dữ liệu thô, upload, ResearchProfileCard (chọn Người đọc mục tiêu + Góc viết), CreateContentSetPanel (thêm Sản phẩm cho bài Gom link, nền tảng, "Tạo bộ nội dung"), nơi đang dùng | FR-3, FR-5–FR-12 |
 | Bộ nội dung | `/cms/bo-noi-dung/[id]` | SuggestionCard theo nền tảng đã chọn (bố cục bên dưới), duyệt, copy, đánh dấu đã đăng | FR-12–FR-23 |
@@ -270,6 +270,8 @@ Hành vi. Hình ảnh ở `DESIGN.md` Components.
 | Hồ sơ nghiên cứu | AI bỏ qua ảnh hoặc tìm web (`skipped`) | Dải thông báo đầu thân thẻ: "AI chưa đọc được ảnh — hồ sơ chỉ dựa trên dữ liệu chữ" / "AI không tìm thêm được nguồn trên web". Vẫn Duyệt và tạo Bộ nội dung được (UJ-1 lỗi, FR-6, FR-7). |
 | Cảm hứng | Không đọc được video | Thông báo rõ trong chi tiết, gợi ý tải file video lên (FR-2). |
 | Soạn Bài web | Bài web có gợi ý AI Đang tạo / Chờ duyệt (sau Tạo lại ở Bộ nội dung) | Nút "Xuất bản" tắt + dòng lý do "Cần duyệt bài AI trước khi xuất bản" + link về Bộ nội dung (FR-22). Khoá chỉ ở giao diện; server không chặn (AD-19). |
+| Tạo Bài web — Nhập từ URL | Đang đọc / thành công / lỗi | Ô URL + dòng nhắc "Nội dung lấy từ trang khác — hãy viết lại trước khi xuất bản". Nút "Lấy nội dung" → "Đang đọc trang…" (có thể tới 90 giây). Thành công: màn chuyển sang form bài đầy đủ (Loại bài, Danh mục, tiêu đề, tóm tắt, PostEditor, ảnh đại diện, thẻ, SEO) đã điền sẵn, chưa lưu; có "AI chỉnh sửa" và khối "Ảnh trong bài gốc" (link + nút copy) cạnh ô ảnh đại diện; nút dính đáy "Lưu nháp" tạo bài rồi chuyển sang `/cms/bai-viet/[id]`; UnsavedChangesGuard bật ngay khi form được điền. Lấy lại từ URL khác khi form đã có nội dung → ConfirmDialog. Lỗi: thông báo dưới ô URL, giữ URL; form "Tạo bản nháp" thường vẫn dùng được (FR-39, R-9). |
+| Soạn Bài web — AI chỉnh sửa | Đang viết / thành công / lỗi | AiRewriteDialog: ô chỉ dẫn tuỳ chọn, nút "Viết lại" → "AI đang viết…". Thành công: điền form, chưa lưu; Toast "Đã viết lại — chưa lưu" kèm "Hoàn tác"; Cảnh báo rủi ro qua RiskWarningList. Lỗi: Toast tiếng Việt, form không đổi (FR-40). |
 | Sản phẩm | Đang ẩn | StatusBadge "Ẩn" + danh sách Bài web và Bộ nội dung đang dùng, mỗi mục là link (FR-5). |
 | Sản phẩm | Link affiliate sai domain | Lỗi tại trường: "Link phải thuộc Shopee (shopee.vn, s.shopee.vn, shope.ee)". |
 | Danh mục | Xoá khi còn bài/sản phẩm | Toast lỗi nêu số Bài web và Sản phẩm còn lại; gợi ý chuyển Danh mục trước (FR-28). |

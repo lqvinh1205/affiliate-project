@@ -29,7 +29,7 @@ Luật bất di bất dịch. Mọi agent, skill và workflow trong repo này ph
 
 ## 3. Nội dung và AI
 
-- **[QD-08]** Mọi nội dung AI tạo là Gợi ý AI ở trạng thái *chờ duyệt*. Không xuất bản Bài web có phần AI chưa được Duyệt (PRD FR-22).
+- **[QD-08]** Mọi nội dung AI tạo là Gợi ý AI ở trạng thái *chờ duyệt*. Không xuất bản Bài web có phần AI chưa được Duyệt (PRD FR-22). Ngoại lệ duy nhất: nhập bài từ URL và AI chỉnh sửa trong trình soạn (PRD FR-39, FR-40; spine AD-9 ngoại lệ có tên) — kết quả điền vào form chưa lưu, Vinh xem, sửa rồi lưu như nội dung tự viết.
 - **[QD-09]** Không dùng OpenAI. Mọi lời gọi AI đi qua một lớp chung (xem `docs/nen-tang-ky-thuat/lop-ai.md`); tính năng không gọi thẳng SDK của nhà cung cấp.
 - **[QD-10]** Ngân sách AI và hạ tầng là 0đ/tháng. Không tích hợp dịch vụ trả phí; dịch vụ có free tier phải ghi rõ giới hạn.
 - **[QD-11]** Prompt AI phải cấm bịa số liệu, giá, công dụng y khoa/mỹ phẩm tuyệt đối, và phải yêu cầu tiếng Việt có dấu chuẩn.
