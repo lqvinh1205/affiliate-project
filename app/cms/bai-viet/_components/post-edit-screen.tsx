@@ -4,7 +4,7 @@ import { listCategoryOptionsForCms } from "@/modules/categories/cms-queries";
 import { PRODUCT_PICKER_PARAM } from "@/modules/products/constants";
 import { listPickerProductsForCms } from "@/modules/products/cms-queries";
 import { getPostForCms } from "@/modules/posts/cms-queries";
-import { checkPostSeo } from "@/modules/posts/actions";
+import { checkPostSeo, rewritePostDraft } from "@/modules/posts/actions";
 import { PostForm } from "@/modules/posts/components/post-form.client";
 import { getContentSetForCms } from "@/modules/content-sets/cms-queries";
 import { getPostAiStateForCms, getContentSetSuggestionsForCms } from "@/modules/suggestions/cms-queries";
@@ -53,7 +53,7 @@ export async function PostEditScreen({ params, searchParams }: PageProps<"/cms/b
         products={attached.map(toPicker)}
         productResults={productResults.map(toPicker)}
         productQuery={productQuery}
-        ai={{ seoCheck: checkPostSeo }}
+        ai={{ seoCheck: checkPostSeo, rewrite: rewritePostDraft }}
         publishLock={ai.locked && setHref ? { reason: "Cần duyệt bài AI trước khi xuất bản", href: setHref } : null}
         riskWarnings={ai.riskWarnings}
         defaultValues={{

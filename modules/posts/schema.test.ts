@@ -1,7 +1,16 @@
 import { describe, expect, it } from "vitest";
-import { POST_EXCERPT_MAX, POST_PRODUCTS_MAX, POST_TAGS_MAX, POST_TITLE_MAX } from "@/modules/posts/constants";
 import {
+  POST_EXCERPT_MAX,
+  POST_IMPORT_URL_MAX,
+  POST_PRODUCTS_MAX,
+  POST_REWRITE_INSTRUCTION_MAX,
+  POST_TAGS_MAX,
+  POST_TITLE_MAX,
+} from "@/modules/posts/constants";
+import {
+  importPostInputSchema,
   newPostInputSchema,
+  rewritePostInputSchema,
   postInputSchema,
   setPostStatusInputSchema,
   type PostFormValues,
@@ -102,5 +111,32 @@ describe("newPostInputSchema / setPostStatusInputSchema", () => {
 
   it("trạng thái chỉ DRAFT / PUBLISHED", () => {
     expect(setPostStatusInputSchema.safeParse({ id: "p", status: "ARCHIVED" }).success).toBe(false);
+  });
+});
+
+describe("importPostInputSchema (FR-39)", () => {
+  it("nhận URL http(s), cắt khoảng trắng", () => {
+    expect(importPostInputSchema.parse({ url: " https://blog.vn/bai " })).toEqual({ url: "https://blog.vn/bai" });
+    expect(importPostInputSchema.safeParse({ url: "http://blog.vn" }).success).toBe(true);
+  });
+
+  it("từ chối URL sai dạng, giao thức khác, rỗng, quá dài", () => {
+    for (const url of ["abc", "ftp://blog.vn/a", "javascript:alert(1)", "", `https://blog.vn/${"a".repeat(POST_IMPORT_URL_MAX)}`]) {
+      expect(importPostInputSchema.safeParse({ url }).success).toBe(false);
+    }
+  });
+});
+
+describe("rewritePostInputSchema (FR-40)", () => {
+  const ok = { title: "T", excerpt: "", content: "<p>x</p>", instruction: "" };
+
+  it("chỉ dẫn tuỳ chọn, tối đa 200 ký tự", () => {
+    expect(rewritePostInputSchema.safeParse(ok).success).toBe(true);
+    expect(rewritePostInputSchema.safeParse({ ...ok, instruction: "a".repeat(POST_REWRITE_INSTRUCTION_MAX + 1) }).success).toBe(false);
+  });
+
+  it("tiêu đề, tóm tắt quá giới hạn bị từ chối", () => {
+    expect(rewritePostInputSchema.safeParse({ ...ok, title: "a".repeat(POST_TITLE_MAX + 1) }).success).toBe(false);
+    expect(rewritePostInputSchema.safeParse({ ...ok, excerpt: "a".repeat(POST_EXCERPT_MAX + 1) }).success).toBe(false);
   });
 });

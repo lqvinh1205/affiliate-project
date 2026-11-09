@@ -25,6 +25,7 @@ import { PostActionBar } from "@/modules/posts/components/post-action-bar.client
 import { PostBodyEditor } from "@/modules/posts/components/post-body-editor.client";
 import { RiskWarningList } from "@/modules/posts/components/risk-warning-list.client";
 import { PostSeoCheck, type SeoCheckAction } from "@/modules/posts/components/post-seo-check.client";
+import { PostAiRewrite, usePostRewrite, type RewriteAction } from "@/modules/posts/components/post-ai-rewrite.client";
 import { PostTypePicker } from "@/modules/posts/components/post-type-picker.client";
 import { PreviewSheet } from "@/modules/posts/components/preview-sheet.client";
 import { CmsForm } from "@/components/shared/cms-form.client";
@@ -33,8 +34,8 @@ import { Field, FieldDescription, FieldError, FieldLabel } from "@/components/ui
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 
-// Action AI của màn soạn (chấm SEO — `posts.checkPostSeo`) do Screen truyền vào.
-export type PostAiActions = { seoCheck: SeoCheckAction };
+// Action AI của màn soạn (chấm SEO — `posts.checkPostSeo`; AI chỉnh sửa — `posts.rewritePostDraft`) do Screen truyền vào.
+export type PostAiActions = { seoCheck: SeoCheckAction; rewrite: RewriteAction };
 
 type PreviewPost = Omit<ArticlePost, "readingMinutes">;
 
@@ -55,6 +56,8 @@ function Counter({ value, max, min }: { value: string; max: number; min?: number
 // đổi chưa lưu); Xuất bản / Chuyển về nháp / Xoá (ConfirmDialog). Chỉ đọc `defaultValues` lúc mount (AD-12).
 // Bài của Bộ nội dung (AD-19, Story 5.7): `publishLock` khoá nút Xuất bản khi gợi ý AI còn Đang tạo / Chờ duyệt (chỉ
 // ở giao diện); `riskWarnings` của gợi ý hiện trên thân bài, chạm mục thì bôi câu trong PostEditor (UX-DR43).
+// "AI chỉnh sửa" (FR-40): kết quả điền form chưa lưu, cảnh báo của lần viết lại thay cảnh báo của gợi ý; PostEditor chỉ
+// đọc `value` lúc mount nên đổi `key` sau khi viết lại / hoàn tác.
 export function PostForm({
   defaultValues,
   status: initialStatus,
@@ -85,7 +88,7 @@ export function PostForm({
   const [picked, setPicked] = useState(products);
   const [uploading, setUploading] = useState(0);
   const [preview, setPreview] = useState<{ post: PreviewPost; content: string } | null>(null);
-  const [highlight, setHighlight] = useState<{ sentence: string; key: number } | null>(null);
+  const rewrite = usePostRewrite(form);
   const title = useWatch({ control: form.control, name: "title" });
 
   const canPublish = () => {
@@ -255,12 +258,21 @@ export function PostForm({
           control={form.control}
           render={({ field, fieldState }) => (
             <Field data-invalid={fieldState.invalid}>
-              <FieldLabel id="post-content-label">Thân bài</FieldLabel>
+              <div className="flex flex-wrap items-center justify-between gap-space-sm">
+                <FieldLabel id="post-content-label">Thân bài</FieldLabel>
+                <PostAiRewrite
+                  rewrite={ai.rewrite}
+                  getDraft={rewrite.getDraft}
+                  onApply={rewrite.onApply}
+                  onUndo={rewrite.onUndo}
+                />
+              </div>
               <RiskWarningList
-                warnings={riskWarnings}
-                onSelect={(w) => setHighlight({ sentence: w.sentence, key: Date.now() })}
+                warnings={rewrite.warnings ?? riskWarnings}
+                onSelect={rewrite.highlightWarning}
               />
               <PostBodyEditor
+                key={rewrite.editorKey}
                 id="post-content"
                 labelledBy="post-content-label"
                 describedBy="post-content-hint"
@@ -268,7 +280,7 @@ export function PostForm({
                 onChange={field.onChange}
                 onBlur={field.onBlur}
                 invalid={fieldState.invalid}
-                highlight={highlight}
+                highlight={rewrite.highlight}
                 onHighlightMissing={() => toast.info("Không còn thấy câu này trong thân bài — có thể bạn đã sửa.")}
               />
               <FieldDescription id="post-content-hint">

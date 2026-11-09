@@ -112,7 +112,7 @@ development_status:
   10-2-từ-cảm-hứng-tới-bộ-nội-dung: review
   epic-10-retrospective: optional
 
-  epic-11: backlog
-  11-1-nhập-nội-dung-từ-url-vào-trình-soạn: backlog
-  11-2-ai-chỉnh-sửa-nội-dung-trong-trình-soạn: backlog
+  epic-11: in-progress
+  11-1-nhập-nội-dung-từ-url-vào-trình-soạn: review
+  11-2-ai-chỉnh-sửa-nội-dung-trong-trình-soạn: review
   epic-11-retrospective: optional

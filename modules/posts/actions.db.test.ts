@@ -2,7 +2,19 @@ import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { db } from "@/platform/db";
 import { actionTest, resetTestDb } from "@/vitest.db.helpers";
 import { fakeAi } from "@/platform/ai/providers/fake";
-import { checkPostSeo, createPost, createPostDraft, deletePost, savePost, setPostStatus } from "@/modules/posts/actions";
+import { AI_BAD_OUTPUT, AI_UNAVAILABLE } from "@/platform/ai/ask";
+import { ProviderError } from "@/platform/ai/providers/types";
+import {
+  checkPostSeo,
+  createPost,
+  createPostDraft,
+  deletePost,
+  importPostFromUrl,
+  rewritePostDraft,
+  savePost,
+  setPostStatus,
+} from "@/modules/posts/actions";
+import { IMPORT_NO_WEB, IMPORT_UNREADABLE, REWRITE_EMPTY } from "@/modules/posts/constants";
 import type { PostFormValues } from "@/modules/posts/schema";
 
 async function product(name: string, data: { hidden?: boolean } = {}) {
@@ -337,6 +349,154 @@ describe("checkPostSeo", () => {
   it("chưa đăng nhập bị chặn, không gọi AI", async () => {
     actionTest.authorization = null;
     expect(await checkPostSeo(seoInput)).toEqual({ ok: false, error: "Bạn cần đăng nhập CMS" });
+    expect(fakeAi.calls()).toHaveLength(0);
+  });
+});
+
+describe("importPostFromUrl (FR-39, ngoại lệ AD-9)", () => {
+  const page = (patch: Record<string, unknown> = {}) => ({
+    data: {
+      readable: true,
+      title: "Mẹo giặt áo trắng",
+      excerpt: "Sapo",
+      content: "<h2>Ngâm</h2><p>Dùng <a href='https://x.vn'>baking soda</a></p><img src='https://x.vn/1.jpg'>",
+      imageUrls: ["https://x.vn/1.jpg", "https://x.vn/1.jpg", "ftp://x.vn/2.jpg"],
+      ...patch,
+    },
+    sources: [{ url: "https://blog.vn/bai", title: "Bài gốc" }],
+  });
+
+  it("trả nội dung đã lọc + link ảnh; gọi AI có đọc web; không ghi DB, không Suggestion, không updateTag", async () => {
+    fakeAi.reply(() => page());
+    const res = await importPostFromUrl({ url: "https://blog.vn/bai" });
+    expect(res).toEqual({
+      ok: true,
+      title: "Mẹo giặt áo trắng",
+      excerpt: "Sapo",
+      content: expect.stringContaining("<h2>Ngâm</h2>"),
+      imageUrls: ["https://x.vn/1.jpg"],
+    });
+    expect(res.ok && res.content).not.toMatch(/<a|<img/);
+    expect(fakeAi.calls()[0]).toMatchObject({ webSearch: true, profile: "fast" });
+    expect(fakeAi.calls()[0].user).toContain("https://blog.vn/bai");
+    expect(await db.post.count()).toBe(0);
+    expect(await db.suggestion.count()).toBe(0);
+    expect(actionTest.updatedTags).toEqual([]);
+  });
+
+  it("URL sai thì không gọi AI", async () => {
+    for (const url of ["abc", "ftp://blog.vn/a", `https://blog.vn/${"a".repeat(2000)}`]) {
+      const res = await importPostFromUrl({ url });
+      expect(res.ok).toBe(false);
+    }
+    expect(fakeAi.calls()).toHaveLength(0);
+  });
+
+  it("AI báo không đọc được, hoặc thân bài sau lọc rỗng → IMPORT_UNREADABLE", async () => {
+    fakeAi.reply(() => page({ readable: false }));
+    expect(await importPostFromUrl({ url: "https://blog.vn/bai" })).toEqual({ ok: false, error: IMPORT_UNREADABLE });
+    fakeAi.reply(() => page({ content: "<p></p><img src='https://x.vn/1.jpg'>" }));
+    expect(await importPostFromUrl({ url: "https://blog.vn/bai" })).toEqual({ ok: false, error: IMPORT_UNREADABLE });
+  });
+
+  it("đọc web mà không ra nguồn nào → IMPORT_UNREADABLE", async () => {
+    fakeAi.reply(() => ({ ...page(), sources: [] }));
+    expect(await importPostFromUrl({ url: "https://blog.vn/bai" })).toEqual({ ok: false, error: IMPORT_UNREADABLE });
+  });
+
+  it("nhà AI không đọc web (sources không có) → IMPORT_NO_WEB", async () => {
+    fakeAi.supports({ webSearch: false });
+    fakeAi.reply(() => page().data);
+    expect(await importPostFromUrl({ url: "https://blog.vn/bai" })).toEqual({ ok: false, error: IMPORT_NO_WEB });
+  });
+
+  it("AI lỗi → UserError của ask", async () => {
+    fakeAi.reply(() => {
+      throw new ProviderError("unavailable", "lỗi");
+    });
+    expect(await importPostFromUrl({ url: "https://blog.vn/bai" })).toEqual({ ok: false, error: AI_UNAVAILABLE });
+  });
+
+  it("chưa đăng nhập bị chặn, không gọi AI", async () => {
+    actionTest.authorization = null;
+    expect(await importPostFromUrl({ url: "https://blog.vn/bai" })).toEqual({ ok: false, error: "Bạn cần đăng nhập CMS" });
+    expect(fakeAi.calls()).toHaveLength(0);
+  });
+
+  it("Lưu nháp từ nội dung nhập: một Post DRAFT qua createPostDraft", async () => {
+    fakeAi.reply(() => page());
+    const res = await importPostFromUrl({ url: "https://blog.vn/bai" });
+    if (!res.ok) throw new Error(res.error);
+    expect(await db.post.count()).toBe(0);
+    const saved = await createPostDraft({
+      title: res.title,
+      slug: "",
+      excerpt: res.excerpt,
+      featuredImage: "",
+      postType: "MEO_VAT",
+      categoryId: "",
+      content: res.content,
+      tags: "",
+      seoTitle: "",
+      seoDescription: "",
+      seoKeywords: "",
+    });
+    expect(saved.ok).toBe(true);
+    expect(await db.post.findMany()).toMatchObject([{ title: "Mẹo giặt áo trắng", status: "DRAFT" }]);
+  });
+});
+
+describe("rewritePostDraft (FR-40, ngoại lệ AD-9)", () => {
+  const draft = { title: "Bài cũ", excerpt: "Tóm tắt cũ", content: "<p>Nội dung cũ</p>", instruction: " ngắn hơn " };
+  const reply = () => ({
+    title: "Bài mới",
+    excerpt: "Tóm tắt mới",
+    content: "<h2>Mục</h2><p>Mới</p><a href='https://x.vn'>mua</a>",
+    riskWarnings: [{ sentence: "Mới", reason: "Thử" }],
+  });
+
+  it("trả nội dung viết lại đã lọc + cảnh báo; dùng Hồ sơ phong cách Website; không lưu, không updateTag", async () => {
+    await db.styleProfile.create({
+      data: { platform: "WEBSITE", voice: "Giọng thử nghiệm", lengthMin: 300, lengthMax: 900, partsMin: 2, partsMax: 4, emoji: "", forbidden: "", rules: "" },
+    });
+    fakeAi.reply(reply);
+    const res = await rewritePostDraft(draft);
+    expect(res).toEqual({
+      ok: true,
+      title: "Bài mới",
+      excerpt: "Tóm tắt mới",
+      content: "<h2>Mục</h2><p>Mới</p>mua",
+      riskWarnings: [{ sentence: "Mới", reason: "Thử" }],
+    });
+    const call = fakeAi.calls()[0];
+    expect(call).toMatchObject({ profile: "quality", webSearch: false });
+    expect(call.system).toContain("Giọng thử nghiệm");
+    expect(call.user).toContain("Chỉ dẫn khi viết lại: ngắn hơn");
+    expect(await db.suggestion.count()).toBe(0);
+    expect(await db.post.count()).toBe(0);
+    expect(actionTest.updatedTags).toEqual([]);
+  });
+
+  it("AI trả thân bài chỉ có link rỗng/ảnh (rỗng sau lọc — sanitize giữ chữ trong link) → AI_BAD_OUTPUT", async () => {
+    fakeAi.reply(() => ({ ...reply(), content: "<a href='https://x.vn'></a><img src='https://x.vn/a.jpg'>" }));
+    expect(await rewritePostDraft(draft)).toEqual({ ok: false, error: AI_BAD_OUTPUT });
+  });
+
+  it("thân bài trống thì không gọi AI", async () => {
+    expect(await rewritePostDraft({ ...draft, content: "<p> </p>" })).toEqual({ ok: false, error: REWRITE_EMPTY });
+    expect(fakeAi.calls()).toHaveLength(0);
+  });
+
+  it("AI lỗi → UserError của ask", async () => {
+    fakeAi.reply(() => {
+      throw new ProviderError("timeout", "chậm");
+    });
+    expect(await rewritePostDraft(draft)).toEqual({ ok: false, error: AI_UNAVAILABLE });
+  });
+
+  it("chưa đăng nhập bị chặn, không gọi AI", async () => {
+    actionTest.authorization = null;
+    expect(await rewritePostDraft(draft)).toEqual({ ok: false, error: "Bạn cần đăng nhập CMS" });
     expect(fakeAi.calls()).toHaveLength(0);
   });
 });

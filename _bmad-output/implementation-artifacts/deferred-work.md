@@ -73,3 +73,9 @@
 - source_spec: `_bmad-output/implementation-artifacts/spec-10-luot-gop-epic-10.md`
   summary: Dải "AI chưa đọc được video" của gợi ý nghiên cứu Cảm hứng chọn câu theo file **hiện tại** của Cảm hứng, không theo file đã gửi cho AI lúc tạo gợi ý — sửa file (thêm/đổi ảnh) sau khi Nghiên cứu mà chưa Tạo lại thì câu có thể lệch (vd. nói "dựa trên ảnh chụp màn hình" dù lần đó chưa có ảnh).
   evidence: Review gộp Epic 10 #4 (quyết định 16). Sửa gốc: lưu đầu vào đã gửi/đã đọc của gợi ý (vd. cột Json `Suggestion.input` hoặc thêm vào `skipped`) — đổi schema, làm cùng việc đọc khung hình video.
+- source_spec: `_bmad-output/implementation-artifacts/spec-11-luot-gop-epic-11.md`
+  summary: Logic client của Nhập từ URL / AI chỉnh sửa (Hoàn tác khôi phục giá trị + cảnh báo, form nhập dirty ngay khi mount để UnsavedChangesGuard bật, ConfirmDialog trước khi nhập lại, giữ form khi nhập lỗi) chưa có test tự động.
+  evidence: Review gộp Epic 11 (verification-gap). Repo không có hạ tầng test component (vitest chỉ `**/*.test.ts`, không jsdom/testing-library); thêm thư viện cần hỏi theo QD-04. Hiện kiểm tay trên trình duyệt.
+- source_spec: `_bmad-output/implementation-artifacts/spec-11-luot-gop-epic-11.md`
+  summary: `docs/cong-thuc/them-tinh-nang-ai.md` (Tóm tắt + Checklist) vẫn ghi "mọi đầu ra AI là Suggestion, chỉ checkPostSeo là ngoại lệ" — chưa theo AD-9 mới có thêm `importPostFromUrl`, `rewritePostDraft`.
+  evidence: Review gộp Epic 11 (project-conventions). Spine AD-9 và QD-08 đã cập nhật 2026-11-09; công thức là tài liệu quy tắc cho agent nên để Vinh duyệt khi sửa.

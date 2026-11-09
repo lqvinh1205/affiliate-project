@@ -1,5 +1,7 @@
 import type { listPostsForCms } from "@/modules/posts/cms-queries";
 import type { getLatestPosts, getPostBySlug, listNavCategories, listPostsByType } from "@/modules/posts/queries";
+import type { toImportedPost } from "@/modules/posts/prompts/import-post.prompt";
+import type { toRewrittenPost } from "@/modules/posts/prompts/rewrite-post.prompt";
 
 // Kiểu suy từ query, không chép tay ([NO-18], [QU-09]).
 // Thẻ Bài web public (PostCard).
@@ -25,5 +27,10 @@ export type RiskWarning = { sentence: string; reason: string };
 
 // Khoá nút Xuất bản khi Bài web còn gợi ý AI Đang tạo / Chờ duyệt (FR-22, UX-DR72) — chỉ ở giao diện.
 export type PublishLock = { reason: string; href: string };
+
+// Nội dung nhập từ URL (`importPostFromUrl`, FR-39) và nội dung AI viết lại (`rewritePostDraft`, FR-40) — điền form,
+// chưa lưu.
+export type ImportedPost = NonNullable<ReturnType<typeof toImportedPost>>;
+export type RewrittenPost = NonNullable<ReturnType<typeof toRewrittenPost>>;
 
 export type { WebPostPayload } from "@/modules/posts/prompts/web-post.prompt";

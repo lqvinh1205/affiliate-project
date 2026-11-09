@@ -262,7 +262,7 @@ Người vận hành có thể xem trước Bài web, xuất bản, chuyển v�
 - Đổi slug Bài web đã xuất bản thì đường dẫn cũ chuyển hướng 301 sang đường dẫn mới.
 
 #### FR-39: Nhập Bài web từ URL
-Ở màn Tạo Bài web, người vận hành có thể dán URL một bài viết bên ngoài để AI đọc trang và điền sẵn tiêu đề, tóm tắt và thân bài vào form bài đầy đủ (chưa lưu). Bài chỉ được tạo (Nháp) khi Vinh bấm Lưu; không tạo bản nháp trống trước. *(thêm 2026-11-09)*
+Ở màn Tạo Bài web, người vận hành có thể dán URL một bài viết bên ngoài để AI đọc trang và điền sẵn tiêu đề, tóm tắt và thân bài vào form bài (chưa lưu). Bài chỉ được tạo (Nháp) khi Vinh bấm Lưu; không tạo bản nháp trống trước. *(thêm 2026-11-09)*
 - Thân bài chỉ giữ định dạng website hỗ trợ và được làm sạch (AD-22). Link và ảnh của bài gốc không vào thân bài; link ảnh được liệt kê riêng để Vinh tự lưu và tải lên nếu muốn. Hệ thống không tự tải ảnh về.
 - Nhập lại URL khác khi form đã có nội dung thì hỏi xác nhận trước khi ghi đè.
 - Không đọc được trang (cần đăng nhập, bị chặn, render bằng JS) thì báo rõ bằng tiếng Việt và gợi ý dán nội dung tay.

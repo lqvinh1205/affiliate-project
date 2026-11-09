@@ -72,6 +72,12 @@ export const ARTICLE_RESERVED_IDS = [
 export const WEB_POST_WORDS_MAX = 3000;
 export const WEB_POST_SECTIONS_MAX = 10;
 
+// Nhập Bài web từ URL (FR-39, `importPostFromUrl`) và AI chỉnh sửa (FR-40, `rewritePostDraft`).
+export const POST_IMPORT_URL_MAX = 2000;
+// Số link ảnh của bài gốc trả về khối "Ảnh trong bài gốc".
+export const POST_IMPORT_IMAGES_MAX = 20;
+export const POST_REWRITE_INSTRUCTION_MAX = 200;
+
 // Tìm kiếm `/tim-kiem` (FR-36, action công khai `searchPosts` — spine AD-6 ngoại lệ số 2).
 // Từ khoá: tối thiểu 2 ký tự (1 ký tự chưa tìm — UX-DR31), tối đa 100 ký tự và 8 từ (đủ cho câu hỏi tự nhiên, chặn
 // chuỗi dài làm truy vấn nặng).
@@ -83,3 +89,8 @@ export const SEARCH_RESULTS_LIMIT = 20;
 // Giới hạn tần suất: 60 lần tìm/phút mỗi nguồn (băm IP). Người đọc gõ có chờ 300 ms nên một lần tìm thật tốn vài
 // lượt; mức này chừa chỗ cho nhiều người chung IP mà vẫn chặn script dội.
 export const SEARCH_RATE_LIMIT = { limit: 60, windowMs: 60_000 };
+
+// Lỗi của Nhập từ URL / AI chỉnh sửa (UserError tiếng Việt — AD-13).
+export const IMPORT_UNREADABLE = "Không đọc được nội dung trang này. Thử copy nội dung rồi dán vào trình soạn.";
+export const IMPORT_NO_WEB = "Nhà AI hiện tại không đọc được trang web.";
+export const REWRITE_EMPTY = "Thân bài đang trống — viết hoặc nhập nội dung trước.";

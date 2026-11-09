@@ -4,7 +4,9 @@ import { imageUrl, optionalText, requiredText, slugField } from "@/platform/vali
 import {
   POST_CONTENT_MAX,
   POST_EXCERPT_MAX,
+  POST_IMPORT_URL_MAX,
   POST_PRODUCTS_MAX,
+  POST_REWRITE_INSTRUCTION_MAX,
   POST_SEO_DESCRIPTION_MAX,
   POST_SEO_TITLE_MAX,
   POST_SLUG_MAX,
@@ -98,6 +100,30 @@ export const seoCheckInputSchema = z.object({
   keywords: z.array(z.string().max(POST_TAG_MAX)).max(POST_TAGS_MAX),
 });
 
+// Nhập Bài web từ URL (`importPostFromUrl`, FR-39): chỉ kiểm dạng URL http(s); máy chủ không tự tải trang (AD-9).
+export const importPostInputSchema = z.object({
+  url: z
+    .string()
+    .trim()
+    .min(1, "Nhập URL bài viết")
+    .max(POST_IMPORT_URL_MAX, `URL tối đa ${POST_IMPORT_URL_MAX} ký tự`)
+    .refine((s) => {
+      try {
+        return /^https?:$/.test(new URL(s).protocol);
+      } catch {
+        return false;
+      }
+    }, "URL phải bắt đầu bằng http:// hoặc https://"),
+});
+
+// AI chỉnh sửa (`rewritePostDraft`, FR-40): giá trị form lúc bấm, chưa lưu, kèm chỉ dẫn tuỳ chọn.
+export const rewritePostInputSchema = z.object({
+  title: z.string().max(POST_TITLE_MAX, `Tối đa ${POST_TITLE_MAX} ký tự`),
+  excerpt: z.string().max(POST_EXCERPT_MAX, `Tối đa ${POST_EXCERPT_MAX} ký tự`),
+  content: z.string().max(POST_CONTENT_MAX, "Nội dung quá dài"),
+  instruction: z.string().trim().max(POST_REWRITE_INSTRUCTION_MAX, `Tối đa ${POST_REWRITE_INSTRUCTION_MAX} ký tự`),
+});
+
 export const setPostStatusInputSchema = z.object({ id: postId, status: z.enum(Status) });
 
 export const deletePostInputSchema = z.object({ id: postId });
@@ -108,6 +134,8 @@ export type PostInput = z.infer<typeof postInputSchema>;
 export type NewPostFormValues = z.input<typeof newPostInputSchema>;
 export type PostDraftFormValues = z.input<typeof postDraftInputSchema>;
 export type SeoCheckInput = z.input<typeof seoCheckInputSchema>;
+export type ImportPostInput = z.input<typeof importPostInputSchema>;
+export type RewritePostInput = z.input<typeof rewritePostInputSchema>;
 
 // Tìm Bài web (`searchPosts`, FR-36): luật từ khoá ở `searchQueryTerms` (dùng chung với client). Trả về các từ đã gấp.
 export const searchPostsInputSchema = z.object({

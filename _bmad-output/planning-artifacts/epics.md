@@ -58,7 +58,7 @@ FR-35: Thả tim. Người đọc thả tim và bỏ tim Bài web không cần �
 FR-36: Tìm kiếm. Người đọc tìm Bài web đã xuất bản theo từ khoá; khớp cả khi gõ không dấu (vd "noi chien" tìm được "nồi chiên").
 FR-37: Chia sẻ. Mỗi Bài web có nút chia sẻ lên Facebook, Threads và nút sao chép link; trên điện thoại dùng được chia sẻ gốc của hệ điều hành.
 FR-38: Thống kê trong CMS. Danh sách bài trong CMS hiện Lượt xem và Lượt tim từng Bài web, sắp xếp được theo hai chỉ số này.
-FR-39: Nhập Bài web từ URL (thêm 2026-11-09). Ở màn Tạo Bài web, dán URL bài bên ngoài → AI đọc trang, điền sẵn tiêu đề, tóm tắt, thân bài vào form bài đầy đủ (chưa lưu); chỉ tạo Nháp khi bấm Lưu. Thân bài làm sạch, không link/ảnh; link ảnh liệt kê riêng, không tự tải; ghi đè cần xác nhận; không đọc được trang thì báo rõ.
+FR-39: Nhập Bài web từ URL (thêm 2026-11-09). Ở màn Tạo Bài web, dán URL bài bên ngoài → AI đọc trang, điền sẵn tiêu đề, tóm tắt, thân bài vào form bài (chưa lưu); chỉ tạo Nháp khi bấm Lưu. Thân bài làm sạch, không link/ảnh; link ảnh liệt kê riêng, không tự tải; ghi đè cần xác nhận; không đọc được trang thì báo rõ.
 FR-40: AI chỉnh sửa trong trình soạn (thêm 2026-11-09). "AI chỉnh sửa" + chỉ dẫn tuỳ chọn viết lại tiêu đề, tóm tắt, thân bài đang có trong form theo Hồ sơ phong cách Website, kèm Cảnh báo rủi ro; điền form chưa lưu, hoàn tác được. Có ở form nhập từ URL và trình soạn bài đã có. FR-39/40 là ngoại lệ của FR-22 (không tạo Gợi ý AI).
 
 ### NonFunctional Requirements
@@ -1582,7 +1582,7 @@ So that tôi không phải copy tay từng đoạn.
 **When** dán URL `http(s)` vào khối "Nhập từ URL", chạm "Lấy nội dung"
 **Then** `posts.importPostFromUrl` qua `run()` validate URL (Zod ở `posts/schema.ts`, độ dài ở `posts/constants.ts`), gọi `ask()` với prompt `modules/posts/prompts/import-post.prompt.ts` và `webSearch: true`; máy chủ không tự fetch URL (spine AD-9 ngoại lệ có tên); chưa ghi gì vào DB
 **And** kết quả `{ title, summary, contentHtml, imageUrls[] }`: `contentHtml` qua `sanitizePostHtml` trước khi trả về; tiêu đề/tóm tắt cắt theo giới hạn trong `posts/constants.ts`
-**And** màn hiện form bài đầy đủ đã điền sẵn (Loại bài, Danh mục, tiêu đề, tóm tắt, PostEditor, ảnh đại diện, thẻ, SEO) theo `postDraftInputSchema`, qua CmsForm + UnsavedChangesGuard; khối "Ảnh trong bài gốc" liệt kê `imageUrls` (link + nút copy), không tự tải ảnh, không gán ảnh đại diện
+**And** màn hiện form bài đã điền sẵn (Loại bài, Danh mục, tiêu đề, tóm tắt, PostEditor, ảnh đại diện; thẻ, SEO, Sản phẩm thêm ở trình soạn sau khi lưu) theo `postDraftInputSchema`, qua CmsForm + UnsavedChangesGuard; khối "Ảnh trong bài gốc" liệt kê `imageUrls` (link + nút copy), không tự tải ảnh, không gán ảnh đại diện
 
 **Given** form nhập đã điền
 **When** chạm "Lưu nháp"
