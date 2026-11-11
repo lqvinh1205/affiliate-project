@@ -65,15 +65,15 @@ sources:
 - Desktop (≥ 1024px): SiteHeader có nav ngang: Mẹo vặt, Gom link, các Danh mục theo thứ tự; Danh mục không vừa bề ngang gom vào menu "Thêm" [ASSUMPTION]; nút tìm kiếm; nút "Đồ hay".
 - SiteFooter: giới thiệu ngắn, link Danh mục, link `/bio`, câu công khai, ©. Không link trang tĩnh (Q9).
 
-**Bố cục `/bio` (FR-30)** — một cột, ProductCard *row*. **Vinh chốt 2026-11-06: theo màn Stitch [Bio-M]** (thay bố cục FilterChips trước đó), vẫn giữ các loại trừ của PRD: không tick xác minh, không @handle, không icon MXH, không emoji, không ô tìm, không "Bài mới nhất", không bộ sưu tập ảo.
+**Bố cục `/bio` (FR-30)** — một cột, ProductCard *bio* (Vinh 2026-11-09). **Vinh chốt 2026-11-06: theo màn Stitch [Bio-M]** (thay bố cục FilterChips trước đó), vẫn giữ các loại trừ của PRD: không tick xác minh, không @handle, không icon MXH, không emoji, không ô tìm, không "Bài mới nhất", không bộ sưu tập ảo.
 
 | Thứ tự | Khối | Quy tắc |
 |---|---|---|
 | 1 | Đầu trang căn giữa | Ảnh đại diện vuông bo góc (tuỳ chọn, sửa ở `/cms/bio`, cùng luật upload ảnh Sản phẩm; không có thì không render), tiêu đề "Đồ hay", giới thiệu từ CMS (FR-31). |
 | 2 | AffiliateDisclosure | Luôn hiện, không đóng được, **giữ ở đầu trang** trước mọi Link affiliate (FR-24, FR-30) — không dời xuống cuối như khối minh bạch của Stitch. |
-| 3 | Dòng Danh mục | Mỗi Danh mục có Sản phẩm hiện một thẻ dòng: tên, mô tả Danh mục cắt 1 dòng (nếu có), viên "N món" (tính cả món ghim), chevron; món chưa có Danh mục thành dòng "Khác" cuối. Hiện 5 dòng đầu; nhiều hơn 6 thì nút "Xem thêm N danh mục" / "Thu gọn". |
+| 3 | Dòng Danh mục | Mỗi Danh mục có Sản phẩm hiện một thẻ dòng: ô vuông chữ cái đầu tên (trang trí, `aria-hidden`, Vinh 2026-11-09), tên, mô tả Danh mục cắt 1 dòng (nếu có), viên "N món" (tính cả món ghim), chevron; món chưa có Danh mục thành dòng "Khác" cuối. Hiện 5 dòng đầu; nhiều hơn 6 thì nút "Xem thêm N danh mục" / "Thu gọn". |
 | 4a | Màn mặc định | Nhóm "Nổi bật" (Sản phẩm ghim, theo thứ tự bio), tiêu đề `{typography.headline-sm}` + số món. Không có món ghim → mọi nhóm theo Danh mục như trước (Danh mục theo thứ tự hiển thị, "Khác" cuối, món ghim không lặp). |
-| 4b | Chạm một dòng Danh mục | Ẩn dòng Danh mục và nhóm mặc định; hiện link "← Về nổi bật" (không có món ghim: "← Tất cả danh mục"), tên + mô tả + số món, danh sách phẳng (món ghim lên đầu, giữ dấu Ghim). Dòng đang xem nằm trên URL `/bio?danh-muc=<slug>` (dòng "Khác": `_khac`) nên quay lại/tải lại giữ đúng màn; slug không khớp → màn mặc định. |
+| 4b | Chạm một dòng Danh mục | Ẩn dòng Danh mục và nhóm mặc định; hiện link "← Về nổi bật" (không có món ghim: "← Tất cả danh mục"), khối đầu (tên lớn + mô tả + số món), danh sách phẳng (món ghim lên đầu, giữ dấu Ghim), cuối cùng khối "Khám phá danh mục khác" — lưới 2 cột các dòng Danh mục còn lại (tên, mô tả, số món, mũi tên), chạm → màn đã lọc của dòng đó (Vinh 2026-11-09). Dòng đang xem nằm trên URL `/bio?danh-muc=<slug>` (dòng "Khác": `_khac`) nên quay lại/tải lại giữ đúng màn; slug không khớp → màn mặc định. |
 | 5 | Thẻ "Ghé thăm Website" | Thẻ nền `{colors.primary-container}` gần cuối, link `/` cùng tab — liên kết tuỳ chỉnh duy nhất (thay link chữ "Về trang chủ"). |
 
 ### CMS
@@ -145,7 +145,7 @@ Hành vi. Hình ảnh ở `DESIGN.md` Components.
 | RelatedPosts | cuối Bài viết | Tối đa 3 Bài web cùng Danh mục, mới nhất trước (FR-26); mobile PostCard *row*, desktop *grid*. |
 | PostTags | cuối thân Bài viết | Chỉ hiển thị, không link (DESIGN Do's). Bài không có thẻ: ẩn. |
 | PostTypeBadge | PostCard, đầu bài | Chỉ hiển thị, không là link. |
-| ProductCard | Bài viết (*row*), `/bio` (*row*), dải "Gom link đồ xinh" Trang chủ (*tile*) | **Cả thẻ là một link duy nhất** tới Link affiliate (memlog 2026-11-04): một `<a>` bọc ảnh, tên, giá, ngày và nút "Xem trên Shopee" (nút chỉ là hình, không phải phần tử bấm riêng) — một Link affiliate mỗi thẻ, không link trùng cho trình đọc màn hình. Sản phẩm ẩn không bao giờ hiện (FR-5). |
+| ProductCard | Bài viết (*row*), `/bio` (*bio*), dải "Gom link đồ xinh" Trang chủ (*tile*) | **Cả thẻ là một link duy nhất** tới Link affiliate (memlog 2026-11-04): một `<a>` bọc ảnh, tên, giá, ngày và nút "Xem trên Shopee" (nút chỉ là hình, không phải phần tử bấm riêng) — một Link affiliate mỗi thẻ, không link trùng cho trình đọc màn hình. Sản phẩm ẩn không bao giờ hiện (FR-5). |
 | AffiliateLink | ProductCard, Banner trỏ Shopee | Component thuộc tính link, nhận `children`: nguyên link Shopee, tab mới, `rel="sponsored nofollow noopener"`, không qua `/go` (FR-25, AD-11). Trong ProductCard và Banner, AffiliateLink bọc cả thẻ; nút Shopee chỉ là phần hiển thị bên trong (vùng bấm = cả thẻ). Không đếm click (§7). |
 | AffiliateDisclosure | Bài viết, `/bio`, Trang chủ, footer | Vị trí: bài có ≥ 1 Sản phẩm — ngay dưới dòng meta, trước ảnh đầu bài; `/bio` — đầu trang; Trang chủ — dòng chữ ngắn ngay dưới tiêu đề dải "Gom link đồ xinh" (FR-24) [ASSUMPTION]; footer — dạng chữ. Bài không có Sản phẩm: không render (FR-24). Trên `/bio` luôn hiện, không đóng được (FR-30). |
 | TableOfContents | Bài viết | Sinh từ h2 (sau sanitize, AD-22). Mobile: mặc định **mở** [ASSUMPTION: Stitch mở sẵn], chạm tiêu đề để thu. Chạm mục: cuộn mượt tới h2, chừa chiều cao header. Desktop: dính cột phải, highlight mục đang đọc. < 2 h2: ẩn. |
@@ -285,7 +285,7 @@ Hành vi. Hình ảnh ở `DESIGN.md` Components.
 
 ## Interaction Primitives
 
-- **Chạm / bấm để hành động.** Mọi vùng bấm ≥ 44px (`{spacing.touch-target}`); chip và nút Shopee giữ hình 36px nhưng vùng bấm 44px (DESIGN Layout & Spacing).
+- **Chạm / bấm để hành động.** Mọi vùng bấm ≥ 44px (`{spacing.touch-target}`); chip và nút Shopee giữ hình 36px nhưng vùng bấm 44px (DESIGN Layout & Spacing). Ngoại lệ: link SiteFooter là dòng cao 32px, bấm được cả dòng (Vinh 2026-11-09; ≥ 24px theo WCAG 2.5.8).
 - **Cuộn ngang có chủ đích** chỉ ở: dải Banner, dải Gom link đồ xinh trên Trang chủ, FilterChips, thanh nhảy Bộ nội dung. Snap theo thẻ, không thanh cuộn. Trang không bao giờ cuộn ngang.
 - **Cuộn mượt** tới neo (mục lục, "Sản phẩm", thanh nhảy Bộ nội dung, mục RiskWarning); tắt khi `prefers-reduced-motion`.
 - **Hover (desktop):** ảnh PostCard phóng 3–5%, tiêu đề đổi màu `{colors.primary}`; không có hành động chỉ xuất hiện khi hover.

@@ -5,6 +5,7 @@ import {
   bioDefaultGroupsOf,
   bioGroupsOf,
   bioItemsOfRow,
+  bioOtherRowsOf,
 } from "@/modules/bio/browse";
 
 const bep = { id: "bep", name: "Đồ bếp", slug: "do-bep", description: "Nồi, chảo" };
@@ -76,5 +77,22 @@ describe("bioCategoryRowsOf, bioItemsOfRow (dòng Danh mục)", () => {
     expect(bioItemsOfRow(items, [bep, don, trong], "khong-co")).toBeNull();
     expect(bioItemsOfRow(items, [bep, don, trong], "o-tro")).toBeNull();
     expect(bioItemsOfRow([{ id: "x", pinned: false, categoryId: "bep" }], [bep], BIO_UNCATEGORIZED_KEY)).toBeNull();
+  });
+});
+
+describe("bioOtherRowsOf", () => {
+  const rows = bioCategoryRowsOf(items, [bep, don, trong]);
+
+  it("bỏ dòng Danh mục đang xem, giữ thứ tự", () => {
+    expect(bioOtherRowsOf(rows, "do-bep").map((r) => r.key)).toEqual(["don-dep", BIO_UNCATEGORIZED_KEY]);
+  });
+
+  it("đang xem dòng Khác: bỏ Khác, giữ thứ tự", () => {
+    expect(bioOtherRowsOf(rows, BIO_UNCATEGORIZED_KEY).map((r) => r.key)).toEqual(["do-bep", "don-dep"]);
+  });
+
+  it("chỉ một dòng → rỗng", () => {
+    const one = bioCategoryRowsOf([{ pinned: false, categoryId: "bep" }], [bep]);
+    expect(bioOtherRowsOf(one, "do-bep")).toEqual([]);
   });
 });

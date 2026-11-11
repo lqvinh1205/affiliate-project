@@ -1,7 +1,7 @@
 ---
 status: final
 created: 2026-11-03
-updated: 2026-11-04
+updated: 2026-11-09
 sources:
   - _bmad-output/planning-artifacts/ux-designs/ux-affiliate-project-2026-11-03/.memlog.md
   - _bmad-output/planning-artifacts/ux-designs/ux-affiliate-project-2026-11-03/reconcile-stitch.md
@@ -238,7 +238,7 @@ Mobile-first, chuẩn 390px, kiểm ở 360px. Theo Stitch DS:
 - **Tablet (768–1023px):** lưới 6 cột, lề `{spacing.margin-tablet}`, gutter `{spacing.gutter-desktop}`.
 - **Desktop (≥ 1024px):** lưới 12 cột, lề `{spacing.margin-desktop}`, gutter `{spacing.gutter-desktop}`, khung tối đa `{spacing.container-max}` căn giữa. Trang bài: 8 cột thân bài + 4 cột bên phải, dính (TOC, tim/chia sẻ).
 - Giữa các khu: `{spacing.space-xl}`; giữa khối trong khu: `{spacing.space-lg}`; padding trong thẻ: `{spacing.space-md}` (mobile) / `{spacing.space-lg}` (desktop).
-- Vùng bấm tối thiểu `{spacing.touch-target}`. Phần tử có hình nhỏ hơn (chip, nút Shopee 36px) giữ hình nhưng nới **vùng bấm** tới `{spacing.touch-target}` bằng pseudo-element `::before` trong suốt (`inset` âm 4px trên/dưới); khoảng cách giữa hai phần tử như vậy ≥ `{spacing.space-sm}` để vùng bấm không chồng nhau.
+- Vùng bấm tối thiểu `{spacing.touch-target}`. Phần tử có hình nhỏ hơn (chip, nút Shopee 36px) giữ hình nhưng nới **vùng bấm** tới `{spacing.touch-target}` bằng pseudo-element `::before` trong suốt (`inset` âm 4px trên/dưới); khoảng cách giữa hai phần tử như vậy ≥ `{spacing.space-sm}` để vùng bấm không chồng nhau. **Ngoại lệ:** link SiteFooter là dòng cao 32px, bấm được cả dòng (Vinh 2026-11-09; vẫn ≥ 24px theo WCAG 2.5.8).
 - Header cố định (cao theo `{components.site-header}`) và BottomTabBar cố định: nội dung có padding trên/dưới tương ứng, cộng `safe-area-inset`.
 - Ảnh có tỉ lệ cố định để không nhảy layout (NFR-5): ảnh đầu bài 16:9, ảnh PostCard 16:9 (Stitch), ảnh ProductCard 1:1. [ASSUMPTION: brief ghi thẻ bài 4:3; theo Stitch 16:9.]
 
@@ -277,15 +277,17 @@ Icon: **Lucide**, nét 1.25–1.5px (Stitch DS §Iconography; màn Stitch dùng 
 | **SiteHeader** | `{components.site-header}`. Mobile: logo chữ "Mẹo Vặt Cuộc Sống" + dòng phụ "Tạp chí tổ ấm nhỏ" (`{typography.label-meta}`), nút tìm kiếm. Desktop: thêm nav ngang và nút "Đồ hay" (`{colors.primary-fixed}`, `{rounded.full}`). Không avatar, không bookmark. | [Home-M], [Home-D] |
 | **BottomTabBar** | `{components.bottom-tab-bar}`. 5 mục, icon 24px + nhãn; mục đang chọn đổi `{colors.primary}`, đậm 600. Chỉ mobile/tablet. | [Home-M] |
 | **CategorySheet** | Sheet đáy, nền `{colors.surface-container-lowest}`, góc trên `{rounded.xl}`, danh sách Danh mục dạng dòng cao `{spacing.touch-target}`. | [Bio-M] (bottom sheet) |
-| **SiteFooter** | Nền `{colors.surface-container-low}`, padding `{spacing.space-xl}`: tên + giới thiệu, link Danh mục, link `/bio`, AffiliateDisclosure dạng chữ, ©. | [Home-M] (chỉ bố cục; bỏ newsletter, trang tĩnh) |
+| **SiteFooter** | Nền `{colors.surface-container-low}`, padding `{spacing.space-xl}`: tên + giới thiệu, link Danh mục, link `/bio`, AffiliateDisclosure dạng chữ, ©. Link là dòng cao 32px bấm được cả dòng — ngoại lệ vùng bấm `{spacing.touch-target}` (Vinh 2026-11-09; ≥ 24px theo WCAG 2.5.8). | [Home-M] (chỉ bố cục; bỏ newsletter, trang tĩnh) |
 | **Banner** | `{components.banner}`: ảnh trái/trên, tiêu đề `{typography.body-sm}` đậm 500, mô tả, CTA pill `{colors.primary}` (chỉ là hình, cả Banner là một link). Nhãn nhỏ dùng `{colors.tertiary-fixed}`. Nhiều banner: dải cuộn ngang có chấm chỉ vị trí. | [Home-M] (khối "Mùa ấm áp") |
 | **PostCard** | `{components.post-card}`. Biến thể: *featured* (ảnh 16:9, badge trên ảnh, tiêu đề lớn), *grid*, *row* (thumbnail trái 80px), *rank* (số `01`–`05` `{typography.headline-lg}` màu `{colors.outline-variant}` — trang trí, `aria-hidden`, xem Colors — chữ ở bên phải). Hover: ảnh phóng 3–5%, tiêu đề đổi `{colors.primary}`. | [Home-M], [Home-D] |
 | **RelatedPosts** | Tiêu đề khu `{typography.headline-md}`; mobile PostCard *row*, desktop PostCard *grid* 3 cột. | [Bài-D] (chỉ vị trí cuối bài) |
 | **PostTypeBadge** | `{components.post-type-badge-meo-vat}` / `{components.post-type-badge-gom-link}`, chữ hoa. | [Home-M], [Bài-M] |
 | **PostTags** | Dòng thẻ cuối thân bài: "#tag" chữ thường `{typography.label-sm}` `{colors.on-surface-variant}`, cách nhau `{spacing.space-sm}`, không nền, không link (FR-26). | — |
-| **ProductCard** *row* | `{components.product-card}`. Chung cho cả hai biến thể: cả thẻ là một link (hover: nền `{colors.surface-container-low}`); phần đã loại: xem Do's and Don'ts. *row* (bài viết, `/bio`): ảnh vuông 80px bên trái; bên phải là tên tối đa 2 dòng, dòng "Giá tham khảo" `{typography.label-meta}` + giá `{colors.primary}` + "cập nhật dd/mm/yyyy" `{typography.label-meta}`, nút Shopee. Dấu Ghim (bio): icon pin trên nền `{colors.primary-fixed}`. | [Bài-M], [Bio-M], [DM-M] — chỉ lấy bố cục ảnh–tên–giá |
+| **ProductCard** *row* | `{components.product-card}`. Chung cho mọi biến thể: cả thẻ là một link (hover: nền `{colors.surface-container-low}`); phần đã loại: xem Do's and Don'ts. *row* (bài viết): ảnh vuông 80px bên trái; bên phải là tên tối đa 2 dòng, dòng "Giá tham khảo" `{typography.label-meta}` + giá `{colors.primary}` + "cập nhật dd/mm/yyyy" `{typography.label-meta}`, nút Shopee. | [Bài-M] — chỉ lấy bố cục ảnh–tên–giá |
+| **ProductCard** *bio* | Chỉ ở `/bio` (Vinh 2026-11-09): ảnh vuông 96px `{rounded.lg}` bên trái; bên phải tên tối đa 2 dòng `{typography.headline-sm}`, dòng "Giá tham khảo · cập nhật dd/mm/yyyy" `{typography.label-meta}` `{colors.on-surface-variant}`, hàng dưới giá `{typography.headline-sm}` `{colors.primary}` bên trái + nút Shopee bên phải (màn hẹp thì nút xuống dòng; không có giá: chỉ nút). Dấu Ghim: icon pin trên nền `{colors.primary-fixed}`. | [Bio-M], [DM-M] — chỉ lấy bố cục ảnh–tên–giá–nút |
 | **Đầu trang `/bio`** | Căn giữa: ảnh đại diện 80px vuông bo góc 16px (tuỳ chọn), "Đồ hay" `{typography.headline-lg-mobile}`, giới thiệu `{typography.body-regular}` `{colors.on-surface-variant}`. Không tick, @handle, icon MXH, emoji. | [Bio-M] (Vinh 2026-11-06) |
-| **BioCategoryRow** | Thẻ dòng nền `{colors.surface-container-lowest}`, viền `{colors.outline-variant}`, `{rounded.xl}`, Mức 0, padding `{spacing.space-md}`, cao ≥ `{spacing.touch-target}`: tên `{typography.headline-sm}`, mô tả 1 dòng `{typography.body-sm}`, viên "N món" `{typography.label-meta}` nền `{colors.surface-container-high}`, chevron. Hover: nền `{colors.surface-container-low}`, viền `{colors.primary}` nhạt. Nút "Xem thêm N danh mục" nền `{colors.surface-container-high}`. Không icon/emoji Danh mục. | [Bio-M] (Vinh 2026-11-06) |
+| **BioCategoryRow** | Thẻ dòng nền `{colors.surface-container-lowest}`, viền `{colors.outline-variant}`, `{rounded.xl}`, Mức 0, padding `{spacing.space-md}`, cao ≥ `{spacing.touch-target}`: ô vuông 40px `{rounded.xl}` nền `{colors.primary-fixed}` hiện chữ cái đầu tên Danh mục `{colors.on-primary-fixed}` (trang trí, `aria-hidden`, Vinh 2026-11-09), tên `{typography.headline-sm}`, mô tả 1 dòng `{typography.body-sm}`, viên "N món" `{typography.label-meta}` nền `{colors.surface-container-high}`, chevron. Hover: nền `{colors.surface-container-low}`, viền `{colors.primary}` nhạt. Nút "Xem thêm N danh mục" nền `{colors.surface-container-high}`. Không icon/emoji Danh mục. | [Bio-M] (Vinh 2026-11-06) |
+| **Màn `/bio` đã lọc Danh mục** | Khối đầu nền `{colors.surface-container-low}`, `{rounded.xl}`, padding `{spacing.space-md}`: tên `{typography.headline-lg-mobile}`, mô tả `{typography.body-regular}`, "N món" `{typography.label-meta}`. Cuối màn khối "Khám phá danh mục khác" (`{typography.headline-sm}`): lưới 2 cột thẻ cùng nền/viền BioCategoryRow — tên, mô tả 1 dòng `{typography.label-meta}`, "N món" + mũi tên `{colors.primary}`. Không huy hiệu "Tuyển chọn thực tế", "Cập nhật hôm qua", ô tìm, chip lọc. | [DM-M] (Vinh 2026-11-09) |
 | **Thẻ "Ghé thăm Website"** (`/bio`) | Nền `{colors.primary-container}`, chữ `{colors.on-primary-container}`, `{rounded.xl}`, Mức 0; icon nhà trong vòng tròn, tiêu đề `{typography.headline-sm}`, dòng phụ `{typography.body-sm}`, mũi tên phải. | [Bio-M] (Vinh 2026-11-06) |
 | **ProductCard** *tile* | Dải "Gom link đồ xinh" Trang chủ: rộng 160px trên mobile / 1 trong 4 cột desktop, ảnh 1:1 rộng hết thẻ `{rounded.lg}`, tên 2 dòng, giá + ngày, nút Shopee rộng hết thẻ. | như *row* |
 | **AffiliateLink** | Không có hình riêng (hành vi: EXPERIENCE). Hình "nút Shopee" là `{components.affiliate-link-button}`: chữ "Xem trên Shopee" + icon external-link 14px, cao 36px, **vùng bấm 44px** (`hit-area`). Trong ProductCard và Banner, vùng bấm là cả thẻ. Hover: độ mờ 95%. | [Bài-M] |
@@ -364,7 +366,7 @@ Kế thừa nguyên component shadcn; chỉ ghi **delta** so với mặc định
 | Ảnh tỉ lệ cố định, khung chờ và khung ảnh lỗi cùng kích thước | Ảnh đầu bài carousel; khối tải muộn đẩy nội dung |
 | Icon Lucide nét mảnh | Material Symbols, icon nét 2px |
 | Breadcrumb một cấp theo Danh mục; hashtag là chữ thường, không link | Danh mục con, nhãn phụ, breadcrumb 3 cấp |
-| Vùng bấm ≥ `{spacing.touch-target}` kể cả khi hình nhỏ hơn | Nút/chip có vùng bấm bằng đúng hình 36px |
+| Vùng bấm ≥ `{spacing.touch-target}` kể cả khi hình nhỏ hơn (ngoại lệ: link SiteFooter dòng 32px, Vinh 2026-11-09, ≥ 24px WCAG 2.5.8) | Nút/chip có vùng bấm bằng đúng hình 36px |
 
 **Phần Stitch bị loại (danh sách chuẩn)** — lý do: `reconcile-stitch.md` §3a. Không thêm lại khi chưa sửa PRD.
 

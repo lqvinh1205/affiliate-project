@@ -57,3 +57,8 @@ export function bioItemsOfRow<T extends Item>(items: T[], categories: Category[]
   const list = items.filter((p) => p.categoryId === category.id);
   return list.length > 0 ? list : null;
 }
+
+// "Khám phá danh mục khác" ở màn đã lọc: mọi dòng trừ dòng đang xem, giữ thứ tự.
+export function bioOtherRowsOf(rows: BioCategoryRow[], key: string) {
+  return rows.filter((r) => r.key !== key);
+}

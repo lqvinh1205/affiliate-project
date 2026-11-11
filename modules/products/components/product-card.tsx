@@ -52,25 +52,64 @@ function PinnedMark() {
   );
 }
 
-// *row*: trong bài viết, `/bio`; *tile*: dải "Gom link đồ xinh" Trang chủ. `pinned`: món ghim trên `/bio`.
+// *row*: trong bài viết; *bio*: `/bio` (Stitch [Bio-M], Vinh 2026-11-09); *tile*: dải "Gom link đồ xinh" Trang chủ.
+// `pinned`: món ghim trên `/bio`.
 export function ProductCard({
   product,
   variant = "row",
   pinned = false,
 }: {
   product: PublicProduct;
-  variant?: "row" | "tile";
+  variant?: "row" | "bio" | "tile";
   pinned?: boolean;
 }) {
   if (variant === "tile") {
     return (
-      <AffiliateLink href={product.affiliateUrl} className={cn(CARD, "flex w-40 flex-col gap-space-sm p-space-sm lg:w-auto")}>
+      <AffiliateLink href={product.affiliateUrl} className={cn(CARD, "flex w-40 flex-col gap-space-sm p-space-sm lg:w-full")}>
         <span className="relative block aspect-square overflow-hidden rounded-lg bg-surface-container">
           <ImageFallback src={product.image} alt="" fill sizes="(min-width: 1024px) 25vw, 160px" className="object-cover" />
         </span>
         <span className="line-clamp-2 text-headline-sm">{product.name}</span>
         <ReferencePrice priceText={product.priceText} priceUpdatedAt={product.priceUpdatedAt} />
         <ShopeeButton className="mt-auto w-full" />
+      </AffiliateLink>
+    );
+  }
+  if (variant === "bio") {
+    // Ảnh 96px; tên 2 dòng; "Giá tham khảo · cập nhật dd/mm/yyyy"; hàng dưới giá to bên trái + nút Shopee bên phải
+    // (màn hẹp thì nút xuống dòng). Không có giá: chỉ nút.
+    const date = formatShortDate(product.priceUpdatedAt);
+    return (
+      <AffiliateLink href={product.affiliateUrl} className={cn(CARD, "flex items-center gap-space-sm px-space-sm py-space-md")}>
+        <span className="relative block size-24 shrink-0 overflow-hidden rounded-lg bg-surface-container">
+          <ImageFallback src={product.image} alt="" fill sizes="96px" className="object-cover" />
+          {pinned && <PinnedMark />}
+        </span>
+        <span className="flex min-w-0 flex-1 flex-col gap-space-xs">
+          <span className="line-clamp-2 text-headline-sm">{product.name}</span>
+          {/* Dòng nhãn chỉ để nhìn; trình đọc màn hình đọc "Giá tham khảo ~X · cập nhật …" ở giá bên dưới (UX-DR35). */}
+          {product.priceText && (
+            <span aria-hidden className="block text-label-meta text-on-surface-variant">
+              Giá tham khảo
+              {date && (
+                <>
+                  {" · "}
+                  <span className="whitespace-nowrap">cập nhật {date}</span>
+                </>
+              )}
+            </span>
+          )}
+          <span className="flex flex-wrap items-center justify-between gap-x-space-xs gap-y-space-xs">
+            {product.priceText && (
+              <span className="text-headline-sm text-primary">
+                <span className="sr-only">Giá tham khảo </span>
+                {product.priceText}
+                {date && <span className="sr-only"> · cập nhật {date}</span>}
+              </span>
+            )}
+            <ShopeeButton className="ml-auto shrink-0" />
+          </span>
+        </span>
       </AffiliateLink>
     );
   }

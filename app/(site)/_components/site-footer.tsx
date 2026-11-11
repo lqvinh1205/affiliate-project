@@ -3,7 +3,8 @@ import type { NavCategory } from "@/modules/posts/types";
 import { AffiliateDisclosure } from "@/modules/products/components/affiliate-disclosure";
 import { BIO_PATH, POST_TYPE_LINKS } from "@/app/(site)/_components/site-nav";
 
-const FOOTER_LINK = "inline-flex min-h-touch-target items-center text-body-sm text-on-surface-variant hover:text-primary";
+// Dòng link cao 32px (vùng bấm ≥ 24px, WCAG 2.5.8), bấm được cả dòng.
+const FOOTER_LINK = "flex min-h-8 items-center text-body-sm text-on-surface-variant hover:text-primary";
 
 // SiteFooter (UX-DR14): tên + giới thiệu, link Danh mục, link `/bio`, AffiliateDisclosure dạng chữ, ©.
 // Mobile chừa đáy cho BottomTabBar.
@@ -21,7 +22,7 @@ export function SiteFooter({ categories }: { categories: NavCategory[] }) {
           <AffiliateDisclosure variant="text" />
         </div>
         <nav aria-label="Danh mục">
-          <p className="text-label-meta uppercase text-on-surface-variant">Danh mục</p>
+          <p className="mb-space-xs text-label-meta uppercase text-on-surface-variant">Danh mục</p>
           <ul className="grid grid-cols-2 gap-x-space-md lg:grid-cols-1">
             {categories.map((c) => (
               <li key={c.slug}>
@@ -33,7 +34,7 @@ export function SiteFooter({ categories }: { categories: NavCategory[] }) {
           </ul>
         </nav>
         <nav aria-label="Khám phá">
-          <p className="text-label-meta uppercase text-on-surface-variant">Khám phá</p>
+          <p className="mb-space-xs text-label-meta uppercase text-on-surface-variant">Khám phá</p>
           <ul>
             {POST_TYPE_LINKS.map((l) => (
               <li key={l.href}>

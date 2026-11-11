@@ -305,6 +305,11 @@ export function StyleguideScreen() {
             product={{ ...SAMPLE_PRODUCT, id: "p2", name: "Thảm nỉ trải sàn màu be (không có giá, ảnh lỗi)", priceText: null, image: "https://down-vn.img.susercontent.com/file/anh-loi" }}
           />
         </div>
+        <p className="text-body-sm text-on-surface-variant">ProductCard *bio* (`/bio`).</p>
+        <div className="max-w-[560px] space-y-space-sm">
+          <ProductCard variant="bio" product={SAMPLE_PRODUCT} pinned />
+          <ProductCard variant="bio" product={{ ...SAMPLE_PRODUCT, id: "p4", priceText: null }} />
+        </div>
         <p className="text-body-sm text-on-surface-variant">ProductCard *tile* (dải Trang chủ).</p>
         <div className="flex gap-space-md overflow-x-auto">
           <ProductCard variant="tile" product={SAMPLE_PRODUCT} />
