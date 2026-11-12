@@ -95,7 +95,7 @@ sources:
 
 **Điều hướng CMS — CmsShell:** thanh trên dính (tên mục hiện tại + nút menu) mở `Sheet` trái liệt kê các mục danh sách theo thứ tự bảng trên (không có Gốc CMS, Soạn Bài web, Chi tiết Sản phẩm, Bộ nội dung — tới các màn này qua link trong màn khác); desktop ≥ 1024px là sidebar cố định [ASSUMPTION: không mockup; theo mẫu shadcn]. Nút "Xem site" mở `/` ở tab mới.
 
-**Màn Bộ nội dung `/cms/bo-noi-dung/[id]`** (cao trào UJ-1, NFR-4). Mobile 360px: một cột xếp chồng (không tab — mọi thẻ hiện trên cùng một màn, FR-12); desktop: cùng cột, rộng tối đa 768px căn giữa [ASSUMPTION].
+**Màn Bộ nội dung `/cms/bo-noi-dung/[id]`** (cao trào UJ-1, NFR-4). Mobile 360px: một cột xếp chồng (không tab — mọi thẻ hiện trên cùng một màn, FR-12); desktop: cùng cột, rộng hết vùng nội dung CMS (Vinh 2026-11-12: CMS dùng hết màn hình).
 
 **Số thẻ:** 1 SuggestionCard cho mỗi nền tảng đã chọn + 1 SuggestionCard Bình luận kèm link cho **mỗi** nền tảng mạng xã hội đã chọn (FR-17, AD-19 khoá `contentSetId + platform`). Đủ 3 nền tảng = **5 thẻ**; chỉ Threads = 2; chỉ Bài web = 1. Bình luận là thẻ riêng (Duyệt riêng, FR-22) nằm ngay dưới bài của nền tảng đó.
 
@@ -323,7 +323,7 @@ Tương phản màu ở `DESIGN.md` Colors. PRD không có NFR a11y riêng; mứ
 | 768–1023px | Lưới 6 cột: PostCard grid 2 cột. Vẫn BottomTabBar [ASSUMPTION]. |
 | ≥ 1024px | Nav ngang, không BottomTabBar. Trang chủ cùng thứ tự, trừ Bài nổi bật (7 cột) + Xem nhiều (5 cột) đứng cạnh nhau (Stitch desktop) rồi tới Gom link đồ xinh lưới 4 cột *tile*; Mới cập nhật 3 cột. Bài viết: đầu bài (Breadcrumb, badge, H1, meta, AffiliateDisclosure, ảnh đầu bài) rộng hết khung như Stitch desktop; từ thân bài chia 8 cột + cột phải dính (TOC, tim, chia sẻ) (Vinh 2026-11-06). |
 | `/bio` | Thiết kế cho mobile (FR-30); desktop chỉ căn giữa cột rộng tối đa 560px [ASSUMPTION]. |
-| CMS | Mọi luồng UJ-1, UJ-2 làm trọn trên điện thoại 360px (NFR-4). Desktop thêm sidebar và bảng; Bộ nội dung giữ một cột ≤ 768px. |
+| CMS | Mọi luồng UJ-1, UJ-2 làm trọn trên điện thoại 360px (NFR-4). Desktop thêm sidebar và bảng; mọi màn rộng hết vùng nội dung (Vinh 2026-11-12). |
 
 Stitch chưa có bản desktop/tablet cho Danh mục, Bio, Tìm kiếm, và chưa có dark mode cho màn nào — dựng theo bảng trên và token `-dark`.
 
@@ -455,7 +455,7 @@ Câu hỏi 1–3 của `reconcile-stitch.md` đã chốt trong memlog. Câu 4–
 |---|---|
 | Đích "Xem tất cả" từng khu Trang chủ | Information Architecture › Khu Trang chủ |
 | Sản phẩm ghim không lặp ở nhóm Danh mục trên `/bio` | Information Architecture › Bố cục `/bio` |
-| Bộ nội dung một cột ≤ 768px trên desktop | Information Architecture › Màn Bộ nội dung |
+| Bộ nội dung một cột, rộng hết vùng nội dung CMS trên desktop (Vinh 2026-11-12) | Information Architecture › Màn Bộ nội dung |
 | "Thêm Bài {nền tảng}" vào bộ có sẵn | Information Architecture › Màn Bộ nội dung (thứ tự 6) |
 | Threads > 500 ký tự chặn Duyệt | Component Patterns › SuggestionCard |
 | Không thêm/xoá bài trong chuỗi | Component Patterns › SuggestionCard |

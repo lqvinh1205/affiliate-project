@@ -145,7 +145,7 @@ export async function ContentSetScreen({ params }: Pick<PageProps<"/cms/bo-noi-d
   };
 
   return (
-    <div className="mx-auto max-w-3xl space-y-space-lg">
+    <div className="space-y-space-lg">
       {generating.length > 0 && <GeneratingPoller startedAt={generating[0]} />}
       <Header set={set} approved={approved} total={views.length} />
       <ContentSetJumpBar chips={chips} />

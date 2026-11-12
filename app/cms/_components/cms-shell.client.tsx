@@ -131,7 +131,7 @@ export function CmsShell({ children }: { children: ReactNode }) {
         <main
           id={MAIN_CONTENT_ID}
           tabIndex={-1}
-          className="mx-auto w-full max-w-2xl px-margin pb-space-xl pt-space-md outline-none lg:pt-space-xl"
+          className="px-margin pb-space-xl pt-space-md outline-none lg:px-margin-desktop lg:pt-space-xl"
         >
           {children}
         </main>

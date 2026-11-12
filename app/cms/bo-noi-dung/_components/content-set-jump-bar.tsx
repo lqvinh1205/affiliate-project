@@ -20,7 +20,7 @@ export function ContentSetJumpBar({ chips }: { chips: JumpChip[] }) {
   return (
     <nav
       aria-label="Nhảy tới nền tảng"
-      className="sticky-bar sticky top-14 z-10 -mx-margin flex snap-x gap-space-sm overflow-x-auto px-margin py-space-sm [scrollbar-width:none] lg:top-0"
+      className="sticky-bar sticky top-14 z-10 -mx-margin flex snap-x gap-space-sm overflow-x-auto px-margin py-space-sm [scrollbar-width:none] lg:top-0 lg:-mx-margin-desktop lg:px-margin-desktop"
     >
       {chips.map((c) => (
         <a

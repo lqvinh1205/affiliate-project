@@ -192,7 +192,7 @@ Vị trí component **mới** theo spine AD-11: hiển thị/form của một th
 flowchart TD
   Root["app/layout.tsx<br/>html lang=vi · font · Toaster"]
   Root --> Site["app/(site)/layout.tsx<br/>ensureStatic=navigation<br/>SiteHeader · main.flex-1 · SiteFooter"]
-  Root --> Cms["app/cms/layout.tsx<br/>CmsShell: thanh trên h-14 + Sheet (< 1024px)<br/>sidebar w-64 (≥ 1024px) · main max-w-2xl"]
+  Root --> Cms["app/cms/layout.tsx<br/>CmsShell: thanh trên h-14 + Sheet (< 1024px)<br/>sidebar w-64 (≥ 1024px) · main hết chiều ngang"]
   Cms --> Sg["/cms/styleguide"]
   Site --> Home["/ (page.tsx)"]
   Site --> Cat["/[category]"]
@@ -218,8 +218,8 @@ CMS (`app/cms`): khung là `CmsShell` (`app/cms/_components/cms-shell.client.tsx
 - `<aside aria-label="Thanh bên CMS">`; "Xem site" có `sr-only` "(mở tab mới)".
 - "Xem site" là `<a href="/" target="_blank">`, ở cuối Sheet và sidebar.
 - `usePathname` nằm trong `Suspense` (`WithPathname`), fallback là bản chưa đánh dấu mục đang mở.
-- Nội dung: `main.mx-auto.max-w-2xl.px-margin`, nền trang `surface`; không còn bottom nav nên không cần `pb-28`. Nút tạo mới đặt trong màn (ví dụ "Tạo bài web" đầu danh sách, `app/cms/page.tsx`).
-- Thanh thao tác của editor sticky `top-14 z-20 -mx-4` (`components/cms/post-editor.tsx:114`) khớp chiều cao thanh trên mobile; ở ≥ 1024px không có thanh trên nên nó chừa khoảng trống 56px — sửa (`top-14 lg:top-0`) khi chuyển file đó.
+- Nội dung: `main.px-margin.lg:px-margin-desktop`, không giới hạn độ rộng: mọi màn CMS (danh sách, form, Bộ nội dung) rộng hết vùng nội dung (Vinh 2026-11-12); không đặt `max-w-*` ở gốc Screen/Skeleton CMS. Nền trang `surface`; không còn bottom nav nên không cần `pb-28`. Thanh dính đáy (`-mx-margin`) chuyển `lg:static lg:mx-0` nên không lệch lề desktop. Nút tạo mới đặt trong màn (ví dụ "Tạo bài web" đầu danh sách).
+- Thanh công cụ trình soạn sticky `top-14 lg:top-0` (`modules/posts/components/post-body-editor.client.tsx`) khớp chiều cao thanh trên mobile, không dùng lề âm.
 - Trang CMS đọc DB **không cache**: bọc phần đọc trong `<Suspense fallback={<Skeleton…/>}>` và gọi `await connection()` hoặc `await params` bên trong (`app/cms/page.tsx`, `app/cms/posts/[id]/page.tsx:9-17`).
 
 ### [GD-12] Mẫu gọi Server Action từ client (đang dùng)

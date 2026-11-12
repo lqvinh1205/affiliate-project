@@ -2,7 +2,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 export function ContentSetSkeleton() {
   return (
-    <div className="mx-auto max-w-3xl space-y-space-lg">
+    <div className="space-y-space-lg">
       <Skeleton className="h-9 w-48" />
       <div className="space-y-space-sm rounded-xl border p-space-md">
         <Skeleton className="h-10 w-2/3" />
