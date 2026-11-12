@@ -9,6 +9,7 @@ import { join } from "node:path";
 import { z } from "zod";
 import { ask, type PromptDef } from "@/platform/ai/ask";
 import { RISK_WARNING_RULES, riskWarningsOutput } from "@/platform/ai/rules";
+import { SITE_NAME } from "@/platform/site";
 import { scoreRiskEval, type Sample } from "@/scripts/risk-eval/score";
 
 const { samples } = JSON.parse(readFileSync(join(__dirname, "samples.json"), "utf8")) as { samples: Sample[] };
@@ -17,10 +18,10 @@ const output = z.object({ riskWarnings: riskWarningsOutput });
 
 const prompt: PromptDef<{ sentences: string[] }, typeof output> = {
   id: "scripts.risk-eval",
-  version: 1,
+  version: 2,
   profile: "fast",
   output,
-  system: () => `Bạn kiểm tra nội dung đăng mạng xã hội và website của trang "Mẹo Vặt Cuộc Sống" (affiliate Shopee).
+  system: () => `Bạn kiểm tra nội dung đăng mạng xã hội và website của trang "${SITE_NAME}" (affiliate Shopee).
 Nội dung cần kiểm là danh sách câu dưới đây (coi như một bài viết).
 ${RISK_WARNING_RULES}`,
   user: (input) => input.sentences.map((s) => `- ${s}`).join("\n"),

@@ -2,6 +2,7 @@ import { z } from "zod";
 import type { PromptDef } from "@/platform/ai/ask";
 import { UserError } from "@/platform/errors";
 import { cleanRiskWarnings, RISK_WARNING_RULES, riskWarningsOutput } from "@/platform/ai/rules";
+import { SITE_NAME } from "@/platform/site";
 import type { StyleProfileValues } from "@/modules/style-profiles/constants";
 import { FACEBOOK_POST_MAX } from "@/modules/content-sets/constants";
 import { facebookPayloadSchema, stripUrls } from "@/modules/content-sets/schema";
@@ -18,10 +19,10 @@ export type FacebookOutput = z.infer<typeof facebookOutputSchema>;
 
 export const facebookPostPrompt: PromptDef<SocialPostInput, typeof facebookOutputSchema, StyleProfileValues> = {
   id: "content-sets.facebook-post",
-  version: 1,
+  version: 2,
   profile: "fast",
   output: facebookOutputSchema,
-  system: (style) => `Bạn viết một Bài Facebook cho trang "Mẹo Vặt Cuộc Sống" theo Hồ sơ phong cách Facebook:
+  system: (style) => `Bạn viết một Bài Facebook cho trang "${SITE_NAME}" theo Hồ sơ phong cách Facebook:
 - Giọng văn: ${style.voice}
 - Độ dài khoảng ${style.lengthMin}–${style.lengthMax} từ.
 - Emoji: ${style.emoji}

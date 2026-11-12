@@ -11,7 +11,7 @@ export function generateStaticParams() {
 
 export async function generateMetadata({ params }: PageProps<"/gom-link/trang/[n]">): Promise<Metadata> {
   const page = parsePageParam((await params).n);
-  return page ? postTypeMetadata("GOM_LINK", page) : {};
+  return page ? await postTypeMetadata("GOM_LINK", page) : {};
 }
 
 export default async function GomLinkPagedPage({ params }: PageProps<"/gom-link/trang/[n]">) {

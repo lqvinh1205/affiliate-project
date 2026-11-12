@@ -74,7 +74,7 @@ describe("researchProduct", () => {
       ["RESEARCH", "GENERATING"],
       ["PRODUCT_CATEGORY", "GENERATING"],
     ]);
-    expect(rows.every((r) => r.promptId === "research.product" && r.promptVersion === 1)).toBe(true);
+    expect(rows.every((r) => r.promptId === "research.product" && r.promptVersion === 2)).toBe(true);
     expect(fakeAi.calls()).toHaveLength(0);
     expect(actionTest.updatedTags).toEqual([]);
     const view = await getProductSuggestionsForCms(p.id);

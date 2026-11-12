@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { Be_Vietnam_Pro } from "next/font/google";
-import { DEFAULT_OG_IMAGE, MAIN_CONTENT_ID, SITE_NAME, SITE_URL } from "@/platform/site";
+import { MAIN_CONTENT_ID, SITE_NAME, SITE_OPEN_GRAPH, SITE_URL } from "@/platform/site";
 import "./globals.css";
 
 const body = Be_Vietnam_Pro({
@@ -18,7 +18,7 @@ export const metadata: Metadata = {
   },
   description:
     "Mẹo vặt nhà cửa, bếp núc, làm đẹp và tổng hợp đồ xinh giá tốt được chọn lọc kỹ.",
-  openGraph: { siteName: SITE_NAME, locale: "vi_VN", type: "website", images: [DEFAULT_OG_IMAGE] },
+  openGraph: SITE_OPEN_GRAPH,
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

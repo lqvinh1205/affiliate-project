@@ -1,5 +1,6 @@
 import { z } from "zod";
 import type { PromptDef } from "@/platform/ai/ask";
+import { SITE_NAME } from "@/platform/site";
 import {
   RESEARCH_ANGLES_MAX,
   RESEARCH_ANGLES_MIN,
@@ -49,10 +50,10 @@ export type ResearchOutput = z.infer<typeof researchOutputSchema>;
 
 export const researchProductPrompt: PromptDef<ResearchPromptInput, typeof researchOutputSchema> = {
   id: "research.product",
-  version: 1,
+  version: 2,
   profile: "quality",
   output: researchOutputSchema,
-  system: () => `Bạn là người nghiên cứu sản phẩm cho trang "Mẹo Vặt Cuộc Sống" (đồ gia dụng, nhà cửa, làm đẹp… bán trên Shopee).
+  system: () => `Bạn là người nghiên cứu sản phẩm cho trang "${SITE_NAME}" (đồ gia dụng, nhà cửa, làm đẹp… bán trên Shopee).
 Nhiệm vụ: lập Hồ sơ nghiên cứu để người viết dùng làm nội dung. Trả về JSON:
 - "info": tối đa ${RESEARCH_INFO_MAX} ý về công dụng, cách dùng, nhận xét chung tìm được trên web; mỗi ý một câu ngắn và "sourceUrl" là đúng link trang bạn đã đọc ý đó. Chỉ ghi ý có nguồn; không tìm được nguồn thì để "info" rỗng.
 - "infoNote": khi "info" rỗng hoặc thông tin ít, một câu nói rõ là không tìm được thông tin công khai (không bịa); ngược lại null.

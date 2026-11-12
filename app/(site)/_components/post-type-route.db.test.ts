@@ -2,7 +2,7 @@ import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { db } from "@/platform/db";
 import { resetTestDb } from "@/vitest.db.helpers";
 import { PAGE_SIZE } from "@/modules/posts/constants";
-import { loadPostTypePage } from "@/app/(site)/_components/post-type-route";
+import { loadPostTypePage, postTypeMetadata } from "@/app/(site)/_components/post-type-route";
 
 vi.mock("next/navigation", () => ({
   permanentRedirect: (url: string) => {
@@ -43,5 +43,18 @@ describe("loadPostTypePage", () => {
 
   it("vượt trang cuối (pages + 1) → 404", async () => {
     await expect(loadPostTypePage("MEO_VAT", "3")).rejects.toThrow("404");
+  });
+});
+
+describe("postTypeMetadata", () => {
+  it("Loại bài chưa có bài xuất bản → noindex (trang mỏng, AD-26)", async () => {
+    expect((await postTypeMetadata("GOM_LINK", 1)).robots).toEqual({ index: false });
+  });
+
+  it("có một bài Gom link đã xuất bản → không có robots", async () => {
+    await db.post.create({
+      data: { title: "g", slug: "g", content: "<p>x</p>", postType: "GOM_LINK", status: "PUBLISHED", publishedAt: new Date() },
+    });
+    expect((await postTypeMetadata("GOM_LINK", 1)).robots).toBeUndefined();
   });
 });

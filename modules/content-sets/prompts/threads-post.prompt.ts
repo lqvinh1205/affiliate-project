@@ -2,6 +2,7 @@ import { z } from "zod";
 import type { PromptDef } from "@/platform/ai/ask";
 import { UserError } from "@/platform/errors";
 import { cleanRiskWarnings, RISK_WARNING_RULES, riskWarningsOutput } from "@/platform/ai/rules";
+import { SITE_NAME } from "@/platform/site";
 import type { StyleProfileValues } from "@/modules/style-profiles/constants";
 import { THREADS_PARTS_MAX, THREADS_POST_MAX } from "@/modules/content-sets/constants";
 import { stripUrls, threadsPayloadSchema } from "@/modules/content-sets/schema";
@@ -39,10 +40,10 @@ ${input.instruction ? `\nChỉ dẫn khi viết lại: ${input.instruction}` : "
 
 export const threadsPostPrompt: PromptDef<SocialPostInput, typeof threadsOutputSchema, StyleProfileValues> = {
   id: "content-sets.threads-post",
-  version: 2,
+  version: 3,
   profile: "fast",
   output: threadsOutputSchema,
-  system: (style) => `Bạn viết bài Threads (chuỗi bài ngắn) cho trang "Mẹo Vặt Cuộc Sống" theo Hồ sơ phong cách Threads:
+  system: (style) => `Bạn viết bài Threads (chuỗi bài ngắn) cho trang "${SITE_NAME}" theo Hồ sơ phong cách Threads:
 - Giọng văn: ${style.voice}
 - Chuỗi ${style.partsMin ?? 4}–${style.partsMax ?? 7} bài; mỗi bài khoảng ${style.lengthMin}–${style.lengthMax} ký tự, tuyệt đối không quá ${THREADS_POST_MAX} ký tự.
 - Emoji: ${style.emoji}

@@ -3,7 +3,7 @@ import { Suspense } from "react";
 import { getPublicCategory } from "@/modules/categories/queries";
 import { listCategoriesWithPostCounts, listPostsByCategory } from "@/modules/posts/queries";
 import { loadCategory } from "@/app/(site)/[danh-muc]/_components/load-category";
-import { listPageMetadata } from "@/app/(site)/_components/list-page-metadata";
+import { defaultCategoryDescription, listPageMetadata } from "@/app/(site)/_components/list-page-metadata";
 import { PostListScreen } from "@/app/(site)/_components/post-list-screen";
 import { PostListSkeleton } from "@/app/(site)/_components/post-list-skeleton";
 
@@ -21,7 +21,7 @@ export async function generateMetadata({ params }: PageProps<"/[danh-muc]">): Pr
   const { total } = await listPostsByCategory(category.id, 1);
   return listPageMetadata({
     title: category.name,
-    description: category.description,
+    description: category.description ?? defaultCategoryDescription(category.name),
     path: `/${category.slug}`,
     page: 1,
     noindex: total === 0,

@@ -1,4 +1,4 @@
-# Tài liệu dự án — Mẹo Vặt Cuộc Sống
+# Tài liệu dự án — Mẹo Cuộc Sống
 
 > Kiểm lần cuối: 2026-11-05 @ 8771851 · Chuẩn viết: `chuan-tai-lieu.md`
 

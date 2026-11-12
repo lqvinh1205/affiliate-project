@@ -11,7 +11,7 @@ export function generateStaticParams() {
 
 export async function generateMetadata({ params }: PageProps<"/meo-vat/trang/[n]">): Promise<Metadata> {
   const page = parsePageParam((await params).n);
-  return page ? postTypeMetadata("MEO_VAT", page) : {};
+  return page ? await postTypeMetadata("MEO_VAT", page) : {};
 }
 
 export default async function MeoVatPagedPage({ params }: PageProps<"/meo-vat/trang/[n]">) {

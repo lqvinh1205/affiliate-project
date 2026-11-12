@@ -4,7 +4,7 @@ import { notFound, permanentRedirect } from "next/navigation";
 import { getPublicCategory } from "@/modules/categories/queries";
 import { listCategoriesWithPostCounts, listPostsByCategory } from "@/modules/posts/queries";
 import { loadCategory } from "@/app/(site)/[danh-muc]/_components/load-category";
-import { listPageMetadata } from "@/app/(site)/_components/list-page-metadata";
+import { defaultCategoryDescription, listPageMetadata } from "@/app/(site)/_components/list-page-metadata";
 import { pageHref, parsePageParam, staticPageParams } from "@/app/(site)/_components/pagination-items";
 import { PostListScreen } from "@/app/(site)/_components/post-list-screen";
 import { PostListSkeleton } from "@/app/(site)/_components/post-list-skeleton";
@@ -24,7 +24,8 @@ export async function generateMetadata({ params }: PageProps<"/[danh-muc]/trang/
   const [category, page] = [await getPublicCategory(slug), parsePageParam(n)];
   if (!category || !page) return {};
   const path = pageHref(`/${category.slug}`, page);
-  return listPageMetadata({ title: category.name, description: category.description, path, page });
+  const description = category.description ?? defaultCategoryDescription(category.name);
+  return listPageMetadata({ title: category.name, description, path, page });
 }
 
 export default async function CategoryPagedPage({ params }: PageProps<"/[danh-muc]/trang/[n]">) {

@@ -9,6 +9,7 @@ import {
   SEARCH_PATH,
 } from "@/app/(site)/_components/site-nav";
 import { MoreMenu } from "@/app/(site)/_components/more-menu.client";
+import { SiteLogoText } from "@/app/(site)/_components/site-logo-text";
 
 const NAV_LINK = "inline-flex min-h-touch-target items-center rounded-lg px-2 text-label-md hover:text-primary";
 
@@ -22,7 +23,7 @@ export function SiteHeader({ categories }: { categories: NavCategory[] }) {
       <div className="mx-auto flex h-16 max-w-container-max items-center justify-between gap-space-md px-margin lg:px-margin-desktop">
         <Link href="/" className="flex min-h-touch-target shrink-0 flex-col justify-center">
           <span className="text-headline-sm">
-            Mẹo Vặt <span className="text-primary">Cuộc Sống</span>
+            <SiteLogoText />
           </span>
           <span className="text-label-meta text-on-surface-variant">Tạp chí tổ ấm nhỏ</span>
         </Link>

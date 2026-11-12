@@ -1,7 +1,9 @@
 import Link from "next/link";
+import { SITE_NAME } from "@/platform/site";
 import type { NavCategory } from "@/modules/posts/types";
 import { AffiliateDisclosure } from "@/modules/products/components/affiliate-disclosure";
 import { BIO_PATH, POST_TYPE_LINKS } from "@/app/(site)/_components/site-nav";
+import { SiteLogoText } from "@/app/(site)/_components/site-logo-text";
 
 // Dòng link cao 32px (vùng bấm ≥ 24px, WCAG 2.5.8), bấm được cả dòng.
 const FOOTER_LINK = "flex min-h-8 items-center text-body-sm text-on-surface-variant hover:text-primary";
@@ -14,7 +16,7 @@ export function SiteFooter({ categories }: { categories: NavCategory[] }) {
       <div className="mx-auto grid max-w-container-max gap-space-lg px-margin py-space-xl lg:grid-cols-[2fr_1fr_1fr] lg:px-margin-desktop">
         <div className="space-y-space-sm">
           <p className="text-headline-sm">
-            Mẹo Vặt <span className="text-primary">Cuộc Sống</span>
+            <SiteLogoText />
           </p>
           <p className="max-w-md text-body-sm text-on-surface-variant">
             Mẹo hay cho nhà cửa, bếp núc, làm đẹp và những món đồ xinh giá tốt được chọn lọc mỗi ngày.
@@ -52,7 +54,7 @@ export function SiteFooter({ categories }: { categories: NavCategory[] }) {
         </nav>
       </div>
       <p className="mx-auto max-w-container-max border-t px-margin py-space-md text-label-sm text-on-surface-variant lg:px-margin-desktop">
-        © Mẹo Vặt Cuộc Sống
+        © {SITE_NAME}
       </p>
     </footer>
   );

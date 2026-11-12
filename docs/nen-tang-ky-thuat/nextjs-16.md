@@ -250,8 +250,8 @@ Nguồn: `docs/01-app/03-api-reference/03-file-conventions/error.md`, `not-found
 
 ### [NX-26] SEO
 
-- Root `metadata`: `metadataBase: new URL(SITE_URL)`, `title.template: "%s | Mẹo Vặt Cuộc Sống"`, `openGraph.locale: "vi_VN"` — `app/layout.tsx:14-23`. `SITE_URL` lấy từ `NEXT_PUBLIC_SITE_URL` — `platform/site.ts:2`.
-- `generateMetadata` của trang Danh mục / Loại bài: `listPageMetadata` (`app/(site)/_components/list-page-metadata.ts`), `alternates.canonical` tương đối, meta description = mô tả.
+- Root `metadata`: `metadataBase: new URL(SITE_URL)`, `title.template: "%s | Mẹo Cuộc Sống"`, `openGraph: SITE_OPEN_GRAPH` (`siteName`, `locale: "vi_VN"`, ảnh mặc định; `platform/site.ts`) — `app/layout.tsx`. Next gộp metadata nông: trang tự đặt `openGraph` phải trải `...SITE_OPEN_GRAPH` và thêm `url` = canonical. `SITE_URL` lấy từ `NEXT_PUBLIC_SITE_URL` — `platform/site.ts:2`.
+- `generateMetadata` của trang Danh mục / Loại bài: `listPageMetadata` (`app/(site)/_components/list-page-metadata.ts`), `alternates.canonical` và `openGraph.url` tương đối, meta description = mô tả (Danh mục thiếu mô tả dùng `defaultCategoryDescription`; trang n > 1 thêm "– Trang n"); Danh mục / Loại bài chưa có bài: `noindex`, ngoài sitemap.
 - `generateMetadata` của Bài web: gọi `getPostBySlug` (đã cache) nên hợp lệ dưới `ensureStatic='navigation'`; `openGraph.type: "article"`, `publishedTime`, `modifiedTime` — `app/(site)/bai-viet/[slug]/page.tsx:23-41`.
 - JSON-LD `Article` + `BreadcrumbList` qua `app/(site)/_components/json-ld.tsx` (escape `<`) — `app/(site)/bai-viet/[slug]/page.tsx:54-79`.
 - `sitemap.ts` dùng `getPublishedSlugs()` (đã cache, tag `posts`) — `app/sitemap.ts:6-22`. `robots.ts` — `app/robots.ts:4-9`.
@@ -286,7 +286,7 @@ import { AboutSkeleton } from "./_components/about-skeleton";
 
 export const metadata: Metadata = {
   title: "Giới thiệu",
-  description: "Về Mẹo Vặt Cuộc Sống.",
+  description: "Về Mẹo Cuộc Sống.",
   alternates: { canonical: "/gioi-thieu" },
 };
 
@@ -562,7 +562,7 @@ Spine AD-6 chỉ có **một** Route Handler: `app/cms/upload/route.ts` (AD-24).
 ### [NX-38] Metadata/SEO cho trang mới
 
 1. Trang không tham số: `export const metadata`. Trang có tham số: `generateMetadata` chỉ gọi hàm cached.
-2. Đặt `title` ngắn (template gốc tự thêm `| Mẹo Vặt Cuộc Sống`), `description`, `alternates.canonical` dạng đường dẫn tương đối (ghép với `metadataBase`).
+2. Đặt `title` ngắn (template gốc tự thêm `| Mẹo Cuộc Sống`), `description`, `alternates.canonical` dạng đường dẫn tương đối (ghép với `metadataBase`), `openGraph: { ...SITE_OPEN_GRAPH, url: <canonical> }`.
 3. Trang `(site)` không đọc `headers()`/`cookies()` trong `generateMetadata`.
 4. Nếu thêm `"use cache"` vào `generateMetadata`, không trả `URL` (dùng chuỗi).
 5. Thêm URL vào `app/sitemap.ts`; trang nội bộ thì thêm vào `disallow` của `app/robots.ts` và đặt `robots: { index: false }`.

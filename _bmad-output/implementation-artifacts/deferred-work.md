@@ -79,3 +79,12 @@
 - source_spec: `_bmad-output/implementation-artifacts/spec-11-luot-gop-epic-11.md`
   summary: `docs/cong-thuc/them-tinh-nang-ai.md` (Tóm tắt + Checklist) vẫn ghi "mọi đầu ra AI là Suggestion, chỉ checkPostSeo là ngoại lệ" — chưa theo AD-9 mới có thêm `importPostFromUrl`, `rewritePostDraft`.
   evidence: Review gộp Epic 11 (project-conventions). Spine AD-9 và QD-08 đã cập nhật 2026-11-09; công thức là tài liệu quy tắc cho agent nên để Vinh duyệt khi sửa.
+- source_spec: `_bmad-output/implementation-artifacts/spec-sua-loi-technical-seo-doi-ten-thuong-hieu.md`
+  summary: Thêm test cho `generateMetadata` trang Bài web (openGraph giữ siteName/locale của SITE_OPEN_GRAPH, type article, url = canonical).
+  evidence: Gỡ `...SITE_OPEN_GRAPH` khỏi `app/(site)/bai-viet/[slug]/page.tsx` sẽ tái phát lỗi #1 mà không test nào đỏ.
+- source_spec: `_bmad-output/implementation-artifacts/spec-sua-loi-technical-seo-doi-ten-thuong-hieu.md`
+  summary: Cập nhật bảng AD-26 trong spine: Danh mục / Loại bài chưa có bài xuất bản thì `noindex` và không vào sitemap; og:url = canonical qua SITE_OPEN_GRAPH.
+  evidence: Code (Danh mục từ trước, Loại bài từ thay đổi này) làm luật này nhưng AD-26 ghi "Sitemap: có" không ngoại lệ; spine thắng docs nên agent sau có thể "sửa" ngược.
+- source_spec: `_bmad-output/implementation-artifacts/spec-sua-loi-technical-seo-doi-ten-thuong-hieu.md`
+  summary: Đổi tên logo "Mẹo Vặt Cuộc Sống" → "Mẹo Cuộc Sống" trong DESIGN.md, EXPERIENCE.md, epics (UX-DR11).
+  evidence: Tài liệu UX đang dùng vẫn mô tả logo tên cũ sau khi đổi thương hiệu 2026-11-12.

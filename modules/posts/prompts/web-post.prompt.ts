@@ -3,6 +3,7 @@ import { PostType } from "@/generated/prisma/enums";
 import type { PromptDef } from "@/platform/ai/ask";
 import { cleanRiskWarnings, RISK_WARNING_RULES, riskWarningsOutput } from "@/platform/ai/rules";
 import { sanitizePostHtml } from "@/platform/html/sanitize";
+import { SITE_NAME } from "@/platform/site";
 import type { StyleProfileValues } from "@/modules/style-profiles/constants";
 import {
   POST_CONTENT_MAX,
@@ -51,10 +52,10 @@ const postTypeList = (Object.keys(POST_TYPES) as PostType[])
 
 export const webPostPrompt: PromptDef<WebPostInput, typeof webPostOutputSchema, StyleProfileValues> = {
   id: "posts.web-post",
-  version: 2,
+  version: 3,
   profile: "quality",
   output: webPostOutputSchema,
-  system: (style) => `Bạn là biên tập viên của trang "Mẹo Vặt Cuộc Sống" — tạp chí đời sống cho người Việt. Viết một Bài web theo Hồ sơ phong cách Website:
+  system: (style) => `Bạn là biên tập viên của trang "${SITE_NAME}" — tạp chí đời sống cho người Việt. Viết một Bài web theo Hồ sơ phong cách Website:
 - Giọng văn: ${style.voice}
 - Độ dài thân bài: ${style.lengthMin}–${style.lengthMax} từ, ${style.partsMin ?? 3}–${style.partsMax ?? 5} mục h2.
 - Emoji: ${style.emoji}

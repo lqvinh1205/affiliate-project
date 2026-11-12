@@ -1,9 +1,12 @@
+import type { Metadata } from "next";
 import { Suspense } from "react";
 import { postTypeMetadata } from "@/app/(site)/_components/post-type-route";
 import { PostTypeScreen } from "@/app/(site)/_components/post-type-screen";
 import { PostListSkeleton } from "@/app/(site)/_components/post-list-skeleton";
 
-export const metadata = postTypeMetadata("GOM_LINK", 1);
+export function generateMetadata(): Promise<Metadata> {
+  return postTypeMetadata("GOM_LINK", 1);
+}
 
 export default function GomLinkPage() {
   return (

@@ -17,7 +17,7 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 
 ## affiliate-project
 
-Website "Mẹo Vặt Cuộc Sống" + gom link affiliate Shopee, có CMS nội bộ dùng AI (nghiên cứu Sản phẩm, Xưởng Bộ nội dung, chấm SEO). Next.js 16 (App Router, `cacheComponents`), Prisma 7 + PostgreSQL, Tailwind 4 + shadcn (base-ui), npm. Artifact BMad nằm trong `_bmad-output/`: yêu cầu ở PRD `_bmad-output/planning-artifacts/prds/`; cấu trúc đích ở spine `_bmad-output/planning-artifacts/architecture/architecture-affiliate-project-2026-11-03/ARCHITECTURE-SPINE.md` — spine thắng `docs/` khi mâu thuẫn. `docs/PRD_AFFILIATE_PROJECT.md` chỉ là ý tưởng ban đầu, đã lỗi thời.
+Website "Mẹo Cuộc Sống" (tên miền `meocuocsong.io.vn`, đổi tên 2026-11-12) + gom link affiliate Shopee, có CMS nội bộ dùng AI (nghiên cứu Sản phẩm, Xưởng Bộ nội dung, chấm SEO). Next.js 16 (App Router, `cacheComponents`), Prisma 7 + PostgreSQL, Tailwind 4 + shadcn (base-ui), npm. Artifact BMad nằm trong `_bmad-output/`: yêu cầu ở PRD `_bmad-output/planning-artifacts/prds/`; cấu trúc đích ở spine `_bmad-output/planning-artifacts/architecture/architecture-affiliate-project-2026-11-03/ARCHITECTURE-SPINE.md` — spine thắng `docs/` khi mâu thuẫn. `docs/PRD_AFFILIATE_PROJECT.md` chỉ là ý tưởng ban đầu, đã lỗi thời.
 
 ## Policy
 

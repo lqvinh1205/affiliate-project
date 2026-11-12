@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 import { Sparkles } from "lucide-react";
 import { parseColorTokens } from "@/platform/design-tokens";
+import { SITE_NAME } from "@/platform/site";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -116,7 +117,7 @@ export function StyleguideScreen() {
       <header>
         <h1 className="text-headline-lg-mobile lg:text-headline-display">Styleguide</h1>
         <p className="text-body-regular text-on-surface-variant">
-          Mẹo Vặt Cuộc Sống · token và component. Sáng/tối theo hệ điều hành.
+          {SITE_NAME} · token và component. Sáng/tối theo hệ điều hành.
         </p>
       </header>
 

@@ -1,12 +1,12 @@
 ---
-title: PRD — affiliate-project (Mẹo Vặt Cuộc Sống & Gom Link)
+title: PRD — affiliate-project (Mẹo Cuộc Sống & Gom Link)
 status: final
 created: 2026-11-03
-updated: 2026-11-09
+updated: 2026-11-12
 ---
 
-# PRD: Mẹo Vặt Cuộc Sống — Xưởng nội dung affiliate có AI
-*Thương hiệu: Mẹo Vặt Cuộc Sống, tên miền dự kiến `meovatcuocsong.vn` (Vinh xác nhận 2026-11-03).*
+# PRD: Mẹo Cuộc Sống — Xưởng nội dung affiliate có AI
+*Thương hiệu: Mẹo Cuộc Sống, tên miền `meocuocsong.io.vn` (Vinh quyết định 2026-11-12; thay "Mẹo Vặt Cuộc Sống" / `meovatcuocsong.vn` chốt ngày 2026-11-03).*
 
 ## 0. Mục đích tài liệu
 

@@ -1,5 +1,6 @@
 import { z } from "zod";
 import type { PromptDef } from "@/platform/ai/ask";
+import { SITE_NAME } from "@/platform/site";
 import {
   INSPIRATION_KEYWORD_MAX,
   INSPIRATION_KEYWORDS_MAX,
@@ -38,10 +39,10 @@ export type InspirationResearchOutput = z.infer<typeof inspirationOutputSchema>;
 
 export const researchInspirationPrompt: PromptDef<InspirationResearchInput, typeof inspirationOutputSchema> = {
   id: "research.inspiration",
-  version: 2,
+  version: 3,
   profile: "quality",
   output: inspirationOutputSchema,
-  system: () => `Bạn giúp người viết trang "Mẹo Vặt Cuộc Sống" biến một Cảm hứng (video/ảnh mẹo vặt họ lưu lại) thành bài mẹo có gắn sản phẩm bán trên Shopee.
+  system: () => `Bạn giúp người viết trang "${SITE_NAME}" biến một Cảm hứng (video/ảnh mẹo vặt họ lưu lại) thành bài mẹo có gắn sản phẩm bán trên Shopee.
 Trả về JSON:
 - "summary": 1–3 câu: Cảm hứng nói về mẹo gì, dựa trên những gì bạn thật sự đọc được (tiêu đề, chú thích của trang link, ảnh, ghi chú). Nếu chỉ có ghi chú hoặc không đọc được trang link, nói rõ điều đó; không đoán nội dung video.
 - "keywords": ${INSPIRATION_KEYWORDS_MIN}–${INSPIRATION_KEYWORDS_MAX} từ khoá để gõ vào ô tìm kiếm Shopee tìm sản phẩm dùng cho mẹo này; tiếng Việt có dấu như người mua hay gõ, mỗi từ khoá 2–6 chữ, không trùng ý, không kèm giá hay thương hiệu nếu không chắc.

@@ -2,6 +2,7 @@ import { z } from "zod";
 import type { PromptDef } from "@/platform/ai/ask";
 import { UserError } from "@/platform/errors";
 import { cleanRiskWarnings, RISK_WARNING_RULES, riskWarningsOutput } from "@/platform/ai/rules";
+import { SITE_NAME } from "@/platform/site";
 import type { StyleProfileValues } from "@/modules/style-profiles/constants";
 import { PLATFORM_LABEL, type SocialPlatform } from "@/modules/content-sets/constants";
 import { linkCommentMax, linkCommentPayloadSchema, URL_PATTERN } from "@/modules/content-sets/schema";
@@ -26,10 +27,10 @@ export type LinkCommentOutput = z.infer<typeof linkCommentOutputSchema>;
 
 export const linkCommentPrompt: PromptDef<LinkCommentInput, typeof linkCommentOutputSchema, StyleProfileValues> = {
   id: "content-sets.link-comment",
-  version: 2,
+  version: 3,
   profile: "fast",
   output: linkCommentOutputSchema,
-  system: (style) => `Bạn viết Bình luận kèm link cho bài mạng xã hội của trang "Mẹo Vặt Cuộc Sống" — bình luận đầu tiên dưới bài, nơi người đọc lấy link mua.
+  system: (style) => `Bạn viết Bình luận kèm link cho bài mạng xã hội của trang "${SITE_NAME}" — bình luận đầu tiên dưới bài, nơi người đọc lấy link mua.
 - Giọng văn: ${style.voice}
 - Emoji: ${style.emoji}
 - Điều cấm: ${style.forbidden}

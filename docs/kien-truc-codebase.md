@@ -217,13 +217,13 @@ Upload: UploadField gửi file thô (XHR, `Content-Type` = loại file) tới `/
 
 | Bề mặt | Vị trí |
 |---|---|
-| Metadata gốc, title template `%s \| Mẹo Vặt Cuộc Sống`, `metadataBase` | `app/layout.tsx` |
-| Metadata trang Danh mục / Loại bài: title, meta description = mô tả, canonical chính nó (kể cả `/trang/n`) | `listPageMetadata` (`app/(site)/_components/list-page-metadata.ts`) |
+| Metadata gốc, title template `%s \| Mẹo Cuộc Sống`, `metadataBase` | `app/layout.tsx` |
+| Metadata trang Danh mục / Loại bài: title, meta description = mô tả (Danh mục thiếu mô tả dùng `defaultCategoryDescription`; `/trang/n` thêm "– Trang n" vào title và description), canonical và `og:url` chính nó (kể cả `/trang/n`), OpenGraph trải `SITE_OPEN_GRAPH` (`platform/site.ts`) | `listPageMetadata` (`app/(site)/_components/list-page-metadata.ts`) |
 | Metadata trang bài | `generateMetadata` trong `app/(site)/bai-viet/[slug]/page.tsx` |
 | JSON-LD `Article` + `BreadcrumbList` (bài), `BreadcrumbList` (Danh mục / Loại bài) | trang bài; `PostListScreen`; component `app/(site)/_components/json-ld.tsx` |
 | Sitemap (không có `/trang/n`) | `app/sitemap.ts` |
 | Robots | `app/robots.ts` |
-| `noindex` cho CMS, styleguide | `app/cms/layout.tsx`, `app/cms/styleguide/page.tsx` |
+| `noindex` cho CMS, styleguide, Danh mục / Loại bài chưa có bài (cũng ngoài sitemap) | `app/cms/layout.tsx`, `app/cms/styleguide/page.tsx`, `listPageMetadata` (`noindex`) |
 | Link affiliate `rel="sponsored nofollow noopener"`, `target="_blank"` | `AffiliateLink` (`modules/products/components/affiliate-link.tsx`) |
 | Chuyển hướng 308 khi đổi slug Danh mục / Bài web | `loadCategory` (`app/(site)/[danh-muc]/_components/load-category.ts`) + `CategorySlugRedirect`; `loadPost` (`app/(site)/bai-viet/[slug]/_components/load-post.ts`) + `PostSlugRedirect` |
 

@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
-import { DEFAULT_OG_IMAGE } from "@/platform/site";
+import { DEFAULT_OG_IMAGE, SITE_OPEN_GRAPH } from "@/platform/site";
 import { getPostBySlug, getPublishedSlugs } from "@/modules/posts/queries";
 import { loadPost } from "@/app/(site)/bai-viet/[slug]/_components/load-post";
 import { PostScreen } from "@/app/(site)/bai-viet/[slug]/_components/post-screen";
@@ -23,6 +23,7 @@ export async function generateMetadata({ params }: PageProps<"/bai-viet/[slug]">
     keywords: post.seoKeywords,
     alternates: { canonical: `/bai-viet/${post.slug}` },
     openGraph: {
+      ...SITE_OPEN_GRAPH,
       type: "article",
       title: post.title,
       description,

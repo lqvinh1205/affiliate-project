@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Suspense, useState, type ReactNode } from "react";
 import { ExternalLink, Menu } from "lucide-react";
-import { MAIN_CONTENT_ID } from "@/platform/site";
+import { MAIN_CONTENT_ID, SITE_NAME } from "@/platform/site";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { cn } from "@/components/ui/lib/utils";
@@ -24,7 +24,7 @@ const NAV_ITEMS: NavItem[] = [
   { label: "Styleguide", href: "/cms/styleguide", match: (p) => p.startsWith("/cms/styleguide") },
 ];
 
-const BRAND = "CMS · Mẹo Vặt";
+const BRAND = `CMS · ${SITE_NAME}`;
 
 function ActivePathname({ children }: { children: (pathname: string) => ReactNode }) {
   return children(usePathname());

@@ -14,9 +14,11 @@ export async function postTypeStaticParams(postType: PostType) {
   return staticPageParams(pages);
 }
 
-export function postTypeMetadata(postType: PostType, page: number): Metadata {
+// Loại bài chưa có bài xuất bản là trang mỏng như Danh mục rỗng: `noindex`, không vào sitemap (AD-26).
+export async function postTypeMetadata(postType: PostType, page: number): Promise<Metadata> {
   const { label, slug, description } = POST_TYPES[postType];
-  return listPageMetadata({ title: label, description, path: pageHref(`/${slug}`, page), page });
+  const { total } = await listPostsByType(postType, 1);
+  return listPageMetadata({ title: label, description, path: pageHref(`/${slug}`, page), page, noindex: total === 0 });
 }
 
 // Đoạn `[n]` → số trang; `n = 1` → 308 về trang gốc; không hợp lệ hoặc vượt trang cuối → 404.

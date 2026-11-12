@@ -1,5 +1,5 @@
 # TÀI LIỆU TOÀN DIỆN TRIỂN KHAI DỰ ÁN HỆ THỐNG AI AFFILIATE AUTOMATION
-## Dự án: Website Mẹo Vặt Cuộc Sống & Gom Link Đồ Đẹp (Next.js 14+)
+## Dự án: Website Mẹo Cuộc Sống & Gom Link Đồ Đẹp (Next.js 14+)
 
 ---
 
@@ -85,7 +85,7 @@ SCRAPINGBEE_API_KEY="SB-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
 
 # Định dạng cấu trúc Link Affiliate mặc định của bạn
 SHOPEE_AFFILIATE_ID="xxxxxxx"
-NEXT_PUBLIC_SITE_URL="https://meovatcuocsong.vn"
+NEXT_PUBLIC_SITE_URL="https://meocuocsong.io.vn"
 ```
 
 ---
@@ -124,7 +124,7 @@ export async function POST(req: Request) {
       messages: [
         {
           role: 'system',
-          content: 'Bạn là chuyên gia Content Creator cho trang web "Mẹo Vặt Cuộc Sống". Văn phong của bạn cá nhân hóa sâu sắc, sử dụng ngôn ngữ hóm hỉnh, Gen-Z.'
+          content: 'Bạn là chuyên gia Content Creator cho trang web "Mẹo Cuộc Sống". Văn phong của bạn cá nhân hóa sâu sắc, sử dụng ngôn ngữ hóm hỉnh, Gen-Z.'
         },
         {
           role: 'user',
